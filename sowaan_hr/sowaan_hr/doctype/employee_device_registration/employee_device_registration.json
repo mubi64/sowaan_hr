@@ -40,6 +40,7 @@
    "fetch_from": "employee.employee_name",
    "fieldname": "employee_name",
    "fieldtype": "Read Only",
+   "in_list_view": 1,
    "label": "Employee Name"
   },
   {
@@ -49,7 +50,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-05-30 17:44:45.918165",
+ "modified": "2022-05-31 11:15:48.500294",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Employee Device Registration",

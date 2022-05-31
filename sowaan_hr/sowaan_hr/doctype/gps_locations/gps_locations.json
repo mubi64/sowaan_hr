@@ -37,13 +37,14 @@
    "description": "Allowed radius range in meters",
    "fieldname": "allowed_radius",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "Allowed Radius",
    "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-05-30 17:36:46.145571",
+ "modified": "2022-05-31 11:43:11.664258",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "GPS Locations",

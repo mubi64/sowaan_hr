@@ -71,12 +71,12 @@ def create_employee_checkin(logtype, employee, time, gps, deviceId):
 
     if(success):
 
-        source_loc = split_string_to_float(gps, ',')
-        tzwhere_obj = tzwhere.tzwhere()
-        timezone_str = tzwhere_obj.tzNameAt(source_loc[0], source_loc[1]) # Seville coordinates
+        # source_loc = split_string_to_float(gps, ',')
+        # tzwhere_obj = tzwhere.tzwhere()
+        # timezone_str = tzwhere_obj.tzNameAt(source_loc[0], source_loc[1]) # Seville coordinates
         
-        timezone = pytz.timezone(timezone_str)
-        time = datetime.now()
+        # timezone = pytz.timezone(timezone_str)
+        # time = datetime.now()
         
         #verifying registered device
         devices = get_employee_devices(employee)
@@ -122,7 +122,7 @@ def create_employee_checkin(logtype, employee, time, gps, deviceId):
             checkin.user = frappe.session.user,
             checkin.employee = employee
             checkin.log_type = logtype
-            checkin.time = time #datetime.strptime(time, '%d-%m-%Y %H:%M')
+            checkin.time = datetime.strptime(time, '%d-%m-%Y %H:%M')
             checkin.device_id = deviceId
             checkin.marked_gps = gps
             checkin.gps_location = x['name']

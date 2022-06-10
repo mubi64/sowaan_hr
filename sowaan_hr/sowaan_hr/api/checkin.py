@@ -5,6 +5,8 @@ import frappe
 from frappe.utils import nowdate, flt, cstr, getdate, get_datetime
 from frappe import _
 from datetime import datetime
+import pytz
+from tzwhere import tzwhere
 from math import sin, cos, sqrt, atan2, radians
 from erpnext.hr.doctype.shift_assignment.shift_assignment import (
 	get_actual_start_end_datetime_of_shift,
@@ -52,7 +54,7 @@ def get_checkins(employee, from_date, to_date):
     checkins = frappe.db.get_list(
         "Employee Checkin",
         filters=filters,
-        fields=["name","log_type","time"],
+        fields=["name","employee_name","log_type","time"],
         order_by="creation desc"
     )
   
@@ -68,6 +70,14 @@ def create_employee_checkin(logtype, employee, time, gps, deviceId):
         message = "Something is not right, Attendance cannot be marked"
 
     if(success):
+
+        source_loc = split_string_to_float(gps, ',')
+        tzwhere_obj = tzwhere.tzwhere()
+        timezone_str = tzwhere_obj.tzNameAt(source_loc[0], source_loc[1]) # Seville coordinates
+        
+        timezone = pytz.timezone(timezone_str)
+        time = datetime.now()
+        
         #verifying registered device
         devices = get_employee_devices(employee)
         if(len(devices) > 0):
@@ -92,15 +102,19 @@ def create_employee_checkin(logtype, employee, time, gps, deviceId):
         if(success):
             locations = get_allowed_locations(employee=employee)
             matched_location = {}
-            for idx, x in enumerate(locations['locations']):
-                distance = round(get_distance(x['location_gps'], gps),0)
-                if(distance <= x['allowed_radius']):
-                    matched_location = x
-                    success = True
-                    break
-                else:
-                    success = False
-                    message = "Not in a allowed location, Attendance cannot be marked"
+            if len(locations) > 0:
+                for idx, x in enumerate(locations['locations']):
+                    distance = round(get_distance(x['location_gps'], gps),0)
+                    if(distance <= x['allowed_radius']):
+                        matched_location = x
+                        success = True
+                        break
+                    else:
+                        success = False
+                        message = "Not in a allowed location, Attendance cannot be marked"
+            else:
+                success = False
+                message = "Not in a allowed location, Attendance cannot be marked"
 
         #marking checkin
         if(success and matched_location):
@@ -108,7 +122,7 @@ def create_employee_checkin(logtype, employee, time, gps, deviceId):
             checkin.user = frappe.session.user,
             checkin.employee = employee
             checkin.log_type = logtype
-            checkin.time = datetime.strptime(time, '%d-%m-%Y %H:%M')
+            checkin.time = time #datetime.strptime(time, '%d-%m-%Y %H:%M')
             checkin.device_id = deviceId
             checkin.marked_gps = gps
             checkin.gps_location = x['name']

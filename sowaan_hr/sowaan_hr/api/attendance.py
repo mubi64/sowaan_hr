@@ -36,7 +36,13 @@ def get_payroll_date(employee):
     return data
 
 @frappe.whitelist()
-def get_attendance(employee, from_date, to_date):
+def get_attendance(employee, from_date, to_date, page):
+    pageSize = 15
+    page = int(page)
+    
+    if(page <= 0):
+        return "Page should be greater or equal of 1"
+
     filters = {
         "docstatus": 1,
         "attendance_date": ["between", (getdate(from_date), getdate(to_date))]
@@ -48,7 +54,9 @@ def get_attendance(employee, from_date, to_date):
         "Attendance",
         filters=filters,
         fields=["name","employee","employee_name","working_hours","status","attendance_date","in_time","out_time","late_entry","early_exit"],
-        order_by="attendance_date desc"
+        order_by="attendance_date desc",
+        start=(page-1)*pageSize,
+        page_length=pageSize,
     )
   
     return attendance

@@ -44,7 +44,13 @@ def get_my_today_checkins(employee):
     return checkins
 
 @frappe.whitelist()
-def get_checkins(employee, from_date, to_date):
+def get_checkins(employee, from_date, to_date, page):
+    pageSize = 15
+    page = int(page)
+    
+    if(page <= 0):
+        return "Page should be greater or equal of 1"
+
     filters = {
         "time": ["between", (getdate(from_date), getdate(to_date))]
     }
@@ -55,7 +61,9 @@ def get_checkins(employee, from_date, to_date):
         "Employee Checkin",
         filters=filters,
         fields=["name","employee_name","log_type","time"],
-        order_by="creation desc"
+        order_by="creation desc",
+        start=(page-1)*pageSize,
+        page_length=pageSize,
     )
   
     return checkins

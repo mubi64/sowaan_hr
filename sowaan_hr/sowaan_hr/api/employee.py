@@ -25,7 +25,7 @@ def get_employee_list():
 def get_employee_info(email):
     roles =  frappe.get_roles()
     if ("HR User" in roles) == False:
-        frappe.throw("You are not allowed to login")
+        raise Exception("You are not allowed to login")
 
     employees = frappe.db.get_all(
         "Employee",
@@ -45,7 +45,7 @@ def get_employee_info(email):
 
 @frappe.whitelist()
 def get_allowed_locations(employee):
-    locations = frappe.db.get_list(
+    locations = frappe.db.get_all(
         "Employee GPS Locations",
         filters={
             "employee": employee,

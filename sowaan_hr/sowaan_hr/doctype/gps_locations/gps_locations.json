@@ -43,8 +43,15 @@
   }
  ],
  "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2022-05-31 11:43:11.664258",
+ "links": [
+  {
+   "link_doctype": "Employee GPS Locations",
+   "link_fieldname": "employee",
+   "parent_doctype": "Employee GPS Locations",
+   "table_fieldname": "locations"
+  }
+ ],
+ "modified": "2022-06-14 17:18:33.108453",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "GPS Locations",

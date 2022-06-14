@@ -126,8 +126,15 @@ def create_employee_checkin(logtype, employee, time, gps, deviceId):
 
         #marking checkin
         if(success and matched_location):
+            # shift_actual_timings = get_actual_start_end_datetime_of_shift(
+            #     employee, get_datetime(), True
+            # )
+            # today_shift = shift_actual_timings[2]
+            
             checkin = frappe.new_doc("Employee Checkin")
-            checkin.user = frappe.session.user,
+            checkin.user = frappe.session.user
+            # if(today_shift):
+            #     checkin.shift = today_shift.shift_type.name
             checkin.employee = employee
             checkin.log_type = logtype
             checkin.time = datetime.strptime(time, '%d-%m-%Y %H:%M')

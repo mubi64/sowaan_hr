@@ -6,6 +6,7 @@ from frappe import _
 
 @frappe.whitelist()
 def get_employee_list():
+    
     employees = frappe.db.get_list(
         "Employee",
         filters={
@@ -22,6 +23,10 @@ def get_employee_list():
 
 @frappe.whitelist()
 def get_employee_info(email):
+    roles =  frappe.get_roles()
+    if ("HR User" in roles) == False:
+        frappe.throw("You are not allowed to login")
+
     employees = frappe.db.get_all(
         "Employee",
         filters={

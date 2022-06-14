@@ -9,7 +9,7 @@ from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 
 @frappe.whitelist()
 def get_payroll_date(employee):
-    payroll_entries = frappe.db.get_list(
+    payroll_entries = frappe.db.get_all(
         "Payroll Entry",
         filters=[
             ['docstatus', '=', 1,],

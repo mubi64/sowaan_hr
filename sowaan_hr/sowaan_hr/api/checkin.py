@@ -5,7 +5,8 @@ import frappe
 from frappe.utils import nowdate, flt, cstr, getdate, get_datetime
 from frappe import _
 from datetime import datetime
-import pytz
+from pytz import timezone
+from timezonefinder import TimezoneFinder
 from tzwhere import tzwhere
 from math import sin, cos, sqrt, atan2, radians
 from erpnext.hr.doctype.shift_assignment.shift_assignment import (
@@ -27,19 +28,35 @@ def get_my_today_checkins(employee):
     
     #return today_shift
     today_shift["employee"] = employee
-    
-    checkins = frappe.db.sql("""
-        select 
-            log_type,
-            case when log_type='IN' then min(time)
-            else max(time)
-            end time
-            from 
-            `tabEmployee Checkin` 
-            where 
-            employee = %(employee) s and time between %(actual_start) s and %(actual_end) s group by log_type
 
-        """, values=today_shift, as_dict=1)
+    checkins = {}
+    checkins["data"] = frappe.db.sql("""
+            select 
+                log_type, time
+                from 
+                `tabEmployee Checkin` 
+                where 
+                employee = %(employee) s and time between %(actual_start) s and %(actual_end) s order by time desc
+
+            """, values=today_shift, as_dict=1)
+
+
+    checkins["ShowCheckInOut"] = "IN"
+    
+    if today_shift.shift_type.working_hours_calculation_based_on == "First Check-in and Last Check-out":
+        if len(checkins["data"]) > 0:
+            checkins["ShowCheckInOut"] = "OUT"
+        else:
+            checkins["ShowCheckInOut"] = "IN"
+
+    elif today_shift.shift_type.working_hours_calculation_based_on == "Every Valid Check-in and Check-out":
+        if len(checkins["data"]) > 0:
+            if checkins["data"][0].log_type == "IN":
+                checkins["ShowCheckInOut"] = "OUT"
+            else:
+                checkins["ShowCheckInOut"] = "IN"
+        else:
+            checkins["ShowCheckInOut"] = "IN"
    
     return checkins
 
@@ -79,12 +96,12 @@ def create_employee_checkin(logtype, employee, time, gps, deviceId):
 
     if(success):
 
-        # source_loc = split_string_to_float(gps, ',')
-        # tzwhere_obj = tzwhere.tzwhere()
-        # timezone_str = tzwhere_obj.tzNameAt(source_loc[0], source_loc[1]) # Seville coordinates
-        
-        # timezone = pytz.timezone(timezone_str)
-        # time = datetime.now()
+        #Getting the datetime information from the GPS location came from device
+        source_loc = split_string_to_float(gps, ',')
+        obj = TimezoneFinder()
+        gps_timezone = obj.timezone_at(lat=source_loc[0], lng=source_loc[1]) 
+        gps_time = datetime.now(timezone(gps_timezone))
+        gps_time_formatted = gps_time.strftime('%Y-%m-%d %H:%M:%S')
         
         #verifying registered device
         devices = get_employee_devices(employee)
@@ -95,7 +112,7 @@ def create_employee_checkin(logtype, employee, time, gps, deviceId):
                     break
                 else:
                     success = False
-                    message = "Device is not registered, Attendance cannot be marked"
+                    message = "Device is not registered, Attendance cannot be marked\n\nDevice Id: "+deviceId
 
         else:
             new_device_registeration = frappe.new_doc("Employee Device Registration")
@@ -119,10 +136,10 @@ def create_employee_checkin(logtype, employee, time, gps, deviceId):
                         break
                     else:
                         success = False
-                        message = "Not in a allowed location, Attendance cannot be marked"
+                        message = "Not in a allowed location, Attendance cannot be marked\n\nGPS: "+gps
             else:
                 success = False
-                message = "Not in a allowed location, Attendance cannot be marked"
+                message = "Not in a allowed location, Attendance cannot be marked\n\nGPS: "+gps
 
         #marking checkin
         if(success and matched_location):
@@ -137,7 +154,7 @@ def create_employee_checkin(logtype, employee, time, gps, deviceId):
             #     checkin.shift = today_shift.shift_type.name
             checkin.employee = employee
             checkin.log_type = logtype
-            checkin.time = datetime.strptime(time, '%d-%m-%Y %H:%M')
+            checkin.time = gps_time_formatted#datetime.strptime(gps_time, '%d-%m-%Y %H:%M')
             checkin.device_id = deviceId
             checkin.marked_gps = gps
             checkin.gps_location = x['name']
@@ -145,7 +162,7 @@ def create_employee_checkin(logtype, employee, time, gps, deviceId):
             checkin.insert(ignore_permissions=True)
             
             success = True
-            message = logtype+" recorded from "+matched_location['location_name']
+            message = logtype+" recorded from "+matched_location['location_name']+" at "+gps_time_formatted+"\n\nGPS: "+gps
         
 
     

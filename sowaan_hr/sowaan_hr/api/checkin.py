@@ -30,6 +30,11 @@ def get_my_today_checkins(employee):
     today_shift["employee"] = employee
 
     checkins = {}
+    checkins["ShowCheckInOut"] = "IN"
+
+    if not hasattr(today_shift,'shift_type'):
+        return checkins;
+
     checkins["data"] = frappe.db.sql("""
             select 
                 log_type, time
@@ -40,8 +45,6 @@ def get_my_today_checkins(employee):
 
             """, values=today_shift, as_dict=1)
 
-
-    checkins["ShowCheckInOut"] = "IN"
     
     if today_shift.shift_type.working_hours_calculation_based_on == "First Check-in and Last Check-out":
         if len(checkins["data"]) > 0:

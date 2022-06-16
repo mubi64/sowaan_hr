@@ -13,7 +13,7 @@
  "idx": 0,
  "is_default": 0,
  "is_standard": 1,
- "label": "Sowaan HR",
+ "label": "Sowaan Hr",
  "links": [
   {
    "hidden": 0,
@@ -49,9 +49,29 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Transactions",
+   "link_to": "",
+   "link_type": "DocType",
+   "onboard": 0,
+   "only_for": "",
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Employee Checkin Request",
+   "link_to": "Employee Checkin Request",
+   "link_type": "DocType",
+   "onboard": 0,
+   "only_for": "",
+   "type": "Link"
   }
  ],
- "modified": "2022-05-31 11:14:45.872620",
+ "modified": "2022-06-16 15:03:18.879913",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Sowaan Hr",
@@ -59,5 +79,15 @@
  "owner": "mubashir@sowaan.com",
  "pin_to_bottom": 0,
  "pin_to_top": 0,
- "shortcuts": []
+ "shortcuts": [
+  {
+   "color": "#ECAD4B",
+   "doc_view": "List",
+   "format": "{} Pending",
+   "label": "Emp Checkin Request",
+   "link_to": "Employee Checkin Request",
+   "stats_filter": "{\"docstatus\":\"Draft\"}",
+   "type": "DocType"
+  }
+ ]
 }

@@ -49,7 +49,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-06-14 18:04:04.310551",
+ "modified": "2022-06-16 15:05:03.071331",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Employee GPS Locations",
@@ -69,8 +69,7 @@
   },
   {
    "read": 1,
-   "role": "Employee",
-   "select": 1
+   "role": "Employee"
   }
  ],
  "sort_field": "modified",

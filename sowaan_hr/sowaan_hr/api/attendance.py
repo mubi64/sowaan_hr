@@ -70,7 +70,7 @@ def get_attendance_summary(employee, from_date, to_date):
     if(employee):
         filters["employee"] = employee
 
-    filters["status"] = "Present"   
+    filters["status"] = ["in",["Present","Half Day"]]
     presents = len(frappe.db.get_list(
         "Attendance",
         filters=filters

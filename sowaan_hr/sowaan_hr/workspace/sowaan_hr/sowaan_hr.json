@@ -88,7 +88,7 @@
  "pin_to_top": 0,
  "shortcuts": [
   {
-   "color": "#ECAD4B",
+   "color": "yellow",
    "doc_view": "List",
    "format": "{} Pending",
    "label": "Emp Checkin Request",
@@ -97,7 +97,7 @@
    "type": "DocType"
   },
   {
-   "color": "#ECAD4B",
+   "color": "yellow",
    "doc_view": "List",
    "format": "{} Pending",
    "label": "Late Approval Request",

@@ -10,7 +10,9 @@
  "field_order": [
   "location_name",
   "location_gps",
-  "allowed_radius"
+  "allowed_radius",
+  "column_break_4",
+  "map"
  ],
  "fields": [
   {
@@ -40,6 +42,15 @@
    "in_list_view": 1,
    "label": "Allowed Radius",
    "reqd": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "map",
+   "fieldtype": "Geolocation",
+   "label": "Map"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -51,7 +62,7 @@
    "table_fieldname": "locations"
   }
  ],
- "modified": "2022-06-14 17:18:33.108453",
+ "modified": "2022-06-20 15:17:24.546875",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "GPS Locations",
@@ -70,7 +81,6 @@
    "write": 1
   }
  ],
- "quick_entry": 1,
  "search_fields": "location_name",
  "show_name_in_global_search": 1,
  "sort_field": "modified",

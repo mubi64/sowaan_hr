@@ -53,11 +53,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Transactions",
-   "link_to": "",
+   "label": "Attendance",
    "link_type": "DocType",
    "onboard": 0,
-   "only_for": "",
    "type": "Card Break"
   },
   {
@@ -69,9 +67,18 @@
    "onboard": 0,
    "only_for": "",
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Late Approval Request",
+   "link_to": "Late Approval Request",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2022-06-16 15:03:18.879913",
+ "modified": "2022-06-20 18:02:23.928984",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Sowaan Hr",
@@ -86,6 +93,15 @@
    "format": "{} Pending",
    "label": "Emp Checkin Request",
    "link_to": "Employee Checkin Request",
+   "stats_filter": "{\"docstatus\":\"Draft\"}",
+   "type": "DocType"
+  },
+  {
+   "color": "#ECAD4B",
+   "doc_view": "List",
+   "format": "{} Pending",
+   "label": "Late Approval Request",
+   "link_to": "Late Approval Request",
    "stats_filter": "{\"docstatus\":\"Draft\"}",
    "type": "DocType"
   }

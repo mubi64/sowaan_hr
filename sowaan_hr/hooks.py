@@ -17,12 +17,35 @@ fixtures = [
 				"dt",
                 "in",
 				(
-					"Employee Checkin"
+					"Employee Checkin", "Attendance"
 				)
 			]
 		]
 	}, 
-	{"doctype":"Client Script"}
+	{
+		"doctype":"Client Script",
+		"filters":[
+			[
+				"dt",
+                "in",
+				(
+					"Employee Checkin"
+				)
+			]
+		]
+	},
+	{
+		"doctype":"Server Script",
+		"filters":[
+			[
+				"reference_doctype",
+                "in",
+				(
+					"Attendance"
+				)
+			]
+		]
+	}
 	]
 
 # Includes in <head>

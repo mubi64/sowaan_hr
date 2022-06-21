@@ -85,7 +85,7 @@ def get_attendance_summary(employee, from_date, to_date):
 
     filters["status"] = "Present"   
     filters["late_entry"] = 1
-    filters["late_approval"] = 0   
+    filters["late_approved"] = 0   
     lates = len(frappe.db.get_list(
         "Attendance",
         filters=filters

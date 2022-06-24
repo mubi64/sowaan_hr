@@ -76,9 +76,26 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Reports",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Smart Attendance Sheet",
+   "link_to": "Smart Attendance Sheet",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2022-06-20 18:02:23.928984",
+ "modified": "2022-06-24 14:41:52.866285",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Sowaan Hr",
@@ -88,7 +105,7 @@
  "pin_to_top": 0,
  "shortcuts": [
   {
-   "color": "yellow",
+   "color": "#ECAD4B",
    "doc_view": "List",
    "format": "{} Pending",
    "label": "Emp Checkin Request",
@@ -97,7 +114,7 @@
    "type": "DocType"
   },
   {
-   "color": "yellow",
+   "color": "#ECAD4B",
    "doc_view": "List",
    "format": "{} Pending",
    "label": "Late Approval Request",

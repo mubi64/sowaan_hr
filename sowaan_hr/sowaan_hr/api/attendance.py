@@ -168,7 +168,7 @@ def get_monthly_hours(employee, from_date, to_date):
     payroll_based_on = frappe.db.get_value("Payroll Settings", None, "payroll_based_on")
     standard_working_hours = float(frappe.db.get_value("HR Settings", None, "standard_working_hours"))
     if standard_working_hours <= 0:
-        frappe.throw(_("Please define standard working hours in HR Settings"))
+        return ""
     include_holidays_in_total_working_days = frappe.db.get_single_value(
         "Payroll Settings", "include_holidays_in_total_working_days"
     )

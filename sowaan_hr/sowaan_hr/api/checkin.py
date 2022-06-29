@@ -164,6 +164,11 @@ def create_employee_checkin(logtype, employee, time, gps, deviceId):
            
             checkin.insert(ignore_permissions=True)
             
+            shift = frappe.get_doc("Shift Type", checkin.shift)
+            if shift:
+                shift.last_sync_of_checkin = gps_time_formatted
+                shift.save(ignore_permissions=True)
+
             success = True
             message = logtype+" recorded from "+matched_location['location_name']+" at "+gps_time_formatted+"\n\nGPS: "+gps
         

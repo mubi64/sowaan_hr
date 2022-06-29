@@ -10,7 +10,7 @@ from frappe.utils import (
 from frappe import _
 from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 from erpnext.hr.utils import get_holiday_dates_for_employee
-from sowaan_hr.sowaan_hr.api.employee import get_allowed_employees
+from sowaan_hr.sowaan_hr.api.employee import get_allowed_employees, get_current_emp
 
 @frappe.whitelist()
 def get_payroll_date(employee):
@@ -54,12 +54,13 @@ def get_attendance(employee, from_date, to_date, page):
     }
     
     allowed_employees = get_allowed_employees()
+    current_emp = frappe.get_value("Employee", {'user_id':frappe.session.user}, 'name')
     
     if employee:
         if (len(allowed_employees) > 0 and employee in allowed_employees) or len(allowed_employees) == 0:
             filters["employee"] = employee
         else:
-            filters["employee"] = frappe.session.user
+            filters["employee"] = get_current_emp()
     elif len(allowed_employees) > 0:
         filters["employee"] = ["in", allowed_employees]
     
@@ -82,8 +83,11 @@ def get_attendance_summary_statuswise(employee, from_date, to_date):
     }
     allowed_employees = get_allowed_employees()
     
-    if(employee and employee in allowed_employees):
-        filters["employee"] = employee
+    if employee:
+        if (len(allowed_employees) > 0 and employee in allowed_employees) or len(allowed_employees) == 0:
+            filters["employee"] = employee
+        else:
+            filters["employee"] = get_current_emp()
     elif len(allowed_employees) > 0:
         filters["employee"] = ["in", allowed_employees]
 

@@ -107,3 +107,6 @@ def get_allowed_employees():
     }, pluck="for_value")
 
     return allowed_employees
+
+def get_current_emp():
+    return frappe.get_value("Employee", {'user_id':frappe.session.user}, 'name')

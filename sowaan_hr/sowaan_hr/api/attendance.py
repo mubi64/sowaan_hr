@@ -51,10 +51,18 @@ def get_attendance(employee, from_date, to_date, page):
         "docstatus": 1,
         "attendance_date": ["between", (getdate(from_date), getdate(to_date))]
     }
-    if(employee):
-        filters["employee"] = employee
     
-    attendance = frappe.db.get_list(
+    allowed_employees = frappe.db.get_all("User Permission", filters={
+        "user" : frappe.session.user,
+        "allow" : "Employee"
+    }, pluck="for_value")
+    
+    if(employee and employee in allowed_employees):
+        filters["employee"] = employee
+    elif len(allowed_employees) > 0:
+        filters["employee"] = ["in", allowed_employees]
+    
+    attendance = frappe.db.get_all(
         "Attendance",
         filters=filters,
         fields=["name","employee","employee_name","working_hours","status","attendance_date","in_time","out_time","late_entry","early_exit"],

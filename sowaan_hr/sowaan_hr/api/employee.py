@@ -24,7 +24,7 @@ def get_employee_list():
 @frappe.whitelist()
 def get_employee_info(email):
     roles =  frappe.get_roles()
-    if ("HR User" in roles) == False:
+    if ("Employee" in roles) == False:
         raise Exception("You are not allowed to login")
 
     employees = frappe.db.get_all(

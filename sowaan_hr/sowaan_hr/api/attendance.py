@@ -55,8 +55,11 @@ def get_attendance(employee, from_date, to_date, page):
     
     allowed_employees = get_allowed_employees()
     
-    if(employee and employee in allowed_employees):
-        filters["employee"] = employee
+    if employee:
+        if (len(allowed_employees) > 0 and employee in allowed_employees) or len(allowed_employees) == 0:
+            filters["employee"] = employee
+        else:
+            filters["employee"] = frappe.session.user
     elif len(allowed_employees) > 0:
         filters["employee"] = ["in", allowed_employees]
     

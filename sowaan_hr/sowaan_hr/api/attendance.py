@@ -180,7 +180,7 @@ def get_monthly_hours(employee, from_date, to_date):
     emp_slip.end_date = to_date
     emp_slip.employee = employee
 
-    emp_slip.validate()
+    emp_slip.get_working_days_details()
 
     required_hours = ((emp_slip.payment_days or 0)+(emp_slip.absent_days or 0)+(emp_slip.leave_without_pay or 0))*standard_working_hours
 

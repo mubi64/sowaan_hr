@@ -87,7 +87,7 @@
   },
   {
    "hidden": 0,
-   "is_query_report": 0,
+   "is_query_report": 1,
    "label": "Smart Attendance Sheet",
    "link_to": "Smart Attendance Sheet",
    "link_type": "Report",
@@ -95,8 +95,8 @@
    "type": "Link"
   }
  ],
- "modified": "2022-06-24 14:41:52.866285",
- "modified_by": "Administrator",
+ "modified": "2022-06-29 14:56:24.385781",
+ "modified_by": "mubashir@sowaan.com",
  "module": "Sowaan Hr",
  "name": "Sowaan Hr",
  "onboarding": "Human Resource",

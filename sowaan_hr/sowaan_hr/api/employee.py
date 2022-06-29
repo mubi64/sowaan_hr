@@ -99,3 +99,11 @@ def get_employee_devices(employee):
 
         """, values=devices[0], as_dict=1)
     return data
+
+def get_allowed_employees():
+    allowed_employees = frappe.db.get_all("User Permission", filters={
+        "user" : frappe.session.user,
+        "allow" : "Employee"
+    }, pluck="for_value")
+
+    return allowed_employees

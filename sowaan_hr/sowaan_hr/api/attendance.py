@@ -10,6 +10,7 @@ from frappe.utils import (
 from frappe import _
 from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 from erpnext.hr.utils import get_holiday_dates_for_employee
+from sowaan_hr.sowaan_hr.api.employee import get_allowed_employees
 
 @frappe.whitelist()
 def get_payroll_date(employee):
@@ -52,10 +53,7 @@ def get_attendance(employee, from_date, to_date, page):
         "attendance_date": ["between", (getdate(from_date), getdate(to_date))]
     }
     
-    allowed_employees = frappe.db.get_all("User Permission", filters={
-        "user" : frappe.session.user,
-        "allow" : "Employee"
-    }, pluck="for_value")
+    allowed_employees = get_allowed_employees()
     
     if(employee and employee in allowed_employees):
         filters["employee"] = employee
@@ -79,10 +77,14 @@ def get_attendance_summary_statuswise(employee, from_date, to_date):
         "docstatus": 1,
         "attendance_date": ["between", (getdate(from_date), getdate(to_date))]
     }
-    if(employee):
+    allowed_employees = get_allowed_employees()
+    
+    if(employee and employee in allowed_employees):
         filters["employee"] = employee
+    elif len(allowed_employees) > 0:
+        filters["employee"] = ["in", allowed_employees]
 
-    att_list = frappe.db.get_list(
+    att_list = frappe.db.get_all(
         "Attendance",
         filters=filters,
         fields=['status','attendance_date'],
@@ -101,7 +103,7 @@ def get_attendance_summary_statuswise(employee, from_date, to_date):
     filters["status"] = "Present"   
     filters["late_entry"] = 1
     filters["late_approved"] = 0   
-    lates = len(frappe.db.get_list(
+    lates = len(frappe.db.get_all(
         "Attendance",
         filters=filters
     ))
@@ -109,7 +111,7 @@ def get_attendance_summary_statuswise(employee, from_date, to_date):
     # get early departures
     filters["status"] = "Present" 
     filters["early_exit"] = 1   
-    early = len(frappe.db.get_list(
+    early = len(frappe.db.get_all(
         "Attendance",
         filters=filters
     ))
@@ -136,13 +138,13 @@ def get_attendance_summary(employee, from_date, to_date):
         filters["employee"] = employee
 
     filters["status"] = ["in",["Present","Half Day"]]
-    presents = len(frappe.db.get_list(
+    presents = len(frappe.db.get_all(
         "Attendance",
         filters=filters
     ))
 
     filters["status"] = "Absent"   
-    absents = len(frappe.db.get_list(
+    absents = len(frappe.db.get_all(
         "Attendance",
         filters=filters
 
@@ -151,14 +153,14 @@ def get_attendance_summary(employee, from_date, to_date):
     filters["status"] = "Present"   
     filters["late_entry"] = 1
     filters["late_approved"] = 0   
-    lates = len(frappe.db.get_list(
+    lates = len(frappe.db.get_all(
         "Attendance",
         filters=filters
     ))
 
     filters["status"] = "Present" 
     filters["early_exit"] = 1   
-    early = len(frappe.db.get_list(
+    early = len(frappe.db.get_all(
         "Attendance",
         filters=filters
     ))

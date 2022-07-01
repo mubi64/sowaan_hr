@@ -14,24 +14,30 @@ from sowaan_hr.sowaan_hr.api.employee import get_allowed_employees, get_current_
 
 @frappe.whitelist()
 def get_payroll_date(employee):
-    payroll_entries = frappe.db.get_all(
-        "Payroll Entry",
-        filters=[
-            ['docstatus', '=', 1,],
-            ['Payroll Employee Detail', 'employee', '=', employee]],
-        fields=["start_date","end_date","payroll_frequency"]
+    today = getdate(nowdate())
+    salary_slips = frappe.db.get_all(
+        "Salary Slip",
+        filters={
+            'docstatus': ['!=', 2],
+            'posting_date': ['<', today],
+            'employee': ['=', employee]
+        },
+      
+        fields=["start_date","end_date","payroll_frequency","name"],
+        order_by="end_date desc",
     )
     data = {}
-    today = getdate(nowdate())
-    if len(payroll_entries) > 0:
-        payroll_entry = payroll_entries[0]
-
-        pay_start = getdate(payroll_entry["start_date"])
-        start_date = getdate(str(today.year)+'-'+str(today.month)+'-'+str(pay_start.day))
+    if len(salary_slips) > 0:
+        salary_slip = salary_slips[0]
+        # return salary_slip
+        pay_start = getdate(salary_slip["start_date"])
+        pay_end = getdate(salary_slip["end_date"])
+        next_pay_start = add_to_date(pay_end, days=1)
+        start_date = getdate(str(today.year)+'-'+str(today.month)+'-'+str(next_pay_start.day))
         if(start_date > today):
             start_date = add_to_date(start_date, months=-1)
 
-        end_date = get_end_date(frequency=payroll_entry['payroll_frequency'], start_date=start_date)
+        end_date = get_end_date(frequency=salary_slip['payroll_frequency'], start_date=start_date)
         data["start_date"] = start_date
         data["end_date"] = end_date["end_date"]
     else:

@@ -17,7 +17,7 @@ fixtures = [
 				"dt",
                 "in",
 				(
-					"Employee Checkin", "Attendance"
+					"Employee Checkin", "Attendance", "Shift Type", "Salary Slip"
 				)
 			]
 		]
@@ -141,6 +141,12 @@ fixtures = [
 # 		"on_trash": "method"
 #	}
 # }
+
+doc_events = {
+	"Salary Slip":{
+		"validate": "sowaan_hr.sowaan_hr.api.salary_slip.validate"
+	}
+}
 
 # Scheduled Tasks
 # ---------------

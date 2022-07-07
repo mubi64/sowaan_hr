@@ -30,7 +30,7 @@ def get_employee_info(email):
     employees = frappe.db.get_all(
         "Employee",
         filters={
-            "user_id": email,
+            "user_id": frappe.session.user,
             "status": "Active",
         },
         fields=["name"]

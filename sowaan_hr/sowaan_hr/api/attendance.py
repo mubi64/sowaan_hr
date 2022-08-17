@@ -301,6 +301,7 @@ def get_monthly_hours(employee, from_date, to_date):
     provided_hours = 0
 
     working_dates = [getdate(from_date)+timedelta(days=x) for x in range((add_to_date(getdate(to_date), days=1)-getdate(from_date)).days)]
+    
     for idx, day in enumerate(working_dates):
         if not is_holiday(employee, day) or include_holidays_in_total_working_days:
             shift_actual_timings = get_actual_start_end_datetime_of_shift(
@@ -312,7 +313,7 @@ def get_monthly_hours(employee, from_date, to_date):
             else:
                 required_hours += standard_working_hours
         
-    # return temp_required_hours,provided_hours,required_hours
+    # return provided_hours,required_hours
     
     
     # provided_hours = sum(c.working_hours for c in att)

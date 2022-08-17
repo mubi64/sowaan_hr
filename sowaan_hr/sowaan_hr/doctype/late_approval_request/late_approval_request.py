@@ -6,7 +6,7 @@ from frappe.model.document import Document
 
 class LateApprovalRequest(Document):
 	def before_save(self):
-		att = frappe.get_list("Attendance", filters={
+		att = frappe.get_all("Attendance", filters={
 			"employee": ["=",self.employee],
 			"attendance_date": ["=", self.late_date],
 			"late_entry": ["=",1]

@@ -93,10 +93,19 @@
    "link_type": "Report",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Smart Leave Balance Summary",
+   "link_to": "Smart Leave Balance Summary",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2022-06-29 14:56:24.385781",
- "modified_by": "mubashir@sowaan.com",
+ "modified": "2022-08-26 11:37:17.494561",
+ "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Sowaan Hr",
  "onboarding": "Human Resource",

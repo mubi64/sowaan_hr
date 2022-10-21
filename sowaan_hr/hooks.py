@@ -142,11 +142,11 @@ fixtures = [
 #	}
 # }
 
-doc_events = {
-	"Salary Slip":{
-		"validate": "sowaan_hr.sowaan_hr.api.salary_slip.validate"
-	}
-}
+# doc_events = {
+# 	"Salary Slip":{
+# 		"validate": "sowaan_hr.sowaan_hr.api.salary_slip.validate"
+# 	}
+# }
 
 # Scheduled Tasks
 # ---------------

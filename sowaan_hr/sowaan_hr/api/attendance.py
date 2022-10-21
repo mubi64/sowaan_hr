@@ -324,7 +324,7 @@ def get_monthly_hours(employee, from_date, to_date):
                 employee, get_datetime(x), False
             )
             current_shift = shift_actual_timings[2]
-            if not current_shift == null and current_shift.shift_type.required_hours > 0:
+            if not current_shift == None and current_shift.shift_type.required_hours > 0:
                 provided_hours += current_shift.shift_type.required_hours
             else:
                 provided_hours += standard_working_hours

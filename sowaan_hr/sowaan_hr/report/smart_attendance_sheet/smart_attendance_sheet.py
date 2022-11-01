@@ -229,7 +229,7 @@ def add_data(employee_map, att_map, filters, holiday_map, conditions, default_ho
 					row.append("0.0")
 
 			row.extend([time_default_counts[0][0],time_default_counts[0][1]])
-			hours = get_monthly_hours(emp, filters.from_date, filters.to_date)
+			hours = ""#get_monthly_hours(emp, filters.from_date, filters.to_date)
 			if hours != "":
 				row.extend([hours[0]['count'],hours[1]['count'],hours[2]['count']])
 			else:

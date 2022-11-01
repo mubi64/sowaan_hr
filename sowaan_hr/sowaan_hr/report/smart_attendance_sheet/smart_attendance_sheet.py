@@ -20,7 +20,7 @@ status_map = {
 	"Weekly Off": "<b>WO</b>",
 	"On Leave": "L",
 	"Present": "P",
-        "Late": "<span style='color:red;'>PL</span>",
+	"Late": "<span style='color:red;'>PL</span>",
 	"Work From Home": "WFH"
 	}
 
@@ -180,7 +180,7 @@ def add_data(employee_map, att_map, filters, holiday_map, conditions, default_ho
 			emp_status_map.append(abbr)
 
 			if  filters.summarized_view:
-				if status == "Present" or status == "Work From Home":
+				if status == "Present" or status == "Work From Home" or status == "Late":
 					total_p += 1
 				elif status == "Absent":
 					total_a += 1

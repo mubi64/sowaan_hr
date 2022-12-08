@@ -1,6 +1,6 @@
 {
     "charts": [],
-    "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<spanclass=\\\"h4\\\"><b>YourShortcuts</b></span>\",\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"EmpCheckinRequest\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"LateApprovalRequest\",\"col\":3}},{\"type\":\"spacer\",\"data\":{\"col\":12}},{\"type\":\"header\",\"data\":{\"text\":\"<spanclass=\\\"h4\\\"><b>Reports&Masters</b></span>\",\"col\":12}},{\"type\":\"card\",\"data\":{\"card_name\":\"Setup\",\"col\":4}},{\"type\":\"card\",\"data\":{\"card_name\":\"Attendance\",\"col\":4}},{\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}}]",
+    "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<spanclass=\\\"h4\\\"><b>Your Shortcuts</b></span>\",\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Emp Checkin Request\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Late Approval Request\",\"col\":3}},{\"type\":\"spacer\",\"data\":{\"col\":12}},{\"type\":\"header\",\"data\":{\"text\":\"<spanclass=\\\"h4\\\"><b>Reports & Masters</b></span>\",\"col\":12}},{\"type\":\"card\",\"data\":{\"card_name\":\"Setup\",\"col\":4}},{\"type\":\"card\",\"data\":{\"card_name\":\"Attendance\",\"col\":4}},{\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}}]",
     "creation": "2022-05-30 12:19:40.717080",
     "docstatus": 0,
     "doctype": "Workspace",
@@ -12,7 +12,7 @@
      {
       "hidden": 0,
       "is_query_report": 0,
-      "label": "Setups",
+      "label": "Setup",
       "link_count": 0,
       "link_type": "DocType",
       "onboard": 0,
@@ -106,16 +106,6 @@
       "link_type": "Report",
       "onboard": 0,
       "type": "Link"
-     },
-     {
-      "hidden": 0,
-      "is_query_report": 1,
-      "label": "Smart Leave Balance Summary",
-      "link_count": 0,
-      "link_to": "Smart Leave Balance Summary",
-      "link_type": "Report",
-      "onboard": 0,
-      "type": "Link"
      }
     ],
     "modified": "2022-12-08 13:25:46.622667",
@@ -135,24 +125,6 @@
       "format": "{} Pending",
       "label": "Emp Checkin Request",
       "link_to": "Employee Checkin Request",
-      "stats_filter": "{\"docstatus\":\"Draft\"}",
-      "type": "DocType"
-     },
-     {
-      "color": "#ECAD4B",
-      "doc_view": "List",
-      "format": "{} Pending",
-      "label": "Late Approval Request",
-      "link_to": "Late Approval Request",
-      "stats_filter": "{\"docstatus\":\"Draft\"}",
-      "type": "DocType"
-     },
-     {
-      "color": "#ECAD4B",
-      "doc_view": "List",
-      "format": "{} Pending",
-      "label": "Late Approval Request",
-      "link_to": "Late Approval Request",
       "stats_filter": "{\"docstatus\":\"Draft\"}",
       "type": "DocType"
      },

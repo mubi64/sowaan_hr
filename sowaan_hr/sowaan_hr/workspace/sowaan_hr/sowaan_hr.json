@@ -2,7 +2,7 @@
  "cards_label": "",
  "category": "Modules",
  "charts": [],
- "content": "[]",
+ "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<spanclass=\\\"h4\\\"><b>YourShortcuts</b></span>\",\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"EmpCheckinRequest\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"LateApprovalRequest\",\"col\":3}},{\"type\":\"spacer\",\"data\":{\"col\":12}},{\"type\":\"header\",\"data\":{\"text\":\"<spanclass=\\\"h4\\\"><b>Reports&Masters</b></span>\",\"col\":12}},{\"type\":\"card\",\"data\":{\"card_name\":\"Setup\",\"col\":4}},{\"type\":\"card\",\"data\":{\"card_name\":\"Attendance\",\"col\":4}},{\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}}]",
  "creation": "2022-05-30 12:19:40.717080",
  "developer_mode_only": 0,
  "disable_user_customization": 0,
@@ -19,7 +19,7 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Setups",
+   "label": "Setup",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"

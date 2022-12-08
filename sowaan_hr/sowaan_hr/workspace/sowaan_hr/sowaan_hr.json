@@ -13,7 +13,6 @@
  "idx": 0,
  "is_default": 0,
  "is_standard": 1,
- "public": 1,
  "label": "Sowaan Hr",
  "links": [
   {
@@ -111,6 +110,9 @@
  "name": "Sowaan Hr",
  "onboarding": "Human Resource",
  "owner": "mubashir@sowaan.com",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
  "pin_to_bottom": 0,
  "pin_to_top": 0,
  "shortcuts": [

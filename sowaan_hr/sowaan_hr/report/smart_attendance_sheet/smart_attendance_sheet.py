@@ -88,9 +88,25 @@ def execute(filters=None):
 		record, emp_att_map = add_data(emp_map, att_map, filters, holiday_map, conditions, default_holiday_list, leave_types=leave_types)
 		data += record
 
+	message = get_message() if not filters.summarized_view else ""
 	chart_data = get_chart_data(emp_att_map, days)
 
-	return columns, data, None, chart_data
+	return columns, data, message, chart_data
+
+def get_message() -> str:
+	message = ""
+	colors = ["green", "red", "orange", "green", "#318AD8", "", ""]
+
+	count = 0
+	for status, abbr in status_map.items():
+		message += f"""
+			<span style='border-left: 2px solid {colors[count]}; padding-right: 12px; padding-left: 5px; margin-right: 3px;'>
+				{status} - {abbr}
+			</span>
+		"""
+		count += 1
+
+	return message
 
 def get_chart_data(emp_att_map, days):
 	labels = []

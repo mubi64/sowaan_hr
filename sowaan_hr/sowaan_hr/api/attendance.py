@@ -8,13 +8,13 @@ from frappe.utils import (
     nowdate, flt, cstr, getdate, get_datetime, add_to_date, date_diff, cint
 )
 from frappe import _
-from erpnext.payroll.doctype.payroll_entry.payroll_entry import get_end_date
-from erpnext.hr.utils import get_holiday_dates_for_employee
+from hrms.payroll.doctype.payroll_entry.payroll_entry import get_end_date
+from hrms.hr.utils import get_holiday_dates_for_employee
 from sowaan_hr.sowaan_hr.api.employee import get_allowed_employees, get_current_emp
-from erpnext.hr.doctype.shift_assignment.shift_assignment import (
+from hrms.hr.doctype.shift_assignment.shift_assignment import (
 	get_actual_start_end_datetime_of_shift,
 )
-from erpnext.hr.doctype.employee.employee import is_holiday
+from hrms.hr.doctype.employee.employee import is_holiday
 
 @frappe.whitelist()
 def get_payroll_date(employee):

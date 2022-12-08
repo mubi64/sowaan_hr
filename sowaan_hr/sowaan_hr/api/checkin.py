@@ -9,7 +9,7 @@ from pytz import timezone
 from timezonefinder import TimezoneFinder
 from tzwhere import tzwhere
 from math import sin, cos, sqrt, atan2, radians
-from erpnext.hr.doctype.shift_assignment.shift_assignment import (
+from hrms.hr.doctype.shift_assignment.shift_assignment import (
 	get_actual_start_end_datetime_of_shift,
 )
 from sowaan_hr.sowaan_hr.api.employee import get_allowed_locations, get_employee_devices

@@ -14,7 +14,7 @@ from sowaan_hr.sowaan_hr.api.employee import get_allowed_employees, get_current_
 from hrms.hr.doctype.shift_assignment.shift_assignment import (
 	get_actual_start_end_datetime_of_shift,
 )
-from hrms.hr.doctype.employee.employee import is_holiday
+from erpnext.setup.doctype.employee.employee import is_holiday
 
 @frappe.whitelist()
 def get_payroll_date(employee):

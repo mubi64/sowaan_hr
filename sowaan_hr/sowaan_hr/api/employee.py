@@ -110,9 +110,3 @@ def get_allowed_employees():
 
 def get_current_emp():
     return frappe.get_value("Employee", {'user_id':frappe.session.user}, 'name')
-
-
-#@frappe.whitelist()
-#def get_emp_roles(employee):
-#    doc = frappe.db.get_list("Has Role", filters={"parent": employee},fields=["name", "role"], order_by="idx")
-#    return doc

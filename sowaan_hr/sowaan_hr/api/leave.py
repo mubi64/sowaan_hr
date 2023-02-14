@@ -1,6 +1,6 @@
 import frappe
-from frappe.desk.form.load import getdoc , getdoctype
-from frappe.utils import date_diff
+from frappe.desk.form.load import getdoc, getdoctype
+from frappe.utils import date_diff, now
 from sowaan_hr.sowaan_hr.api.workflow import apply_actions
 from sowaan_hr.sowaan_hr.api.employee import get_allowed_employees, get_current_emp, get_employee_info
 
@@ -76,6 +76,10 @@ def create_leave(employee, from_date, to_date, leave_type, description, leave_ap
     leave.insert()
     frappe.db.commit()
 
+    name = get_first_doc_name("Leave Application", orderBy="modified DESC")
+
+    return name
+
 @frappe.whitelist()
 def update_leave(name, from_date, to_date, leave_type, description, half_day = False, half_day_date = None):
     day = date_diff(to_date, from_date)
@@ -83,8 +87,7 @@ def update_leave(name, from_date, to_date, leave_type, description, half_day = F
         if (half_day_date == None):
             raise Exception("Mandatory fields required in Leave Application")
 
-    getEmInfo = get_employee_info("")
-    print("email", getEmInfo["employee"].leave_approver)
+    nowTime = now()
     if (half_day == True):
         frappe.db.sql(f"""
             UPDATE `tabLeave Application` 
@@ -93,7 +96,8 @@ def update_leave(name, from_date, to_date, leave_type, description, half_day = F
             leave_type='{leave_type}',
             description="{description}",
             half_day={half_day},
-            half_day_date="{half_day_date}"
+            half_day_date="{half_day_date}",
+            modified="{nowTime}"
             WHERE name='{name}';
         """)
     else :
@@ -103,12 +107,15 @@ def update_leave(name, from_date, to_date, leave_type, description, half_day = F
             to_date='{to_date}',
             leave_type='{leave_type}',
             description="{description}",
-            half_day={half_day}
+            half_day={half_day},
+            modified="{nowTime}"
             WHERE name='{name}';
         """)
     frappe.db.commit()
 
-    return "Leave Application updated"
+    name = get_first_doc_name("Leave Application", orderBy="modified DESC")
+    
+    return name
 
 @frappe.whitelist()
 def delete_leave(name):
@@ -133,3 +140,8 @@ def leave_up_sbm(name, action):
 @frappe.whitelist()
 def get_doctype(doctype):
     getdoctype(doctype)
+
+def get_first_doc_name(doctype, orderBy):
+    doc = frappe.db.get_list(doctype, order_by=orderBy)
+
+    return doc[0]

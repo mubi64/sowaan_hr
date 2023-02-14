@@ -2,19 +2,20 @@ import frappe
 from frappe.desk.form.load import getdoc
 from sowaan_hr.sowaan_hr.api.employee import get_allowed_employees, get_current_emp
 from sowaan_hr.sowaan_hr.api.workflow import apply_actions
+from sowaan_hr.sowaan_hr.api.leave import get_first_doc_name
 
 @frappe.whitelist()
 def get_checkin_request(employee, page):
     pageSize = 15
     page = int(page)
 
-    if(page <= 0):
+    if (page <= 0):
         return "Page should be greater or equal of 1"
 
     filters = {}
 
     allowed_employees = get_allowed_employees()
-    
+
     if employee:
         if (len(allowed_employees) > 0 and employee in allowed_employees) or len(allowed_employees) == 0:
             filters["employee"] = employee
@@ -26,17 +27,17 @@ def get_checkin_request(employee, page):
     getCheckinList = frappe.db.get_list(
         "Employee Checkin Request",
         filters=filters,
-        fields=['name', 
-        'employee', 
-        'employee_name', 
-        'docstatus', 
-        'workflow_state',
-        'log_type', 
-        'time', 
-        'reason', 
-        'checkin_marked'
-        ],
-        order_by="time desc",
+        fields=['name',
+                'employee',
+                'employee_name',
+                'docstatus',
+                'workflow_state',
+                'log_type',
+                'time',
+                'reason',
+                'checkin_marked'
+                ],
+        order_by="time DESC",
         start=(page-1)*pageSize,
         page_length=pageSize,
     )
@@ -59,7 +60,10 @@ def create_checkin_request(employee, log_type, time, reason):
     })
     request.insert()
     frappe.db.commit()
-    return "Checkin request created"
+
+    name = get_first_doc_name("Employee Checkin Request", orderBy="time DESC")
+
+    return name
 
 @frappe.whitelist()
 def update_checkin_request(name, log_type, time, reason):
@@ -72,13 +76,15 @@ def update_checkin_request(name, log_type, time, reason):
     """)
     frappe.db.commit()
 
-    return "Checkin request updated"
+    name = get_first_doc_name("Employee Checkin Request", orderBy="time DESC")
 
+    return name
 
 @frappe.whitelist()
 def checkin_request_up_sbm(name, action):
-    doc = frappe.db.get_list("Employee Checkin Request", filters={"name": name}, fields=["*"])
-    
+    doc = frappe.db.get_list("Employee Checkin Request", filters={
+                             "name": name}, fields=["*"])
+
     doc[0].update({"doctype": "Employee Checkin Request"})
     val = apply_actions(frappe.parse_json(doc[0]), action)
     frappe.db.sql(f"""

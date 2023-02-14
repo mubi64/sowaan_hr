@@ -52,7 +52,7 @@ def get_leave_allocation_details(employee, leaveType):
         filters={"leave_type": leaveType},
         fields=["to_date"]
     )
-    doc =  get_leave_details(employee, frappe.utils.nowdate())
+    doc = get_leave_details(employee, frappe.utils.nowdate())
     response = doc["leave_allocation"][leaveType]
     response.update(leaveAllocationDetails[0])
 

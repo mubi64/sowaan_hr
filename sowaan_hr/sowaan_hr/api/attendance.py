@@ -317,9 +317,7 @@ def get_monthly_hours(employee, from_date, to_date):
 
     for idx, day in enumerate(working_dates):
         if not is_holiday(employee, day) or include_holidays_in_total_working_days:
-            # shift_actual_timings = get_actual_start_end_datetime_of_shift(
-            #     employee, get_datetime(day), False
-            # )
+           
             shifts = get_shifts_for_date(
                 employee, get_datetime(day)
             )
@@ -327,11 +325,7 @@ def get_monthly_hours(employee, from_date, to_date):
                 current_shift = frappe.get_doc(
                     "Shift Type", employee_detail.default_shift)
             else:
-                current_shift = frappe.get_doc("Shift Type", shifts[0])
-
-            # print(shift_actual_timings, "23423fwdfasdf")
-            # if len(shift_actual_timings) > 2:
-            # current_shift = shift_actual_timings[2]
+                current_shift = frappe.get_doc("Shift Type", shifts[0].shift_type)
 
             if not current_shift == None and current_shift.required_hours > 0:
                 required_hours += current_shift.required_hours
@@ -345,11 +339,7 @@ def get_monthly_hours(employee, from_date, to_date):
         holidays_before_today = list(
             filter(lambda x: getdate(x) < getdate(nowdate()), holidays))
         for idx, x in enumerate(holidays_before_today):
-            # shift_actual_timings = get_actual_start_end_datetime_of_shift(
-            #     employee, get_datetime(x), False
-            # )
-            # print(shift_actual_timings, "23423fwdfasdf")
-            # current_shift = shift_actual_timings[2]
+            
             shifts = get_shifts_for_date(
                 employee, get_datetime(day)
             )

@@ -18,15 +18,11 @@ from sowaan_hr.sowaan_hr.api.employee import get_allowed_locations, get_employee
 @frappe.whitelist()
 def get_my_today_checkins(employee):
     employee_detail = frappe.get_doc("Employee", employee)
-    # shift_actual_timings = get_actual_start_end_datetime_of_shift(
-    #     employee, get_datetime(), True
-    # )
-    # today_shift = shift_actual_timings[2]
     shifts = get_shifts_for_date(
         employee, get_datetime()
     )
     
-    today_shift = employee_detail.default_shift if len(shifts) == 0 else shifts[0]
+    today_shift = employee_detail.default_shift if len(shifts) == 0 else shifts[0].shift_type
    
     today_shift_details = get_shift_details(today_shift, get_datetime())
     print(today_shift_details, "get_shift_details")

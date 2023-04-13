@@ -1,13 +1,13 @@
 import frappe
 
 @frappe.whitelist()
-def update_user_image(email, url):
+def update_user_image(name, image):
     frappe.db.sql(f"""
-        UPDATE `tabUser` 
+        UPDATE `tabEmployee` 
         SET
-        user_image='{url}'
-        WHERE email='{email}';
+        image='{image}'
+        WHERE name='{name}';
     """)
     frappe.db.commit()
 
-    return frappe.db.get_list("User", fields=["*"])
+    return frappe.get_doc('Employee', name)

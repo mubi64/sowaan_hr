@@ -80,6 +80,23 @@
   {
    "hidden": 0,
    "is_query_report": 0,
+   "label": "Loan Management",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Loan Reschedule",
+   "link_to": "Loan Reschedule",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
    "label": "Reports",
    "link_type": "DocType",
    "onboard": 0,
@@ -104,7 +121,7 @@
    "type": "Link"
   }
  ],
- "modified": "2022-08-26 11:37:17.494561",
+ "modified": "2023-05-11 13:26:36.384335",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Sowaan Hr",

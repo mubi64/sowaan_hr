@@ -17,7 +17,7 @@ fixtures = [
 				"dt",
                 "in",
 				(
-					"Employee Checkin", "Attendance", "Shift Type", "Salary Slip"
+					"Employee", "Employee Checkin", "Attendance", "Shift Type", "Salary Slip"
 				)
 			]
 		]

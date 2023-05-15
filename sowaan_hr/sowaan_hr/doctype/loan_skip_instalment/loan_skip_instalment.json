@@ -11,10 +11,11 @@
   "repayment_method",
   "repayment_periods",
   "column_break_2",
-  "no_of_months_to_skip",
   "applicant_name",
   "loan_amount",
   "section_break_8",
+  "no_of_months_to_skip",
+  "section_break_9",
   "repayment_dates",
   "amended_from"
  ],
@@ -80,12 +81,16 @@
    "fieldname": "no_of_months_to_skip",
    "fieldtype": "Int",
    "label": "No of Months to skip"
+  },
+  {
+   "fieldname": "section_break_9",
+   "fieldtype": "Section Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2023-05-15 12:56:35.460546",
+ "modified": "2023-05-15 13:28:42.460807",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Loan Skip Instalment",

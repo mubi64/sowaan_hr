@@ -14,9 +14,9 @@
   "repayment_date",
   "applicant_name",
   "loan_amount",
-  "amended_from",
   "section_break_6",
-  "repayment_dates"
+  "repayment_dates",
+  "amended_from"
  ],
  "fields": [
   {
@@ -87,7 +87,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2023-05-15 12:57:39.585518",
+ "modified": "2023-05-17 08:44:08.907461",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Loan Reschedule",

@@ -17,7 +17,7 @@ fixtures = [
 				"dt",
                 "in",
 				(
-					"Employee", "Employee Checkin", "Attendance", "Shift Type", "Salary Slip", "sowaan_leave_policy_assignment"
+					"Employee", "Employee Checkin", "Attendance", "Shift Type", "Salary Slip", "Leave Allocation"
 				)
 			]
 		]

@@ -2,6 +2,7 @@ import frappe
 from frappe.desk.form.load import getdoc
 from sowaan_hr.sowaan_hr.api.employee import get_allowed_employees, get_current_emp
 from sowaan_hr.sowaan_hr.api.workflow import apply_actions
+from sowaan_hr.sowaan_hr.api.leave import get_first_doc_name
 
 
 @frappe.whitelist()
@@ -63,7 +64,9 @@ def create_checkin_request(employee, log_type, time, reason):
     request.insert()
     frappe.db.commit()
 
-    return request
+    name = get_first_doc_name("Employee Checkin Request", orderBy="time DESC")
+
+    return name
 
 
 @frappe.whitelist()
@@ -76,6 +79,8 @@ def update_checkin_request(name, log_type, time, reason):
         WHERE name='{name}';
     """)
     frappe.db.commit()
+
+    name = get_first_doc_name("Employee Checkin Request", orderBy="time DESC")
 
     return name
 

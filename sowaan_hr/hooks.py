@@ -17,7 +17,7 @@ fixtures = [
 				"dt",
                 "in",
 				(
-					"Employee", "Employee Checkin", "Attendance", "Shift Type", "Salary Slip", "sowaan_leave_policy_assignment"
+					"Employee", "Employee Checkin", "Attendance", "Shift Type", "Salary Slip"
 				)
 			]
 		]
@@ -147,33 +147,27 @@ fixtures = [
 # 		"validate": "sowaan_hr.sowaan_hr.api.salary_slip.validate"
 # 	}
 # }
-# doc_events = {
-# 	"Leave Policy Assignment":{
-# 		"on_submit": "sowaan_hr.sowaan_hr.api.leave_type_settings.grant_leave_alloc_for_employee"
-# 	}
-# }
 
 # Scheduled Tasks
 # ---------------
 
-scheduler_events = {
+# scheduler_events = {
 # 	"all": [
 # 		"sowaan_hr.tasks.all"
 # 	],
 # 	"daily": [
 # 		"sowaan_hr.tasks.daily"
 # 	],
-	"hourly_long": [
-		"sowaan_hr.sowaan_hr.utils.allocate_earned_leaves"
+# 	"hourly": [
 # 		"sowaan_hr.tasks.hourly"
-	],
+# 	],
 # 	"weekly": [
 # 		"sowaan_hr.tasks.weekly"
 # 	]
 # 	"monthly": [
 # 		"sowaan_hr.tasks.monthly"
 # 	]
-}
+# }
 
 # Testing
 # -------

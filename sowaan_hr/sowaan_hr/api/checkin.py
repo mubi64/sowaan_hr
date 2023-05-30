@@ -9,56 +9,51 @@ from pytz import timezone
 from timezonefinder import TimezoneFinder
 from tzwhere import tzwhere
 from math import sin, cos, sqrt, atan2, radians
-from hrms.hr.doctype.shift_assignment.shift_assignment import (
-    get_actual_start_end_datetime_of_shift, get_shifts_for_date, get_shift_details
+from erpnext.hr.doctype.shift_assignment.shift_assignment import (
+    get_actual_start_end_datetime_of_shift,
 )
 from sowaan_hr.sowaan_hr.api.employee import get_allowed_locations, get_employee_devices
 
 
 @frappe.whitelist()
 def get_my_today_checkins(employee):
-    employee_detail = frappe.get_doc("Employee", employee)
-    shifts = get_shifts_for_date(
-        employee, get_datetime()
+    shift_actual_timings = get_actual_start_end_datetime_of_shift(
+        employee, get_datetime(), True
     )
-    
-    today_shift = employee_detail.default_shift if len(shifts) == 0 else shifts[0].shift_type
-   
-    today_shift_details = get_shift_details(today_shift, get_datetime())
-    print(today_shift_details, "get_shift_details")
-    if (not today_shift_details):
-        today_shift_details = {}
-        today_shift_details["actual_start"] = get_datetime().replace(
+    today_shift = shift_actual_timings[2]
+    if (not today_shift):
+        today_shift = {}
+        today_shift["actual_start"] = get_datetime().replace(
             hour=0, minute=0, second=0)
-        today_shift_details["actual_end"] = get_datetime().replace(
+        today_shift["actual_end"] = get_datetime().replace(
             hour=23, minute=59, second=59)
 
     # return today_shift
-    today_shift_details["employee"] = employee
+    today_shift["employee"] = employee
 
     checkins = {}
     checkins["ShowCheckInOut"] = "IN"
 
-    if not hasattr(today_shift_details, 'shift_type'):
+    if not hasattr(today_shift, 'shift_type'):
         return checkins
 
     checkins["data"] = frappe.db.sql("""
             select 
-                log_type, time
+                name, log_type, time
                 from 
                 `tabEmployee Checkin` 
                 where 
                 employee = %(employee) s and time between %(actual_start) s and %(actual_end) s order by time desc
 
-            """, values=today_shift_details, as_dict=1)
+            """, values=today_shift, as_dict=1)
 
-    if today_shift_details.shift_type.working_hours_calculation_based_on == "First Check-in and Last Check-out":
+    if today_shift.shift_type.working_hours_calculation_based_on == "First Check-in and Last Check-out":
         if len(checkins["data"]) > 0:
             checkins["ShowCheckInOut"] = "OUT"
         else:
             checkins["ShowCheckInOut"] = "IN"
 
-    elif today_shift_details.shift_type.working_hours_calculation_based_on == "Every Valid Check-in and Check-out":
+    elif today_shift.shift_type.working_hours_calculation_based_on == "Every Valid Check-in and Check-out":
         if len(checkins["data"]) > 0:
             if checkins["data"][0].log_type == "IN":
                 checkins["ShowCheckInOut"] = "OUT"

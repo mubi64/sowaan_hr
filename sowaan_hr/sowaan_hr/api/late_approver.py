@@ -3,6 +3,8 @@ from frappe.desk.form.load import getdoc
 from frappe.utils import now
 from sowaan_hr.sowaan_hr.api.employee import get_allowed_employees, get_current_emp
 from sowaan_hr.sowaan_hr.api.workflow import apply_actions
+from sowaan_hr.sowaan_hr.api.leave import get_first_doc_name
+
 
 @frappe.whitelist()
 def get_late_approver(employee, page):
@@ -67,7 +69,9 @@ def create_late_approver(employee, late_date, reason):
     request.insert()
     frappe.db.commit()
 
-    return request
+    name = get_first_doc_name("Late Approval Request", orderBy="modified DESC")
+
+    return name
 
 
 @frappe.whitelist()
@@ -82,6 +86,8 @@ def update_late_approver(name, late_date, reason):
         WHERE name='{name}';
     """)
     frappe.db.commit()
+
+    name = get_first_doc_name("Late Approval Request", orderBy="modified DESC")
 
     return name
 

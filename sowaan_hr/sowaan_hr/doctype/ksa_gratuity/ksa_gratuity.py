@@ -2,7 +2,7 @@
 # For license information, please see license.txt
 
 
-from math import floor
+from math import (floor, ceil)
 import datetime
 
 import frappe
@@ -161,13 +161,12 @@ def calculate_work_experience(employee, gratuity_rule):
 		"current_work_experience":current_work_experience,
 		"years": years,
 		"months": months,
-		"days": round(days)
+		"days": ceil(days)
 		}
 
 
 def calculate_employee_total_workings_days(employee, date_of_joining, relieving_date):
 	employee_total_workings_days = ((get_datetime(relieving_date)+datetime.timedelta(days=1)) - get_datetime(date_of_joining)).days
-
 	payroll_based_on = frappe.db.get_value("Payroll Settings", None, "payroll_based_on") or "Leave"
 	if payroll_based_on == "Leave":
 		total_lwp = get_non_working_days(employee, relieving_date, "On Leave")
@@ -231,6 +230,8 @@ def calculate_gratuity_amount(employee, gratuity_rule, experience):
 	months = experience["months"]
 	days = experience["days"]
 
+	fraction_of_total = 1;
+
 	for slab in slabs:
 		amount = total_applicable_components_amount * slab.fraction_of_applicable_earnings
 		if calculate_gratuity_amount_based_on == "Current Slab":
@@ -256,6 +257,7 @@ def calculate_gratuity_amount(employee, gratuity_rule, experience):
 					(amount/12/30)*days
 				)
 				slab_found = True
+				fraction_of_total = slab.fraction_of_total_earnings
 				break
 
 			if experience["current_work_experience"] > slab.to_year and experience["current_work_experience"] > slab.from_year and slab.to_year != 0:
@@ -263,9 +265,13 @@ def calculate_gratuity_amount(employee, gratuity_rule, experience):
 					(slab.to_year - slab.from_year)
 					* amount
 				)
-				year_left -= slab.to_year - slab.from_year
+				year_left -= (slab.to_year - slab.from_year)
 				slab_found = True
+				fraction_of_total = slab.fraction_of_total_earnings
 			elif slab.from_year <= experience["current_work_experience"] and (experience["current_work_experience"] < slab.to_year or slab.to_year == 0):
+				
+				print('(year_left)')
+				print(months)
 				gratuity_amount += (
 					year_left * amount
 				)
@@ -276,6 +282,7 @@ def calculate_gratuity_amount(employee, gratuity_rule, experience):
 					(amount/12/30)*days
 				)
 				slab_found = True
+				fraction_of_total = slab.fraction_of_total_earnings
 
 	if not slab_found:
 		frappe.throw(
@@ -283,7 +290,7 @@ def calculate_gratuity_amount(employee, gratuity_rule, experience):
 				bold(gratuity_rule)
 			)
 		)
-	return gratuity_amount
+	return gratuity_amount*fraction_of_total
 
 
 def get_applicable_components(gratuity_rule):

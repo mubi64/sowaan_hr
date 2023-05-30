@@ -3,6 +3,7 @@
 
 
 from math import floor
+import datetime
 
 import frappe
 from frappe import _, bold
@@ -152,19 +153,20 @@ def calculate_work_experience(employee, gratuity_rule):
 	current_work_experience = get_work_experience_using_method(
 		method, current_work_experience, minimum_year_for_gratuity, employee
 	)
+	days_in_month = total_working_days_per_year/12
 	years = int(employee_total_workings_days/total_working_days_per_year)
-	months = int((employee_total_workings_days - (years*total_working_days_per_year))/30)
-	days = employee_total_workings_days - (months*30) - (years*total_working_days_per_year)
+	months = int((employee_total_workings_days - (years*total_working_days_per_year))/days_in_month)
+	days = employee_total_workings_days - (months*days_in_month) - (years*total_working_days_per_year)
 	return {
 		"current_work_experience":current_work_experience,
 		"years": years,
 		"months": months,
-		"days": days
+		"days": round(days)
 		}
 
 
 def calculate_employee_total_workings_days(employee, date_of_joining, relieving_date):
-	employee_total_workings_days = (get_datetime(relieving_date) - get_datetime(date_of_joining)).days
+	employee_total_workings_days = ((get_datetime(relieving_date)+datetime.timedelta(days=1)) - get_datetime(date_of_joining)).days
 
 	payroll_based_on = frappe.db.get_value("Payroll Settings", None, "payroll_based_on") or "Leave"
 	if payroll_based_on == "Leave":

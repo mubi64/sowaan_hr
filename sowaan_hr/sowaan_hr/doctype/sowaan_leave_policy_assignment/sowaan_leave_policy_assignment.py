@@ -175,7 +175,7 @@ class SowaanLeavePolicyAssignment(Document):
 		
 		if len(leave_setting) > 0 and leave_setting[0].leave_frequency == "Daily":
 			if current_date.year == from_date.year:
-				days_passed = current_date.timetuple().tm_yday
+				days_passed = current_date.timetuple().tm_yday - (from_date.timetuple().tm_yday-1)
 			elif current_date.year > from_date.year:
 				days_passed = (365 - from_date.timetuple().tm_yday) + current_date.timetuple().tm_yday
 

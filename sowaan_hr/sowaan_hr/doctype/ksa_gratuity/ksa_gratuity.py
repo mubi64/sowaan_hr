@@ -127,8 +127,8 @@ def calculate_work_experience_and_amount(employee, gratuity_rule):
 
 def calculate_work_experience(employee, gratuity_rule):
 
-	total_working_days_per_year, minimum_year_for_gratuity = frappe.db.get_value(
-		"Gratuity Rule", gratuity_rule, ["total_working_days_per_year", "minimum_year_for_gratuity"]
+	total_working_days_per_year, consider_exact_days_per_year, minimum_year_for_gratuity = frappe.db.get_value(
+		"Gratuity Rule", gratuity_rule, ["total_working_days_per_year", "consider_exact_days_per_year", "minimum_year_for_gratuity"]
 	)
 
 	date_of_joining, relieving_date = frappe.db.get_value(
@@ -147,16 +147,25 @@ def calculate_work_experience(employee, gratuity_rule):
 	employee_total_workings_days = calculate_employee_total_workings_days(
 		employee, date_of_joining, relieving_date
 	)
-	print('employee_total_workings_days****')
-	print(employee_total_workings_days)
+	
+
+	days_per_year = 365.2 if consider_exact_days_per_year == 1 else total_working_days_per_year
+
 	current_work_experience = employee_total_workings_days / total_working_days_per_year or 1
 	current_work_experience = get_work_experience_using_method(
 		method, current_work_experience, minimum_year_for_gratuity, employee
 	)
-	days_in_month = total_working_days_per_year/12
-	years = int(employee_total_workings_days/total_working_days_per_year)
-	months = int((employee_total_workings_days - (years*total_working_days_per_year))/days_in_month)
-	days = employee_total_workings_days - (months*days_in_month) - (years*total_working_days_per_year)
+	days_in_month = days_per_year/12
+	years = floor(employee_total_workings_days/days_per_year)
+	months = floor((employee_total_workings_days - (years*days_per_year))/days_in_month)
+	days = employee_total_workings_days - (months*days_in_month) - (years*days_per_year)
+	
+
+	print('employee_total_workings_days****')
+	print(employee_total_workings_days)
+	print(days_in_month)
+	print(days_per_year)
+	
 	return {
 		"current_work_experience":current_work_experience,
 		"years": years,

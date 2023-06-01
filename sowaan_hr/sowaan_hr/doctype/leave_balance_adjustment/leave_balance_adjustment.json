@@ -8,6 +8,7 @@
  "field_order": [
   "leave_allocation",
   "balance_allocation",
+  "leave_ledger_entry",
   "amended_from"
  ],
  "fields": [
@@ -34,12 +35,20 @@
    "options": "Leave Balance Adjustment",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "leave_ledger_entry",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Leave Ledger Entry",
+   "options": "Leave Ledger Entry",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2023-06-01 08:34:03.469537",
+ "modified": "2023-06-01 13:17:22.868013",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Leave Balance Adjustment",

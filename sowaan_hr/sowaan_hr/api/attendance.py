@@ -347,10 +347,10 @@ def get_monthly_hours(employee, from_date, to_date):
                 current_shift = frappe.get_doc(
                     "Shift Type", employee_detail.default_shift)
             else:
-                current_shift = frappe.get_doc("Shift Type", shifts[0])
+                current_shift = frappe.get_doc("Shift Type", shifts[0].shift_type)
 
-            if not current_shift == None and current_shift.shift_type.required_hours > 0:
-                provided_hours += current_shift.shift_type.required_hours
+            if not current_shift == None and current_shift.required_hours > 0:
+                provided_hours += current_shift.required_hours
             else:
                 provided_hours += standard_working_hours
 

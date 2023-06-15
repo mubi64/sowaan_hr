@@ -286,7 +286,7 @@ def calculate_gratuity_amount(employee, gratuity_rule, experience):
 				fraction_of_total = slab.fraction_of_total_earnings
 				break
 
-			if experience["current_work_experience"] > slab.to_year and experience["current_work_experience"] > slab.from_year and slab.to_year != 0:
+			if experience["current_work_experience"] >= slab.to_year and experience["current_work_experience"] > slab.from_year and slab.to_year != 0:
 				gratuity_amount += (
 					(slab.to_year - slab.from_year)
 					* amount
@@ -309,7 +309,9 @@ def calculate_gratuity_amount(employee, gratuity_rule, experience):
 					(amount/12/30)*days
 				)
 				slab_found = True
-				fraction_of_total = slab.fraction_of_total_earnings
+
+				if year_left > 0 or months > 0 or days > 0:
+					fraction_of_total = slab.fraction_of_total_earnings
 
 	if not slab_found:
 		frappe.throw(

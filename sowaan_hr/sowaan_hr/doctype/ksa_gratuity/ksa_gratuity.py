@@ -4,6 +4,7 @@
 
 from math import (floor, ceil)
 import datetime
+from dateutil import relativedelta
 
 import frappe
 from frappe import _, bold
@@ -144,47 +145,63 @@ def calculate_work_experience(employee, gratuity_rule):
 	method = frappe.db.get_value(
 		"Gratuity Rule", gratuity_rule, "work_experience_calculation_function"
 	)
-	employee_total_workings_days = calculate_employee_total_workings_days(
+	data = calculate_employee_total_workings_days(
 		employee, date_of_joining, relieving_date
 	)
-	
 
-	days_per_year = 365.2 if consider_exact_days_per_year == 1 else total_working_days_per_year
+	employee_total_workings_days = data["employee_total_workings_days"]
+	non_working_days = data["non_working_days"]
+	
+	print(employee_total_workings_days, non_working_days)
+	# days_per_year = 365.2 if consider_exact_days_per_year == 1 else total_working_days_per_year
 
 	current_work_experience = employee_total_workings_days / total_working_days_per_year or 1
 	current_work_experience = get_work_experience_using_method(
 		method, current_work_experience, minimum_year_for_gratuity, employee
 	)
-	days_in_month = days_per_year/12
-	years = floor(employee_total_workings_days/days_per_year)
-	months = floor((employee_total_workings_days - (years*days_per_year))/days_in_month)
-	days = employee_total_workings_days - (months*days_in_month) - (years*days_per_year)
+	# days_in_month = days_per_year/12
+	# years = floor(employee_total_workings_days/days_per_year)
+	# months = floor((employee_total_workings_days - (years*days_per_year))/days_in_month)
+	# days = employee_total_workings_days - (months*days_in_month) - (years*days_per_year)
 	
+	relieving_date = get_datetime(relieving_date)+datetime.timedelta(days=1)
+	relieving_date = get_datetime(relieving_date)+datetime.timedelta(days=-non_working_days)
+
+	date_diff = relativedelta.relativedelta(relieving_date, date_of_joining)
+
 
 	print('employee_total_workings_days****')
-	print(employee_total_workings_days)
-	print(days_in_month)
-	print(days_per_year)
+	print(relieving_date)
+	# print(employee_total_workings_days)
+	# print(days_in_month)
+	# print(days_per_year)
 	
 	return {
 		"current_work_experience":current_work_experience,
-		"years": years,
-		"months": months,
-		"days": ceil(days)
+		"years": date_diff.years,
+		"months": date_diff.months,
+		"days": date_diff.days
 		}
 
 
 def calculate_employee_total_workings_days(employee, date_of_joining, relieving_date):
-	employee_total_workings_days = ((get_datetime(relieving_date)+datetime.timedelta(days=1)) - get_datetime(date_of_joining)).days
+	# employee_total_workings_days = ((get_datetime(relieving_date)+datetime.timedelta(days=1)) - get_datetime(date_of_joining)).days
+	employee_total_workings_days = ((get_datetime(relieving_date)) - get_datetime(date_of_joining)).days
+	non_working_days = 0
 	payroll_based_on = frappe.db.get_value("Payroll Settings", None, "payroll_based_on") or "Leave"
 	if payroll_based_on == "Leave":
 		total_lwp = get_non_working_days(employee, relieving_date, "On Leave")
 		employee_total_workings_days -= total_lwp
+		non_working_days = total_lwp
 	elif payroll_based_on == "Attendance":
 		total_absents = get_non_working_days(employee, relieving_date, "Absent")
 		employee_total_workings_days -= total_absents
+		non_working_days = total_absents
 
-	return employee_total_workings_days
+	return { 
+		"employee_total_workings_days":employee_total_workings_days, 
+		"non_working_days":non_working_days
+		}
 
 
 def get_work_experience_using_method(
@@ -193,7 +210,7 @@ def get_work_experience_using_method(
 	if method == "Round off Work Experience":
 		current_work_experience = round(current_work_experience)
 	else:
-		current_work_experience = floor(current_work_experience)
+		current_work_experience = (current_work_experience)
 
 	if current_work_experience < minimum_year_for_gratuity:
 		frappe.throw(
@@ -280,7 +297,8 @@ def calculate_gratuity_amount(employee, gratuity_rule, experience):
 			elif slab.from_year <= experience["current_work_experience"] and (experience["current_work_experience"] < slab.to_year or slab.to_year == 0):
 				
 				print('(year_left)')
-				print(months)
+				print(experience["current_work_experience"])
+				print(year_left)
 				gratuity_amount += (
 					year_left * amount
 				)

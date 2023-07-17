@@ -14,10 +14,27 @@ fixtures = [
 		"doctype":"Custom Field",
 		"filters":[
 			[
-				"dt",
+				"name",
                 "in",
 				(
-					"Employee", "Employee Checkin", "Attendance", "Shift Type", "Salary Slip", "Leave Allocation", "Gratuity Rule", "Gratuity Rule Slab"
+					"Employee-employee_face_id", 
+                    "Employee Checkin-employee_checkin_image", 
+                    "Employee Checkin-gps_location", 
+                    "Employee Checkin-marked_gps",
+                    "Employee Checkin-map",
+                    "Attendance-employee_email",
+                    "Attendance-late_approved",
+                    "Shift Type-allow_to_complete_required_hours_during_the_whole_month",
+                    "Shift Type-required_hours",
+                    "Shift Type-checkout_entry",
+                    "Salary Slip-late_days",
+                    "Salary Slip-required_hours",
+                    "Salary Slip-provided_hours",
+                    "Salary Slip-approved_hours",
+                    "Salary Slip-less_hours",
+                    "Leave Allocation-sowaan_leave_policy_assignment",
+                    "Gratuity Rule-consider_exact_days_per_year",
+					"Gratuity Rule Slab-fraction_of_total_earnings"
 				)
 			]
 		]

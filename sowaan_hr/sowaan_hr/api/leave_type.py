@@ -16,13 +16,22 @@ def get_leave_list(employee):
 
 
 @frappe.whitelist()
-def get_leave_types():
-    leaveTypeList = frappe.db.get_list(
-        "Leave Type"
+def get_leave_types(employee):
+    leaveAllocation = frappe.db.get_list(
+        "Leave Allocation",
+        filters={"employee": employee, "docstatus": 1},
+        fields=["leave_type", "total_leaves_allocated"]
     )
-
+   
+    array_of_strings = [obj["leave_type"] for obj in leaveAllocation]
+    leaveTypeList = frappe.db.get_list(
+        "Leave Type",filters=[[
+    'name', 'in',array_of_strings
+        ]]
+    )
+    print(array_of_strings)
+    print(leaveTypeList,'value',employee)
     return leaveTypeList
-
 
 @frappe.whitelist()
 def get_leave_allocation(employee):
@@ -42,10 +51,11 @@ def get_leave_allocation(employee):
             leave_type=obj["leave_type"],
             total_leaves_allocation=float(obj["total_leaves_allocated"]),
             leaves_taken=float(val["leaves_taken"]),
-            remaining_leaves=float(val["remaining_leaves"])
+            remaining_leaves=float(val["remaining_leaves"]),
+            leaves_pending_approval=float(val["leaves_pending_approval"]),
         )
         response.append(res)
-    print(response, "Respone")
+
     return response
 
 
@@ -56,9 +66,14 @@ def get_leave_allocation_details(employee, leaveType):
         filters={"leave_type": leaveType},
         fields=["to_date"]
     )
-    doc = get_leave_details(employee, frappe.utils.nowdate())
-    response = doc["leave_allocation"][leaveType]
-    response.update(leaveAllocationDetails[0])
-    response['leaves_taken'] = float(response['leaves_taken'])
-
-    return response
+    if(len(leaveAllocationDetails) > 0):
+        doc = get_leave_details(employee, frappe.utils.nowdate())
+        
+        response = doc["leave_allocation"][leaveType]
+        response.update(leaveAllocationDetails[0])
+        response['leaves_taken'] = float(response['leaves_taken'])
+        response['expired_leaves'] = float(response['expired_leaves'])
+        
+        return response
+    else:
+        frappe.throw("You don't have the leaves of this type")

@@ -308,11 +308,17 @@ def get_monthly_hours(employee, from_date, to_date):
                 employee, get_datetime(day), False
             )
             current_shift = shift_actual_timings[2]
-            if not current_shift == None and current_shift.shift_type.required_hours > 0:
-                required_hours += current_shift.shift_type.required_hours
+            if current_shift != None:
+                get_shift_hours = frappe.get_doc(
+                                        "Shift Type",
+                                        current_shift.shift_type.name
+                                    )
+                if get_shift_hours.required_hours > 0:
+                    required_hours += get_shift_hours.required_hours
+                else:
+                    required_hours += standard_working_hours
             else:
                 required_hours += standard_working_hours
-        
     # return provided_hours,required_hours
     
     
@@ -324,11 +330,17 @@ def get_monthly_hours(employee, from_date, to_date):
                 employee, get_datetime(x), False
             )
             current_shift = shift_actual_timings[2]
-            if not current_shift == None and current_shift.shift_type.required_hours > 0:
-                provided_hours += current_shift.shift_type.required_hours
+            if current_shift != None:
+                get_shift_hours = frappe.get_doc(
+                                        "Shift Type",
+                                        current_shift.shift_type.name
+                                    )
+                if get_shift_hours.required_hours > 0:
+                    provided_hours += get_shift_hours.required_hours
+                else:
+                    provided_hours += standard_working_hours
             else:
                 provided_hours += standard_working_hours
-            
         # provided_hours += len(holidays_before_today)*standard_working_hours
     
     
@@ -374,5 +386,5 @@ def get_monthly_hours(employee, from_date, to_date):
     result.append({"status":"Required Hours","count":round(required_hours,2), "isOk": True, "code":"required_hours"})
     result.append({"status":"Provided Hours","count":round(provided_hours,2), "isOk": True if less_hours<=0 else False, "code":"provided_hours"})
     result.append({"status":"Less Hours","count":less_hours if less_hours > 0 else 0, "isOk": True if less_hours<=0 else False, "code":"less_hours"})
-
+    print(result,'checking')
     return result

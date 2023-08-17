@@ -46,7 +46,7 @@ def get_leaves(employee, page):
         start=(page-1)*pageSize,
         page_length=pageSize
     )
-
+    
     return leaves
 
 @frappe.whitelist()
@@ -70,6 +70,7 @@ def create_leave(employee, from_date, to_date, leave_type, description, leave_ap
         "description": description,
         "half_day": half_day,
         "half_day_date": half_day_date,
+        "leave_approver": leave_approver,
         "leave_approver_name": leave_approver
     })
 
@@ -82,6 +83,7 @@ def create_leave(employee, from_date, to_date, leave_type, description, leave_ap
 
 @frappe.whitelist()
 def update_leave(name, from_date, to_date, leave_type, description, half_day = False, half_day_date = None):
+    print(name, from_date, to_date, leave_type, description, half_day, half_day_date,'update Values')
     day = date_diff(to_date, from_date)
     if (day > 0 and half_day == True):
         if (half_day_date == None):
@@ -125,17 +127,50 @@ def delete_leave(name):
 
 @frappe.whitelist()
 def leave_up_sbm(name, action):
-    doc = frappe.db.get_list("Leave Application", filters={"name": name}, fields=["*"])
+    doc = frappe.db.get_list("Leave Application", filters={
+                             "name": name}, fields=["*"])
+
+    print('myaction',action)
+    check_state = frappe.db.get_list('Workflow State',filters={'name': action}, fields=['*'])
+    print(check_state,'myval')
+    if(len(check_state) != 0):
+        frappe.db.sql(f"""
+                    UPDATE `tabLeave Application` 
+                    SET status='{action}'
+                    WHERE name='{name}';
+                """)
+        frappe.db.commit()
     
-    doc[0].update({"doctype": "Leave Application"})
-    val = apply_actions(frappe.parse_json(doc[0]), action)
-    frappe.db.sql(f"""
-        UPDATE `tabLeave Application` 
-        SET workflow_state='{val.workflow_state}'
-        WHERE name='{name}';
-    """)
-    frappe.db.commit()
-    return val
+        data = frappe.get_doc("Leave Application",name)
+        val = apply_actions(frappe.parse_json(data),action)
+        frappe.db.sql(f"""
+            UPDATE `tabLeave Application` 
+            SET workflow_state='{val.workflow_state}'
+            WHERE name='{name}';
+        """)
+        frappe.db.commit()
+        
+        return val
+    else:
+        frappe.db.sql(f"""
+                    UPDATE `tabLeave Application` 
+                    SET status='Open'
+                    WHERE name='{name}';
+                """)
+        frappe.db.commit()
+    
+        data = frappe.get_doc("Leave Application",name)
+        val = apply_actions(frappe.parse_json(data),action)
+        frappe.db.sql(f"""
+            UPDATE `tabLeave Application` 
+            SET workflow_state='{val.workflow_state}'
+            WHERE name='{name}';
+        """)
+        frappe.db.commit()
+        
+        return val
+        
+   
 
 @frappe.whitelist()
 def get_doctype(doctype):

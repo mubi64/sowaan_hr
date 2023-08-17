@@ -23,6 +23,17 @@ def get_leave_actions(name):
     return workflow
 
 @frappe.whitelist()
+def get_loan_actions(name):
+    doc = {
+        "name": name,
+        "doctype": "Loan Application"
+    }
+    workflow = get_transitions(doc)
+    
+    return workflow
+
+
+@frappe.whitelist()
 def get_late_approval_actions(name):
     doc = {
         "name": name,

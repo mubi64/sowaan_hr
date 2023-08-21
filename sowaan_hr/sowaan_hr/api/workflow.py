@@ -19,7 +19,7 @@ def get_leave_actions(name):
         "doctype": "Leave Application"
     }
     workflow = get_transitions(doc)
-    
+    print('my workflow',workflow)
     return workflow
 
 @frappe.whitelist()

@@ -29,8 +29,7 @@ def get_late_approver(employee, page):
     lateApproverList = frappe.db.get_list(
         "Late Approval Request",
         filters=filters,
-        fields=['name', 'employee', 'employee_name', 'late_date',
-                'docstatus', 'workflow_state', 'reason'],
+        fields=['*'],
         order_by="modified DESC",
         start=(page-1)*pageSize,
         page_length=pageSize,

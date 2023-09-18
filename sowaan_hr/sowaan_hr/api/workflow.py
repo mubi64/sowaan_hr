@@ -19,18 +19,21 @@ def get_leave_actions(name):
         "doctype": "Leave Application"
     }
     workflow = get_transitions(doc)
-    print('my workflow',workflow)
     return workflow
 
 @frappe.whitelist()
 def get_loan_actions(name):
-    doc = {
-        "name": name,
-        "doctype": "Loan Application"
-    }
-    workflow = get_transitions(doc)
-    
-    return workflow
+    try:
+        doc = {
+            "name": name,
+            "doctype": "Loan Application"
+        }
+        workflow = get_transitions(doc)
+        
+        return workflow
+    except Exception as e:
+        frappe.local.response['http_status_code'] = 500
+        frappe.local.response['error_message'] = str(e._error_message)
 
 
 @frappe.whitelist()

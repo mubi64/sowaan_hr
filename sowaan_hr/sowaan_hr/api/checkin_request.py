@@ -28,21 +28,12 @@ def get_checkin_request(employee, page):
     getCheckinList = frappe.db.get_list(
         "Employee Checkin Request",
         filters=filters,
-        fields=['name',
-                'employee',
-                'employee_name',
-                'docstatus',
-                'workflow_state',
-                'log_type',
-                'time',
-                'reason',
-                'checkin_marked'
-                ],
+        fields=['*'],
         order_by="time DESC",
         start=(page-1)*pageSize,
         page_length=pageSize,
     )
-
+    print(getCheckinList, "checiing")
     return getCheckinList
 
 

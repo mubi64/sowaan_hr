@@ -46,14 +46,18 @@ def get_my_today_checkins(employee):
                 employee = %(employee) s and time between %(actual_start) s and %(actual_end) s order by time desc
 
             """, values=today_shift, as_dict=1)
-
-    if today_shift.shift_type.working_hours_calculation_based_on == "First Check-in and Last Check-out":
+    print(today_shift.shift_type, "list")
+    today_shift_details = frappe.get_doc("Shift Type", today_shift.shift_type.name, fields=["*"]) 
+    if today_shift_details.working_hours_calculation_based_on == "First Check-in and Last Check-out":
+        print("IF True")
         if len(checkins["data"]) > 0:
             checkins["ShowCheckInOut"] = "OUT"
         else:
             checkins["ShowCheckInOut"] = "IN"
 
-    elif today_shift.shift_type.working_hours_calculation_based_on == "Every Valid Check-in and Check-out":
+    elif today_shift_details.working_hours_calculation_based_on == "Every Valid Check-in and Check-out":
+        print("ELIF True")
+        
         if len(checkins["data"]) > 0:
             if checkins["data"][0].log_type == "IN":
                 checkins["ShowCheckInOut"] = "OUT"
@@ -87,12 +91,13 @@ def get_checkins(employee, from_date, to_date, page):
         start=(page-1)*pageSize,
         page_length=pageSize,
     )
-
+    print("List of check Ins")
     return checkins
 
 
 @frappe.whitelist()
 def create_employee_checkin(logtype, employee, time, gps, deviceId):
+    print("check IN")
     success = True
     message = ''
 
@@ -180,14 +185,14 @@ def create_employee_checkin(logtype, employee, time, gps, deviceId):
                 gps_time_formatted+"\n\nGPS: "+gps
 
     return {"success": success, "message": message}
-    print(logtype, employee, time, gps, deviceId)
-    return logtype, employee, time, gps, deviceId
+    # print(logtype, employee, time, gps, deviceId)
+    # return logtype, employee, time, gps, deviceId
 
 
 @frappe.whitelist()
 def create_employee_checkin_multi(data):
     checkin_data = json.loads(data)
-    print(checkin_data)
+    print(checkin_data, "Test")
     return checkin_data
 
 

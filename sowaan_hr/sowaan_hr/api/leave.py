@@ -27,9 +27,7 @@ def get_leaves(employee, page):
     leaves = frappe.db.get_list(
         "Leave Application",
         filters=filters,
-        fields=[
-            '*'
-        ],
+        fields=['*'],
         order_by="modified DESC",
         start=(page-1)*pageSize,
         page_length=pageSize

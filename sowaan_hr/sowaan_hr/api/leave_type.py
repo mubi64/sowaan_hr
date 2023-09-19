@@ -29,8 +29,7 @@ def get_leave_types(employee):
     'name', 'in',array_of_strings
         ]]
     )
-    print(array_of_strings)
-    print(leaveTypeList,'value',employee)
+    
     return leaveTypeList
 
 @frappe.whitelist()

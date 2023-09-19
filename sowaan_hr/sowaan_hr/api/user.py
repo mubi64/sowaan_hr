@@ -43,4 +43,7 @@ def user_permission(doctype, action, user, docname=None):
     #     return "User does not have permission to read the document."
     doc=None
     # doc = frappe.get_doc("Loan Application", docname)
-    return has_permission(doctype, ptype=action, doc=doc, user=user)
+    if has_permission(doctype, ptype=action, doc=doc, user=user):
+        return True
+    else:
+        return False 

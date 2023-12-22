@@ -77,7 +77,7 @@ def get_attendance(employee, from_date, to_date, page):
     attendance = frappe.db.get_all(
         "Attendance",
         filters=filters,
-        fields=["name","employee","employee_name","working_hours","status","attendance_date","in_time","out_time","late_entry","early_exit"],
+        fields=["*"],
         order_by="attendance_date desc",
         start=(page-1)*pageSize,
         page_length=pageSize,

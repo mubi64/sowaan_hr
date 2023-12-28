@@ -11,7 +11,7 @@ def get_leave_list(employee):
     response = dict(
         doc["leave_allocation"]
     )
-    print(f"\n\n\n {response} \n\n\n")
+
     return doc
 
 
@@ -27,13 +27,14 @@ def get_leave_types():
 @frappe.whitelist()
 def get_leave_allocation(employee):
     response = []
-    leaveAllocation = frappe.db.get_list(
+    leaveAllocation = frappe.get_all(
         "Leave Allocation",
         filters={"employee": employee, "docstatus": 1},
         fields=["leave_type", "total_leaves_allocated"]
     )
     doc = get_leave_details(employee, frappe.utils.nowdate())
 
+    print(doc, "Respone \n\n\n\n")
     for key in leaveAllocation:
         obj = key
         leave_types = key.leave_type
@@ -45,7 +46,6 @@ def get_leave_allocation(employee):
             remaining_leaves=float(val["remaining_leaves"])
         )
         response.append(res)
-    print(response, "Respone")
     return response
 
 

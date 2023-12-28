@@ -47,13 +47,18 @@ def get_my_today_checkins(employee):
 
             """, values=today_shift, as_dict=1)
 
-    if today_shift.shift_type.working_hours_calculation_based_on == "First Check-in and Last Check-out":
+    today_shift = frappe.get_doc("Shift Type", today_shift.shift_type.get("name"), fields=['*'])
+
+    if today_shift.working_hours_calculation_based_on == "First Check-in and Last Check-out":
+        
         if len(checkins["data"]) > 0:
             checkins["ShowCheckInOut"] = "OUT"
         else:
+
             checkins["ShowCheckInOut"] = "IN"
 
-    elif today_shift.shift_type.working_hours_calculation_based_on == "Every Valid Check-in and Check-out":
+    elif today_shift.working_hours_calculation_based_on == "Every Valid Check-in and Check-out":
+        
         if len(checkins["data"]) > 0:
             if checkins["data"][0].log_type == "IN":
                 checkins["ShowCheckInOut"] = "OUT"
@@ -180,14 +185,14 @@ def create_employee_checkin(logtype, employee, time, gps, deviceId):
                 gps_time_formatted+"\n\nGPS: "+gps
 
     return {"success": success, "message": message}
-    print(logtype, employee, time, gps, deviceId)
-    return logtype, employee, time, gps, deviceId
+    # print(logtype, employee, time, gps, deviceId)
+    # return logtype, employee, time, gps, deviceId
 
 
 @frappe.whitelist()
 def create_employee_checkin_multi(data):
     checkin_data = json.loads(data)
-    print(checkin_data)
+    # print(checkin_data)
     return checkin_data
 
 

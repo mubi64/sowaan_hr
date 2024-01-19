@@ -44,7 +44,7 @@ def get_loans(employee, page):
 
 @frappe.whitelist()
 def get_loan_types():
-    data=frappe.db.get_list("Loan Type", filters={'disabled': 0}, fields=['name','is_term_loan'])
+    data=frappe.db.get_list("Loan Security Type", filters={'disabled': 0}, fields=['*'])
     return data
 
 

@@ -32,30 +32,6 @@ def get_leave_types(employee):
 @frappe.whitelist()
 def get_leave_allocation(employee):
     try:
-        # leaveAllocation = frappe.db.get_list(
-        #     "Leave Allocation",
-        #     filters={"employee": employee, "docstatus": 1},
-        #     fields=["leave_type", "total_leaves_allocated"]
-        # )
-        # doc =  get_leave_details(employee, frappe.utils.nowdate())
-
-        # for obj in leaveAllocation:
-        #     print(str(doc["leave_allocation"][obj.leave_type] == "Annual Leave"))
-        #     if doc["leave_allocation"][obj.leave_type] == "Annual Leave":
-        #         leave_types = obj.leave_type
-        #         print(leave_types, "Check leave_types")
-        #         val = doc["leave_allocation"][leave_types]
-        #         print(val, "Check val")
-
-        #         res = dict(
-        #             leave_type = obj["leave_type"],
-        #             total_leaves_allocation = obj["total_leaves_allocated"],
-        #             leaves_taken = val["leaves_taken"],
-        #             remaining_leaves = val["remaining_leaves"]
-        #         )
-        #         response.append(res)
-        #     else:
-        #         print("Helo")
         leave_details = get_leave_details(employee, frappe.utils.nowdate())
         leave_allocation = leave_details["leave_allocation"]
         response = [
@@ -64,9 +40,6 @@ def get_leave_allocation(employee):
                     **leave_data
                 } for leave_type, leave_data in leave_allocation.items()
             ]
-        # response = dict(
-        #     doc["leave_allocation"]
-        # )
 
         return response
     except Exception as e:

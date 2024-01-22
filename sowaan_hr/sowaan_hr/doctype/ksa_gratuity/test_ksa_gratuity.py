@@ -9,7 +9,7 @@ from frappe.utils import add_days, flt, get_datetime, getdate
 from erpnext.hr.doctype.employee.test_employee import make_employee
 from erpnext.hr.doctype.expense_claim.test_expense_claim import get_payable_account
 from sowaan_hr.sowaan_hr.doctype.ksa_gratuity.ksa_gratuity import get_last_salary_slip
-from erpnext.payroll.doctype.salary_slip.test_salary_slip import (
+from hrms.payroll.doctype.salary_slip.test_salary_slip import (
 	make_deduction_salary_component,
 	make_earning_salary_component,
 	make_employee_salary_slip,
@@ -218,7 +218,7 @@ def create_employee_and_get_last_salary_slip():
 		salary_slip = get_last_salary_slip(employee)
 
 	if not frappe.db.get_value("Employee", "test_employee@salary.com", "holiday_list"):
-		from erpnext.payroll.doctype.salary_slip.test_salary_slip import make_holiday_list
+		from hrms.payroll.doctype.salary_slip.test_salary_slip import make_holiday_list
 
 		make_holiday_list()
 		frappe.db.set_value(

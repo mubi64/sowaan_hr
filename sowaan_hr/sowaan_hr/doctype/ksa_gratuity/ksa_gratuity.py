@@ -128,8 +128,8 @@ def calculate_work_experience_and_amount(employee, gratuity_rule):
 
 def calculate_work_experience(employee, gratuity_rule):
 
-	total_working_days_per_year, consider_exact_days_per_year, minimum_year_for_gratuity = frappe.db.get_value(
-		"Gratuity Rule", gratuity_rule, ["total_working_days_per_year", "consider_exact_days_per_year", "minimum_year_for_gratuity"]
+	total_working_days_per_year, minimum_year_for_gratuity = frappe.db.get_value(
+		"Gratuity Rule", gratuity_rule, ["total_working_days_per_year", "minimum_year_for_gratuity"]
 	)
 
 	date_of_joining, relieving_date = frappe.db.get_value(
@@ -256,7 +256,7 @@ def calculate_gratuity_amount(employee, gratuity_rule, experience):
 	months = experience["months"]
 	days = experience["days"]
 
-	fraction_of_total = 1;
+	fraction_of_total = 1
 
 	for slab in slabs:
 		amount = total_applicable_components_amount * slab.fraction_of_applicable_earnings
@@ -319,7 +319,7 @@ def calculate_gratuity_amount(employee, gratuity_rule, experience):
 				bold(gratuity_rule)
 			)
 		)
-	return gratuity_amount*fraction_of_total
+	return flt(gratuity_amount)*flt(fraction_of_total)
 
 
 def get_applicable_components(gratuity_rule):

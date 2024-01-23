@@ -82,8 +82,8 @@ def calculate_work_experience_and_amount(employee, gratuity_rule, relieving_date
 
 def calculate_work_experience(employee, gratuity_rule, relieving_date):
 
-	total_working_days_per_year, consider_exact_days_per_year, minimum_year_for_gratuity = frappe.db.get_value(
-		"Gratuity Rule", gratuity_rule, ["total_working_days_per_year", "consider_exact_days_per_year", "minimum_year_for_gratuity"]
+	total_working_days_per_year, minimum_year_for_gratuity = frappe.db.get_value(
+		"Gratuity Rule", gratuity_rule, ["total_working_days_per_year", "minimum_year_for_gratuity"]
 	)
 
 	date_of_joining = frappe.db.get_value(

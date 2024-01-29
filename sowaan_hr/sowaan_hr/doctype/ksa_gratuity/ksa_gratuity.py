@@ -22,8 +22,29 @@ class KSAGratuity(AccountsController):
 		self.months = data["months"]
 		self.days = data["days"]
 		self.amount = data["amount"]
-		if self.docstatus == 1:
-			self.status = "Unpaid"
+		self.set_status()
+
+	def set_status(self, update=False):
+		precision = self.precision("paid_amount")
+		status = None
+
+		if self.docstatus == 0:
+			status = "Draft"
+		elif self.docstatus == 1:
+			if flt(self.paid_amount) > 0 and flt(self.amount, precision) == flt(
+				self.paid_amount, precision
+			):
+				status = "Paid"
+			else:
+				status = "Unpaid"
+		elif self.docstatus == 2:
+			status = "Cancelled"
+
+		if update:
+			self.db_set("status", status)
+		else:
+			self.status = status
+
 
 	def on_submit(self):
 		if self.pay_via_salary_slip:
@@ -33,10 +54,13 @@ class KSAGratuity(AccountsController):
 
 	def on_cancel(self):
 		self.ignore_linked_doctypes = ["GL Entry"]
-		self.create_gl_entries(cancel=True)
+		self.set_status(update=True)
+		if self.pay_via_salary_slip == 0:
+			self.create_gl_entries(cancel=True)
 
 	def create_gl_entries(self, cancel=False):
 		gl_entries = self.get_gl_entries()
+		print(gl_entries, "check GL")
 		make_gl_entries(gl_entries, cancel)
 
 	def get_gl_entries(self):

@@ -126,9 +126,9 @@ fixtures = [
 # ---------------
 # Override standard doctype classes
 
-# override_doctype_class = {
-# 	"ToDo": "custom_app.overrides.CustomToDo"
-# }
+override_doctype_class = {
+	"Payment Entry": "sowaan_hr.overrides.employee_payment_entry.EmployeePaymentEntry"
+}
 
 # Document Events
 # ---------------

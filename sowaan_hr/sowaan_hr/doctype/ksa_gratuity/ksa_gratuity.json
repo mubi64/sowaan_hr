@@ -177,6 +177,7 @@
    "fieldname": "paid_amount",
    "fieldtype": "Currency",
    "label": "Paid Amount",
+   "no_copy": 1,
    "read_only": 1
   },
   {
@@ -217,10 +218,11 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2023-05-25 10:09:23.480317",
+ "modified": "2024-01-29 16:53:27.227025",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "KSA Gratuity",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
@@ -249,5 +251,6 @@
   }
  ],
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "states": []
 }

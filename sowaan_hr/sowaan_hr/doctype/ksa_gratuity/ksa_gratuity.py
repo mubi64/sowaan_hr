@@ -8,6 +8,7 @@ from dateutil import relativedelta
 
 import frappe
 from frappe import _, bold
+from frappe.query_builder.functions import Sum
 from frappe.utils import flt, get_datetime, get_link_to_form
 
 from erpnext.accounts.general_ledger import make_gl_entries
@@ -26,6 +27,7 @@ class KSAGratuity(AccountsController):
 
 	def set_status(self, update=False):
 		precision = self.precision("paid_amount")
+		print(precision, self.paid_amount, "Check precision Value \n\n\n")
 		status = None
 
 		if self.docstatus == 0:
@@ -60,7 +62,6 @@ class KSAGratuity(AccountsController):
 
 	def create_gl_entries(self, cancel=False):
 		gl_entries = self.get_gl_entries()
-		print(gl_entries, "check GL")
 		make_gl_entries(gl_entries, cancel)
 
 	def get_gl_entries(self):
@@ -116,25 +117,25 @@ class KSAGratuity(AccountsController):
 			additional_salary.submit()
 
 	def set_total_advance_paid(self):
-		paid_amount = frappe.db.sql(
-			"""
-			select ifnull(sum(debit_in_account_currency), 0) as paid_amount
-			from `tabGL Entry`
-			where against_voucher_type = 'KSA Gratuity'
-				and against_voucher = %s
-				and party_type = 'Employee'
-				and party = %s
-		""",
-			(self.name, self.employee),
-			as_dict=1,
-		)[0].paid_amount
+		gle = frappe.qb.DocType("GL Entry")
+		paid_amount = (
+			frappe.qb.from_(gle)
+			.select(Sum(gle.debit_in_account_currency).as_("paid_amount"))
+			.where(
+				(gle.against_voucher_type == "KSA Gratuity")
+				& (gle.against_voucher == self.name)
+				& (gle.party_type == "Employee")
+				& (gle.party == self.employee)
+				& (gle.docstatus == 1)
+				& (gle.is_cancelled == 0)
+			)
+		).run(as_dict=True)[0].paid_amount or 0
 
 		if flt(paid_amount) > self.amount:
 			frappe.throw(_("Row {0}# Paid Amount cannot be greater than Total amount"))
-
+		print(paid_amount, "I want to check Paid amount set or not \n\n\n\n")
 		self.db_set("paid_amount", paid_amount)
-		if self.amount == self.paid_amount:
-			self.db_set("status", "Paid")
+		self.set_status(update=True)
 
 
 @frappe.whitelist()
@@ -176,7 +177,7 @@ def calculate_work_experience(employee, gratuity_rule):
 	employee_total_workings_days = data["employee_total_workings_days"]
 	non_working_days = data["non_working_days"]
 	
-	print(employee_total_workings_days, non_working_days)
+	# print(employee_total_workings_days, non_working_days)
 	# days_per_year = 365.2 if consider_exact_days_per_year == 1 else total_working_days_per_year
 
 	current_work_experience = employee_total_workings_days / total_working_days_per_year or 1
@@ -194,8 +195,8 @@ def calculate_work_experience(employee, gratuity_rule):
 	date_diff = relativedelta.relativedelta(relieving_date, date_of_joining)
 
 
-	print('employee_total_workings_days****')
-	print(relieving_date)
+	# print('employee_total_workings_days****')
+	# print(relieving_date)
 	# print(employee_total_workings_days)
 	# print(days_in_month)
 	# print(days_per_year)
@@ -265,7 +266,7 @@ def get_non_working_days(employee, relieving_date, status):
 
 def calculate_gratuity_amount(employee, gratuity_rule, experience):
 	applicable_earnings_component = get_applicable_components(gratuity_rule)
-	print(applicable_earnings_component)
+	# print(applicable_earnings_component)
 	total_applicable_components_amount = get_total_applicable_component_amount(
 		employee, applicable_earnings_component, gratuity_rule
 	)
@@ -320,9 +321,9 @@ def calculate_gratuity_amount(employee, gratuity_rule, experience):
 				fraction_of_total = slab.custom_fraction_of_total_earnings
 			elif slab.from_year <= experience["current_work_experience"] and (experience["current_work_experience"] < slab.to_year or slab.to_year == 0):
 				
-				print('(year_left)')
-				print(experience["current_work_experience"])
-				print(year_left)
+				# print('(year_left)')
+				# print(experience["current_work_experience"])
+				# print(year_left)
 				gratuity_amount += (
 					year_left * amount
 				)
@@ -336,7 +337,7 @@ def calculate_gratuity_amount(employee, gratuity_rule, experience):
 
 				if year_left > 0 or months > 0 or days > 0:
 					fraction_of_total = slab.custom_fraction_of_total_earnings
-				print(fraction_of_total, slab, "'fraction_of_total")
+				# print(fraction_of_total, slab, "'fraction_of_total")
 	if not slab_found:
 		frappe.throw(
 			_("No Suitable Slab found for Calculation of gratuity amount in Gratuity Rule: {0}").format(

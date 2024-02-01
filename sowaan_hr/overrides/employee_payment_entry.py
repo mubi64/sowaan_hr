@@ -31,6 +31,7 @@ class EmployeePaymentEntry(PaymentEntry):
 		self, force: bool = False, update_ref_details_only_for: list | None = None
 	) -> None:
 		for d in self.get("references"):
+			get_doc = frappe.get_doc(d.reference_doctype, d.reference_name)
 			if d.allocated_amount:
 				if update_ref_details_only_for and (
 					not (d.reference_doctype, d.reference_name) in update_ref_details_only_for
@@ -224,7 +225,7 @@ def get_reference_details_for_employee(reference_doctype, reference_name, party_
 		if party_account_currency != ref_doc.currency:
 			outstanding_amount = flt(outstanding_amount) * flt(exchange_rate)
 	elif reference_doctype == "KSA Gratuity" or reference_doctype == "Gratuity":
-		outstanding_amount = ref_doc.amount - flt(ref_doc.paid_amount)
+		outstanding_amount = flt(ref_doc.amount) - flt(ref_doc.paid_amount)
 	else:
 		outstanding_amount = flt(total_amount) - flt(ref_doc.advance_paid)
 

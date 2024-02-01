@@ -127,7 +127,8 @@ fixtures = [
 # Override standard doctype classes
 
 override_doctype_class = {
-	"Payment Entry": "sowaan_hr.overrides.employee_payment_entry.EmployeePaymentEntry"
+	"Payment Entry": "sowaan_hr.overrides.employee_payment_entry.EmployeePaymentEntry",
+    "Salary Slip": "sowaan_hr.overrides.employee_salary_slip.EmployeeSalarySlip"
 }
 
 # Document Events
@@ -171,7 +172,7 @@ override_doctype_class = {
 
 # Testing
 # -------
-
+advance_payment_doctypes = ["KSA Gratuity"]
 # before_tests = "sowaan_hr.install.before_tests"
 
 # Overriding Methods

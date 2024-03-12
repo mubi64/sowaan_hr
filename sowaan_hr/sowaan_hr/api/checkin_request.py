@@ -53,44 +53,69 @@ def get_permission(name):
 
 @frappe.whitelist()
 def create_checkin_request(employee, log_type, time, reason):
-    request = frappe.get_doc({
-        "doctype": "Employee Checkin Request",
-        "employee": employee,
-        "log_type": log_type,
-        "time": time,
-        "reason": reason
-    })
-    request.insert()
-    frappe.db.commit()
+    try:
+        request = frappe.get_doc({
+            "doctype": "Employee Checkin Request",
+            "employee": employee,
+            "log_type": log_type,
+            "time": time,
+            "reason": reason
+        })
+        request.insert()
+        frappe.db.commit()
 
-    return request
+        return request
+    except Exception as e:
+            frappe.local.response['http_status_code'] = 500
+            frappe.local.response['error_message'] = str(e) 
 
 
 @frappe.whitelist()
 def update_checkin_request(name, log_type, time, reason):
-    frappe.db.sql(f"""
-        UPDATE `tabEmployee Checkin Request` 
-        SET log_type='{log_type}',
-        time='{time}',
-        reason="{reason}"
-        WHERE name='{name}';
-    """)
-    frappe.db.commit()
+    try:
+        frappe.db.sql(f"""
+            UPDATE `tabEmployee Checkin Request` 
+            SET log_type='{log_type}',
+            time='{time}',
+            reason="{reason}"
+            WHERE name='{name}';
+        """)
+        frappe.db.commit()
 
-    return name
+        return name
+    except Exception as e:
+            frappe.local.response['http_status_code'] = 500
+            frappe.local.response['error_message'] = str(e) 
+
+
+@frappe.whitelist()
+def submit_checkin_request(name):
+    try:
+        request = frappe.get_doc("Employee Checkin Request", name)
+        request.submit()
+        frappe.db.commit()
+
+        return request
+    except Exception as e:
+            frappe.local.response['http_status_code'] = 500
+            frappe.local.response['error_message'] = str(e) 
 
 
 @frappe.whitelist()
 def checkin_request_up_sbm(name, action):
-    doc = frappe.db.get_list("Employee Checkin Request", filters={
-                             "name": name}, fields=["*"])
+    try:
+        doc = frappe.db.get_list("Employee Checkin Request", filters={
+                                "name": name}, fields=["*"])
 
-    doc[0].update({"doctype": "Employee Checkin Request"})
-    val = apply_actions(frappe.parse_json(doc[0]), action)
-    frappe.db.sql(f"""
-        UPDATE `tabEmployee Checkin Request` 
-        SET workflow_state='{val.workflow_state}'
-        WHERE name='{name}';
-    """)
-    frappe.db.commit()
-    return val
+        doc[0].update({"doctype": "Employee Checkin Request"})
+        val = apply_actions(frappe.parse_json(doc[0]), action)
+        frappe.db.sql(f"""
+            UPDATE `tabEmployee Checkin Request` 
+            SET workflow_state='{val.workflow_state}'
+            WHERE name='{name}';
+        """)
+        frappe.db.commit()
+        return val
+    except Exception as e:
+        frappe.local.response['http_status_code'] = 500
+        frappe.local.response['error_message'] = str(e) 

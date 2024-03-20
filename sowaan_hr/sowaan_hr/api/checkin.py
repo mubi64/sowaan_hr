@@ -23,7 +23,7 @@ def get_my_today_checkins(employee):
     )
     
     today_shift = employee_detail.default_shift if len(shifts) == 0 else shifts[0].shift_type
-   
+
     today_shift_details = get_shift_details(today_shift, get_datetime())
     if (not today_shift_details):
         today_shift_details = {}
@@ -37,8 +37,9 @@ def get_my_today_checkins(employee):
 
     checkins = {}
     checkins["ShowCheckInOut"] = "IN"
-
-    st_list = frappe.get_doc("Shift Type", today_shift_details.shift_type.name, fields=["*"]) 
+    st_list = {}
+    if today_shift_details.get("shifttype"):
+        st_list = frappe.get_doc("Shift Type", today_shift_details.shift_type.name, fields=["*"]) 
 
     if not hasattr(today_shift_details, 'shift_type'):
         return checkins
@@ -62,7 +63,7 @@ def get_my_today_checkins(employee):
 
     elif st_list.working_hours_calculation_based_on == "Every Valid Check-in and Check-out":
         if len(checkins["data"]) > 0:
-            print(checkins["data"][0].log_type, "Checking check")
+            # print(checkins["data"][0].log_type, "Checking check")
             if checkins["data"][0].log_type == "IN":
                 checkins["ShowCheckInOut"] = "OUT"
             else:
@@ -188,8 +189,8 @@ def create_employee_checkin(logtype, employee, time, gps, deviceId):
                 gps_time_formatted+"\n\nGPS: "+gps
 
     return {"success": success, "message": message}
-    print(logtype, employee, time, gps, deviceId)
-    return logtype, employee, time, gps, deviceId
+    # print(logtype, employee, time, gps, deviceId)
+    # return logtype, employee, time, gps, deviceId
 
 
 @frappe.whitelist()

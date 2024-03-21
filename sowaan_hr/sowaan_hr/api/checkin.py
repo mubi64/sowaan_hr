@@ -54,22 +54,22 @@ def get_my_today_checkins(employee):
 
             """, values=today_shift_details, as_dict=1)
 
-
-    if st_list.working_hours_calculation_based_on == "First Check-in and Last Check-out":
-        if len(checkins["data"]) > 0:
-            checkins["ShowCheckInOut"] = "OUT"
-        else:
-            checkins["ShowCheckInOut"] = "IN"
-
-    elif st_list.working_hours_calculation_based_on == "Every Valid Check-in and Check-out":
-        if len(checkins["data"]) > 0:
-            # print(checkins["data"][0].log_type, "Checking check")
-            if checkins["data"][0].log_type == "IN":
+    if st_list:
+        if st_list.working_hours_calculation_based_on == "First Check-in and Last Check-out":
+            if len(checkins["data"]) > 0:
                 checkins["ShowCheckInOut"] = "OUT"
             else:
                 checkins["ShowCheckInOut"] = "IN"
-        else:
-            checkins["ShowCheckInOut"] = "IN"
+
+        elif st_list.working_hours_calculation_based_on == "Every Valid Check-in and Check-out":
+            if len(checkins["data"]) > 0:
+                # print(checkins["data"][0].log_type, "Checking check")
+                if checkins["data"][0].log_type == "IN":
+                    checkins["ShowCheckInOut"] = "OUT"
+                else:
+                    checkins["ShowCheckInOut"] = "IN"
+            else:
+                checkins["ShowCheckInOut"] = "IN"
 
     return checkins
 

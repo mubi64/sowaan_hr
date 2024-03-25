@@ -38,7 +38,7 @@ def get_my_today_checkins(employee):
     checkins = {}
     checkins["ShowCheckInOut"] = "IN"
     st_list = {}
-    if today_shift_details.get("shifttype"):
+    if today_shift_details.get("shift_type"):
         st_list = frappe.get_doc("Shift Type", today_shift_details.shift_type.name, fields=["*"]) 
 
     if not hasattr(today_shift_details, 'shift_type'):

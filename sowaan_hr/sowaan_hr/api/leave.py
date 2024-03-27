@@ -8,7 +8,7 @@ from sowaan_hr.sowaan_hr.api.employee import get_allowed_employees, get_current_
 @frappe.whitelist()
 def get_leaves(employee, status, page):
     workflow_status = get_doctype_workflow_status("Leave Application")
-    pageSize = 15
+    pageSize = 20
     page = int(page)
 
     if (page <= 0):

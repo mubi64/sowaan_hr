@@ -5,12 +5,11 @@ from hrms.hr.doctype.leave_application.leave_application import get_leave_detail
 
 @frappe.whitelist()
 def get_leave_list(employee):
-    print(frappe.utils.nowdate())
     doc =  get_leave_details(employee, frappe.utils.nowdate())
     response = dict(
         doc["leave_allocation"]
     )
-    print(f"\n\n\n {response} \n\n\n")
+
     return doc
 
 @frappe.whitelist()

@@ -40,6 +40,8 @@ def get_my_today_checkins(employee):
     st_list = {}
     if today_shift_details.get("shift_type"):
         st_list = frappe.get_doc("Shift Type", today_shift_details.shift_type.name, fields=["*"]) 
+    else:
+        frappe.throw("Shift is not set")
 
     if not hasattr(today_shift_details, 'shift_type'):
         return checkins
@@ -76,7 +78,7 @@ def get_my_today_checkins(employee):
 
 @frappe.whitelist()
 def get_checkins(employee, from_date, to_date, page):
-    pageSize = 15
+    pageSize = 20
     page = int(page)
 
     if (page <= 0):
@@ -130,14 +132,19 @@ def create_employee_checkin(logtype, employee, time, gps, deviceId):
                     message = "Device is not registered, Attendance cannot be marked\n\nDevice Id: "+deviceId
 
         else:
-            new_device_registeration = frappe.new_doc(
-                "Employee Device Registration")
-            new_device_registeration.user = frappe.session.user,
-            new_device_registeration.employee = employee
-            new_device_registeration.append("employee_devices", {
-                "device_id": deviceId
-            })
-            new_device_registeration.insert(ignore_permissions=True)
+            if not frappe.db.exists("Employee Device Registration", [["Employee Device Registration Item", "device_id", "=", deviceId]]):
+                new_device_registeration = frappe.new_doc(
+                    "Employee Device Registration")
+                new_device_registeration.user = frappe.session.user,
+                new_device_registeration.employee = employee
+                new_device_registeration.append("employee_devices", {
+                    "device_id": deviceId
+                })
+                new_device_registeration.insert(ignore_permissions=True)
+            else:
+                success = False
+                message = "Device ID already exists. Please choose a different one."
+
 
         # verifying allowed location
         if (success):
@@ -177,11 +184,12 @@ def create_employee_checkin(logtype, employee, time, gps, deviceId):
             checkin.gps_location = x['name']
 
             checkin.insert(ignore_permissions=True)
-
-            shift = frappe.get_doc("Shift Type", checkin.shift)
-            if shift:
-                shift.last_sync_of_checkin = gps_time_formatted
-                shift.save(ignore_permissions=True)
+            if checkin.shift:
+                shift = frappe.get_doc("Shift Type", checkin.shift)
+                print(shift, "Checking Shift Values \n\n\n\n")
+                if shift:
+                    shift.last_sync_of_checkin = gps_time_formatted
+                    shift.save(ignore_permissions=True)
 
             success = True
             message = logtype+" recorded from " + \

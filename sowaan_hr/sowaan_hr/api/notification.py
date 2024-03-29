@@ -2,7 +2,7 @@ import frappe
 
 @frappe.whitelist()
 def get_notification_log(page):
-    pageSize = 15
+    pageSize = 20
     page = int(page)
     
     if(page <= 0):

@@ -6,7 +6,7 @@ from sowaan_hr.sowaan_hr.api.workflow import apply_actions
 
 @frappe.whitelist()
 def get_checkin_request(employee, page):
-    pageSize = 15
+    pageSize = 20
     page = int(page)
 
     if (page <= 0):

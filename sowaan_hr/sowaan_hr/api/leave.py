@@ -78,6 +78,8 @@ def create_leave(employee, from_date, to_date, leave_type, description, leave_ap
 
 @frappe.whitelist()
 def update_leave(name, from_date, to_date, leave_type, description, half_day=False, half_day_date=None):
+    print(name, "Value \n\n\n\n")
+    
     try:
         day = date_diff(to_date, from_date)
         if (day > 0 and half_day == True):
@@ -92,16 +94,25 @@ def update_leave(name, from_date, to_date, leave_type, description, half_day=Fal
         doc.description=description
         doc.half_day=half_day
         doc.half_day_date=half_day_date if half_day == True else None
-        doc.modified=nowTime
         doc.save()
 
         
-        return name
+        return doc
     except Exception as e:
         frappe.local.response['http_status_code'] = 500
         frappe.local.response['error_message'] = str(e)
     
+@frappe.whitelist()
+def submit_leave(name):
+    try:
+        request = frappe.get_doc("Leave Application", name)
+        request.submit()
+        frappe.db.commit()
 
+        return request
+    except Exception as e:
+            frappe.local.response['http_status_code'] = 500
+            frappe.local.response['error_message'] = str(e) 
 
 @frappe.whitelist()
 def delete_leave(name):

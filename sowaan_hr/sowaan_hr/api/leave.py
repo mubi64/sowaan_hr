@@ -63,7 +63,7 @@ def create_leave(employee, from_date, to_date, leave_type, description, leave_ap
             "to_date":to_date,
             "leave_type": leave_type,
             "description": description,
-            "half_day": True if half_day == "true" else False,
+            "half_day": half_day,
             "half_day_date": half_day_date,
             "leave_approver": leave_approver,
             "leave_approver_name": leave_approver

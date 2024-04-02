@@ -96,7 +96,7 @@ def update_leave(name, from_date, to_date, leave_type, description, half_day=Fal
         doc.half_day=half_day
         doc.half_day_date=half_day_date if half_day == True else None
         doc.save()
-
+        frappe.db.commit()
         
         return doc
     except frappe.PermissionError:

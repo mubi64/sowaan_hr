@@ -6,7 +6,7 @@ from sowaan_hr.sowaan_hr.api.api import gen_response
 
 @frappe.whitelist()
 def get_leave_list(employee):
-    doc =  get_leave_details(employee, frappe.utils.nowdate())
+    doc = get_leave_details(employee, frappe.utils.nowdate())
     response = dict(
         doc["leave_allocation"]
     )
@@ -24,7 +24,7 @@ def get_leave_types(employee):
     array_of_strings = [obj["leave_type"] for obj in leaveAllocation]
     leaveTypeList = frappe.db.get_list(
         "Leave Type",
-        filters=[['name', 'in',array_of_strings]]
+        filters=[['name', 'in', array_of_strings]]
     )
     
     return leaveTypeList

@@ -48,7 +48,6 @@ def get_allowed_locations(employee):
         },
         fields=["name"]
     )
-    print(locations)
     data = ""
     if len(locations) > 0:
         data = {}

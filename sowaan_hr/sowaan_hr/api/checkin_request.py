@@ -2,12 +2,12 @@ import frappe
 from frappe.desk.form.load import getdoc
 from sowaan_hr.sowaan_hr.api.employee import get_allowed_employees, get_current_emp
 from sowaan_hr.sowaan_hr.api.workflow import apply_actions
-from sowaan_hr.sowaan_hr.api.leave import get_first_doc_name
+from sowaan_hr.sowaan_hr.api.api import gen_response
 
 
 @frappe.whitelist()
 def get_checkin_request(employee, page):
-    pageSize = 15
+    pageSize = 20
     page = int(page)
 
     if (page <= 0):
@@ -38,55 +38,78 @@ def get_checkin_request(employee, page):
 
 
 @frappe.whitelist()
-def get_permission(name):
-    doctype = "Employee Checkin Request"
-    getdoc(doctype, name)
-
-
-@frappe.whitelist()
 def create_checkin_request(employee, log_type, time, reason):
-    request = frappe.get_doc({
-        "doctype": "Employee Checkin Request",
-        "employee": employee,
-        "log_type": log_type,
-        "time": time,
-        "reason": reason
-    })
-    request.insert()
-    frappe.db.commit()
+    try:
+        request = frappe.get_doc({
+            "doctype": "Employee Checkin Request",
+            "employee": employee,
+            "log_type": log_type,
+            "time": time,
+            "reason": reason
+        })
+        request.insert()
+        frappe.db.commit()
 
-    name = get_first_doc_name("Employee Checkin Request", orderBy="time DESC")
-
-    return name
+        return request
+    except frappe.PermissionError:
+        return gen_response(500, "Not permitted")
+    except Exception as e:
+        frappe.local.response['http_status_code'] = 500
+        frappe.local.response['error_message'] = str(e)
 
 
 @frappe.whitelist()
 def update_checkin_request(name, log_type, time, reason):
-    frappe.db.sql(f"""
-        UPDATE `tabEmployee Checkin Request` 
-        SET log_type='{log_type}',
-        time='{time}',
-        reason="{reason}"
-        WHERE name='{name}';
-    """)
-    frappe.db.commit()
+    try:
+        frappe.db.sql(f"""
+            UPDATE `tabEmployee Checkin Request` 
+            SET log_type='{log_type}',
+            time='{time}',
+            reason="{reason}"
+            WHERE name='{name}';
+        """)
+        frappe.db.commit()
 
-    name = get_first_doc_name("Employee Checkin Request", orderBy="time DESC")
+        return name
+    except frappe.PermissionError:
+        return gen_response(500, "Not permitted")
+    except Exception as e:
+        frappe.local.response['http_status_code'] = 500
+        frappe.local.response['error_message'] = str(e)
 
-    return name
+
+@frappe.whitelist()
+def submit_checkin_request(name):
+    try:
+        request = frappe.get_doc("Employee Checkin Request", name)
+        request.submit()
+        frappe.db.commit()
+
+        return request
+    except frappe.PermissionError:
+        return gen_response(500, "Not permitted")
+    except Exception as e:
+        frappe.local.response['http_status_code'] = 500
+        frappe.local.response['error_message'] = str(e)
 
 
 @frappe.whitelist()
 def checkin_request_up_sbm(name, action):
-    doc = frappe.db.get_list("Employee Checkin Request", filters={
-                             "name": name}, fields=["*"])
+    try:
+        doc = frappe.db.get_list("Employee Checkin Request", filters={
+                                "name": name}, fields=["*"])
 
-    doc[0].update({"doctype": "Employee Checkin Request"})
-    val = apply_actions(frappe.parse_json(doc[0]), action)
-    frappe.db.sql(f"""
-        UPDATE `tabEmployee Checkin Request` 
-        SET workflow_state='{val.workflow_state}'
-        WHERE name='{name}';
-    """)
-    frappe.db.commit()
-    return val
+        doc[0].update({"doctype": "Employee Checkin Request"})
+        val = apply_actions(frappe.parse_json(doc[0]), action)
+        frappe.db.sql(f"""
+            UPDATE `tabEmployee Checkin Request` 
+            SET workflow_state='{val.workflow_state}'
+            WHERE name='{name}';
+        """)
+        frappe.db.commit()
+        return val
+    except frappe.PermissionError:
+        return gen_response(500, "Not permitted")
+    except Exception as e:
+        frappe.local.response['http_status_code'] = 500
+        frappe.local.response['error_message'] = str(e)

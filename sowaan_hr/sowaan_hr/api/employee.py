@@ -1,12 +1,8 @@
 from __future__ import unicode_literals
-import json
 import frappe
-from frappe.utils import nowdate, flt, cstr
-from frappe import _
 
 @frappe.whitelist()
 def get_employee_list():
-    
     employees = frappe.db.get_list(
         "Employee",
         filters={
@@ -52,7 +48,6 @@ def get_allowed_locations(employee):
         },
         fields=["name"]
     )
-    print(locations)
     data = ""
     if len(locations) > 0:
         data = {}

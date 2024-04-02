@@ -81,10 +81,9 @@ def create_loan(employee, loanType, loanAmount, isTermLoan, repaymentMethod, rep
         
         new_loan.insert()
         # Retrieve the name of the newly created loan application
-        name = get_first_doc_name("Loan Application", orderBy="modified DESC")
 
 
-        return name
+        return new_loan
     except Exception as e:
         frappe.local.response['http_status_code'] = 500
         frappe.local.response['error_message'] = str(e)
@@ -109,9 +108,8 @@ def update_loan(name,employee,loanType,loanAmount,isTermLoan,repaymentMethod,rep
 
         doc.save()
 
-        data = get_first_doc_name("Loan Application", orderBy="modified DESC")
 
-        return data
+        return doc
 
     except Exception as e:
         frappe.local.response['http_status_code'] = 500
@@ -143,11 +141,4 @@ def loan_up_sbm(name, action):
     except Exception as e:
         frappe.local.response['http_status_code'] = 500
         frappe.local.response['error_message'] = str(e)
-
-
-def get_first_doc_name(doctype, orderBy):
-    doc = frappe.db.get_all(doctype, order_by=orderBy)
-    if doc:
-        return doc[0]
-    else:
-        return None
+        

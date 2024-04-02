@@ -15,6 +15,7 @@ from erpnext.hr.doctype.shift_assignment.shift_assignment import (
 	get_actual_start_end_datetime_of_shift,
 )
 from erpnext.hr.doctype.employee.employee import is_holiday
+from sowaan_hr.sowaan_hr.api.api import gen_response
 
 @frappe.whitelist()
 def get_payroll_date(employee):
@@ -52,38 +53,44 @@ def get_payroll_date(employee):
 
 @frappe.whitelist()
 def get_attendance(employee, from_date, to_date, page):
-    pageSize = 15
-    page = int(page)
-    
-    if(page <= 0):
-        return "Page should be greater or equal of 1"
+    try:
+        pageSize = 20
+        page = int(page)
+        
+        if(page <= 0):
+            return "Page should be greater or equal of 1"
 
-    filters = {
-        "docstatus": 1,
-        "attendance_date": ["between", (getdate(from_date), getdate(to_date))]
-    }
+        filters = {
+            "docstatus": 1,
+            "attendance_date": ["between", (getdate(from_date), getdate(to_date))]
+        }
+        
+        allowed_employees = get_allowed_employees()
+        
+        if employee:
+            if (len(allowed_employees) > 0 and employee in allowed_employees) or len(allowed_employees) == 0:
+                filters["employee"] = employee
+            else:
+                filters["employee"] = get_current_emp()
+        elif len(allowed_employees) > 0:
+            filters["employee"] = ["in", allowed_employees]
+        
+        attendance = frappe.db.get_all(
+            "Attendance",
+            filters=filters,
+            fields=["*"],
+            order_by="attendance_date desc",
+            start=(page-1)*pageSize,
+            page_length=pageSize,
+        )
     
-    allowed_employees = get_allowed_employees()
-    current_emp = frappe.get_value("Employee", {'user_id':frappe.session.user}, 'name')
-    
-    if employee:
-        if (len(allowed_employees) > 0 and employee in allowed_employees) or len(allowed_employees) == 0:
-            filters["employee"] = employee
-        else:
-            filters["employee"] = get_current_emp()
-    elif len(allowed_employees) > 0:
-        filters["employee"] = ["in", allowed_employees]
-    
-    attendance = frappe.db.get_all(
-        "Attendance",
-        filters=filters,
-        fields=["*"],
-        order_by="attendance_date desc",
-        start=(page-1)*pageSize,
-        page_length=pageSize,
-    )
-  
-    return attendance
+        return attendance
+    except frappe.PermissionError:
+        return gen_response(500, "Not permitted")
+    except Exception as e:
+        frappe.local.response['http_status_code'] = 500
+        frappe.local.response['error_message'] = str(e) 
+
 
 @frappe.whitelist()
 def get_attendance_summary_statuswise(employee, from_date, to_date):
@@ -189,75 +196,6 @@ def get_attendance_summary(employee, from_date, to_date):
         "early":early
     }
     
-# @frappe.whitelist()
-# def get_monthly_hours(employee, from_date, to_date):
-
-#     payroll_based_on = frappe.db.get_value("Payroll Settings", None, "payroll_based_on")
-#     standard_working_hours = float(frappe.db.get_value("HR Settings", None, "standard_working_hours"))
-#     if standard_working_hours <= 0:
-#         return ""
-#     include_holidays_in_total_working_days = frappe.db.get_single_value(
-#         "Payroll Settings", "include_holidays_in_total_working_days"
-#     )
-
-#     holidays = get_holiday_dates_for_employee(employee, from_date, to_date)
-
-#     emp_slip = frappe.new_doc("Salary Slip")
-#     emp_slip.start_date = from_date
-#     emp_slip.end_date = to_date
-#     emp_slip.employee = employee
-
-#     emp_slip.get_working_days_details()
-
-#     required_hours = ((emp_slip.payment_days or 0)+(emp_slip.absent_days or 0)+(emp_slip.leave_without_pay or 0))*standard_working_hours
-
-#     att = frappe.get_all("Attendance", filters={
-#         "employee": ["=", employee],
-#         "docstatus": 1,
-#         "attendance_date": ["between", (getdate(from_date), getdate(to_date))],
-#     }, fields=['*'])
-
-#     # provided_hours = sum(c.working_hours for c in att)
-#     provided_hours = 0
-#     if include_holidays_in_total_working_days:
-#         holidays_before_today = list(filter(lambda x: getdate(x) < getdate(nowdate()), holidays))
-#         provided_hours += len(holidays_before_today)*standard_working_hours
-    
-#     for idx, x in enumerate(att): 
-#         allow_monthly_flexible_hours = False
-#         if x.shift:
-#             current_shift = frappe.get_doc("Shift Type", x.shift)
-#             if current_shift.allow_to_complete_required_hours_during_the_whole_month == 1:
-#                 allow_monthly_flexible_hours = True
-        
-#         if x.working_hours > 0:
-#             if allow_monthly_flexible_hours:
-#                 provided_hours += x.working_hours
-#             else:
-#                 provided_hours += standard_working_hours if x.working_hours > standard_working_hours else x.working_hours
-
-#         if (x.status == "Half Day" or x.status == "On Leave") and x.leave_type != '' and x.leave_type != None:
-#             leave = frappe.get_doc("Leave Type", x.leave_type)
-#             if x.status == "Half Day" and leave and not leave.is_lwp:
-#                 provided_hours += standard_working_hours * 0.5
-#             elif x.status == "On Leave" and leave and leave.is_ppl:
-#                 provided_hours += standard_working_hours * (1-leave.fraction_of_daily_salary_per_leave)
-#             elif x.status == "On Leave" and leave and not leave.is_ppl and not leave.is_lwp:
-#                 provided_hours += standard_working_hours
-        
-#         if x.status == "Half Day" and x.working_hours == 0:
-#             daily_wages_fraction_for_half_day = float(frappe.db.get_value("Payroll Settings", None, "daily_wages_fraction_for_half_day"))
-#             if daily_wages_fraction_for_half_day:
-#                 provided_hours += standard_working_hours * daily_wages_fraction_for_half_day
-
-#     less_hours = round(required_hours-provided_hours, 2)
-
-#     result = []
-#     result.append({"status":"Required Hours","count":round(required_hours,2), "isOk": True})
-#     result.append({"status":"Provided Hours","count":round(provided_hours,2), "isOk": True if less_hours<=0 else False})
-#     result.append({"status":"Less Hours","count":less_hours if less_hours > 0 else 0, "isOk": True if less_hours<=0 else False})
-
-#     return result
 
 @frappe.whitelist()
 def get_monthly_hours(employee, from_date, to_date):
@@ -272,15 +210,6 @@ def get_monthly_hours(employee, from_date, to_date):
 
     holidays = get_holiday_dates_for_employee(employee, from_date, to_date)
 
-    # emp_slip = frappe.new_doc("Salary Slip")
-    # emp_slip.start_date = from_date
-    # emp_slip.end_date = to_date
-    # emp_slip.employee = employee
-
-    # emp_slip.get_working_days_details()
-
-    # required_hours = ((emp_slip.payment_days or 0)+(emp_slip.absent_days or 0)+(emp_slip.leave_without_pay or 0))*standard_working_hours
-    
     joining_date, relieving_date = frappe.get_cached_value(
         "Employee", employee, ["date_of_joining", "relieving_date"]
     )

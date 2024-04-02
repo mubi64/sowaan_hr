@@ -1,13 +1,10 @@
 from __future__ import unicode_literals
 import json
-from tabnanny import check
 import frappe
-from frappe.utils import nowdate, flt, cstr, getdate, get_datetime
-from frappe import _
+from frappe.utils import getdate, get_datetime
 from datetime import datetime
 from pytz import timezone
 from timezonefinder import TimezoneFinder
-from tzwhere import tzwhere
 from math import sin, cos, sqrt, atan2, radians
 from erpnext.hr.doctype.shift_assignment.shift_assignment import (
     get_actual_start_end_datetime_of_shift,
@@ -46,7 +43,7 @@ def get_my_today_checkins(employee):
                 employee = %(employee) s and time between %(actual_start) s and %(actual_end) s order by time desc
 
             """, values=today_shift, as_dict=1)
-
+    print(today_shift.shift_type, today_shift["actual_start"], today_shift["actual_end"], checkins["data"], "Check Shift, \n\n\n\n")
     today_shift = frappe.get_doc("Shift Type", today_shift.shift_type.get("name"), fields=['*'])
 
     if today_shift.working_hours_calculation_based_on == "First Check-in and Last Check-out":
@@ -72,7 +69,7 @@ def get_my_today_checkins(employee):
 
 @frappe.whitelist()
 def get_checkins(employee, from_date, to_date, page):
-    pageSize = 15
+    pageSize = 20
     page = int(page)
 
     if (page <= 0):
@@ -100,7 +97,6 @@ def get_checkins(employee, from_date, to_date, page):
 def create_employee_checkin(logtype, employee, time, gps, deviceId):
     success = True
     message = ''
-
     if (not logtype or not logtype in ('IN', 'OUT') or not employee or not time or not gps or not deviceId):
         success = False
         message = "Something is not right, Attendance cannot be marked"
@@ -173,11 +169,12 @@ def create_employee_checkin(logtype, employee, time, gps, deviceId):
             checkin.gps_location = x['name']
 
             checkin.insert(ignore_permissions=True)
-
-            shift = frappe.get_doc("Shift Type", checkin.shift)
-            if shift:
-                shift.last_sync_of_checkin = gps_time_formatted
-                shift.save(ignore_permissions=True)
+            # print(checkin.shift, "Check Shift \n\n\n\n")
+            if checkin.shift:
+                shift = frappe.get_doc("Shift Type", checkin.shift)
+                if shift:
+                    shift.last_sync_of_checkin = gps_time_formatted
+                    shift.save(ignore_permissions=True)
 
             success = True
             message = logtype+" recorded from " + \

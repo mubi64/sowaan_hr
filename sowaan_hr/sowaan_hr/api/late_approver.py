@@ -38,12 +38,6 @@ def get_late_approver(employee, page):
 
 
 @frappe.whitelist()
-def get_permission(name):
-    doctype = "Late Approval Request"
-    getdoc(doctype, name)
-
-
-@frappe.whitelist()
 def get_single_doc(name):
     doc = frappe.db.get_list(
         "Late Approval Request",

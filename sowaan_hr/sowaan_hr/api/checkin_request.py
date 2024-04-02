@@ -2,6 +2,7 @@ import frappe
 from frappe.desk.form.load import getdoc
 from sowaan_hr.sowaan_hr.api.employee import get_allowed_employees, get_current_emp
 from sowaan_hr.sowaan_hr.api.workflow import apply_actions
+from sowaan_hr.sowaan_hr.api.api import gen_response
 
 
 @frappe.whitelist()
@@ -46,12 +47,6 @@ def get_checkin_request(employee, page):
 
 
 @frappe.whitelist()
-def get_permission(name):
-    doctype = "Employee Checkin Request"
-    getdoc(doctype, name)
-
-
-@frappe.whitelist()
 def create_checkin_request(employee, log_type, time, reason):
     try:
         request = frappe.get_doc({
@@ -65,9 +60,11 @@ def create_checkin_request(employee, log_type, time, reason):
         frappe.db.commit()
 
         return request
+    except frappe.PermissionError:
+        return gen_response(500, "Not permitted")
     except Exception as e:
-            frappe.local.response['http_status_code'] = 500
-            frappe.local.response['error_message'] = str(e) 
+        frappe.local.response['http_status_code'] = 500
+        frappe.local.response['error_message'] = str(e)
 
 
 @frappe.whitelist()
@@ -83,9 +80,11 @@ def update_checkin_request(name, log_type, time, reason):
         frappe.db.commit()
 
         return name
+    except frappe.PermissionError:
+        return gen_response(500, "Not permitted")
     except Exception as e:
-            frappe.local.response['http_status_code'] = 500
-            frappe.local.response['error_message'] = str(e) 
+        frappe.local.response['http_status_code'] = 500
+        frappe.local.response['error_message'] = str(e)
 
 
 @frappe.whitelist()
@@ -96,9 +95,11 @@ def submit_checkin_request(name):
         frappe.db.commit()
 
         return request
+    except frappe.PermissionError:
+        return gen_response(500, "Not permitted")
     except Exception as e:
-            frappe.local.response['http_status_code'] = 500
-            frappe.local.response['error_message'] = str(e) 
+        frappe.local.response['http_status_code'] = 500
+        frappe.local.response['error_message'] = str(e)
 
 
 @frappe.whitelist()
@@ -116,6 +117,8 @@ def checkin_request_up_sbm(name, action):
         """)
         frappe.db.commit()
         return val
+    except frappe.PermissionError:
+        return gen_response(500, "Not permitted")
     except Exception as e:
         frappe.local.response['http_status_code'] = 500
-        frappe.local.response['error_message'] = str(e) 
+        frappe.local.response['error_message'] = str(e)

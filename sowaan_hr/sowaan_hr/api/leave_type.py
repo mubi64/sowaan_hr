@@ -2,6 +2,7 @@ import frappe
 from frappe import utils
 from sowaan_hr.sowaan_hr.api.employee import get_allowed_employees, get_current_emp
 from hrms.hr.doctype.leave_application.leave_application import get_leave_details
+from sowaan_hr.sowaan_hr.api.api import gen_response
 
 @frappe.whitelist()
 def get_leave_list(employee):
@@ -41,6 +42,8 @@ def get_leave_allocation(employee):
             ]
 
         return response
+    except frappe.PermissionError:
+        return gen_response(500, "Not permitted")
     except Exception as e:
         frappe.local.response['http_status_code'] = 500
         frappe.local.response['error_message'] = str(e)

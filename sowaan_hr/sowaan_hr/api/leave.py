@@ -109,6 +109,7 @@ def update_leave(name, from_date, to_date, leave_type, description, half_day=Fal
 def submit_leave(name):
     try:
         request = frappe.get_doc("Leave Application", name)
+        request.status = "Approved"
         request.submit()
         frappe.db.commit()
 

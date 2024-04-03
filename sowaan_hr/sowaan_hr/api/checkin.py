@@ -75,7 +75,7 @@ def get_my_today_checkins(employee):
 
 @frappe.whitelist()
 def get_checkins(employee, from_date, to_date, page):
-    pageSize = 15
+    pageSize = 20
     page = int(page)
 
     if (page <= 0):
@@ -188,8 +188,8 @@ def create_employee_checkin(logtype, employee, time, gps, deviceId):
                 gps_time_formatted+"\n\nGPS: "+gps
 
     return {"success": success, "message": message}
-    print(logtype, employee, time, gps, deviceId)
-    return logtype, employee, time, gps, deviceId
+    # print(logtype, employee, time, gps, deviceId)
+    # return logtype, employee, time, gps, deviceId
 
 
 @frappe.whitelist()

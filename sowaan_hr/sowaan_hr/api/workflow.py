@@ -37,3 +37,15 @@ def apply_actions(doc, action):
     workflow = apply_workflow(doc, action)
     
     return workflow
+
+
+@frappe.whitelist()
+def get_doctype_workflow_status(doctype):
+    workflow_list = frappe.get_all("Workflow", filters={"name": doctype, "is_active": 1})
+    if len(workflow_list) > 0:
+        for wf in workflow_list:
+            workflow = frappe.get_doc("Workflow", wf.name)
+            allstatus = set(sta.state for sta in workflow.states)
+            return [{"status": state} for state in list(allstatus)]
+    else:
+        return []

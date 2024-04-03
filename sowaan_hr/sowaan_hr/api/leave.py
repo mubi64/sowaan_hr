@@ -1,46 +1,52 @@
 import frappe
 from frappe.desk.form.load import getdoc, getdoctype
 from frappe.utils import date_diff, now
-from sowaan_hr.sowaan_hr.api.workflow import apply_actions
+from sowaan_hr.sowaan_hr.api.workflow import apply_actions, get_doctype_workflow_status
 from sowaan_hr.sowaan_hr.api.employee import get_allowed_employees, get_current_emp, get_employee_info
+from sowaan_hr.sowaan_hr.api.api import gen_response
 
 
 @frappe.whitelist()
-def get_leaves(employee, page):
-    pageSize = 15
-    page = int(page)
+def get_leaves(employee, status, page):
+    try:
+        workflow_status = get_doctype_workflow_status("Leave Application")
+        pageSize = 20
+        page = int(page)
 
-    if (page <= 0):
-        return "Page should be greater or equal of 1"
+        if (page <= 0):
+            return "Page should be greater or equal of 1"
 
-    filters = {}
+        filters = {}
 
-    allowed_employees = get_allowed_employees()
+        allowed_employees = get_allowed_employees()
+        if employee:
+            if (len(allowed_employees) > 0 and employee in allowed_employees) or len(allowed_employees) == 0:
+                filters["employee"] = employee
+            else:
+                filters["employee"] = get_current_emp()
+        # elif len(allowed_employees) > 0:
+        #     filters["employee"] = ["in", allowed_employees]
+        if status:
+            if len(workflow_status) > 0:
+                filters["workflow_state"] = status
+            else:
+                filters["status"] = status
 
-    if employee:
-        if (len(allowed_employees) > 0 and employee in allowed_employees) or len(allowed_employees) == 0:
-            filters["employee"] = employee
-        else:
-            filters["employee"] = get_current_emp()
-    elif len(allowed_employees) > 0:
-        filters["employee"] = ["in", allowed_employees]
+        leaves = frappe.db.get_list(
+            "Leave Application",
+            filters=filters,
+            fields=['*'],
+            order_by="modified DESC",
+            start=(page-1)*pageSize,
+            page_length=pageSize
+        )
 
-    leaves = frappe.db.get_list(
-        "Leave Application",
-        filters=filters,
-        fields=['*'],
-        order_by="modified DESC",
-        start=(page-1)*pageSize,
-        page_length=pageSize
-    )
-
-    return leaves
-
-
-@frappe.whitelist()
-def get_permission(name):
-    doctype = "Leave Application"
-    getdoc(doctype, name)
+        return leaves
+    except frappe.PermissionError:
+        return gen_response(500, "Not permitted")
+    except Exception as e:
+        frappe.local.response['http_status_code'] = 500
+        frappe.local.response['error_message'] = str(e)
 
 
 @frappe.whitelist()
@@ -58,16 +64,16 @@ def create_leave(employee, from_date, to_date, leave_type, description, leave_ap
             "to_date":to_date,
             "leave_type": leave_type,
             "description": description,
-            "half_day": True if half_day == "true" else False,
+            "half_day": half_day,
             "half_day_date": half_day_date,
             "leave_approver": leave_approver,
             "leave_approver_name": leave_approver
-        })
-
-        leave.insert()
+        }).insert()
         frappe.db.commit()
 
         return leave
+    except frappe.PermissionError:
+        return gen_response(500, "Not permitted")
     except Exception as e:
         frappe.local.response['http_status_code'] = 500
         frappe.local.response['error_message'] = str(e)
@@ -83,48 +89,36 @@ def update_leave(name, from_date, to_date, leave_type, description, half_day=Fal
 
         nowTime = now()
         doc = frappe.get_doc('Leave Application',name)   
-        # if (half_day == True):
-        #     frappe.db.sql(f"""
-        #         UPDATE `tabLeave Application` 
-        #         SET from_date='{from_date}',
-        #         to_date='{to_date}',
-        #         leave_type='{leave_type}',
-        #         description="{description}",
-        #         half_day={half_day},
-        #         half_day_date="{half_day_date}",
-        #         modified="{nowTime}"
-        #         WHERE name='{name}';
-        #     """)
-        # else:
-        #     frappe.db.sql(f"""
-        #         UPDATE `tabLeave Application` 
-        #         SET from_date='{from_date}',
-        #         to_date='{to_date}',
-        #         leave_type='{leave_type}',
-        #         description="{description}",
-        #         half_day={half_day},
-        #         modified="{nowTime}"
-        #         WHERE name='{name}';
-        #     """)
-        # frappe.db.commit()
-
-        # return name
         doc.from_date=from_date
         doc.to_date=to_date
         doc.leave_type=leave_type
         doc.description=description
         doc.half_day=half_day
         doc.half_day_date=half_day_date if half_day == True else None
-        doc.modified=nowTime
         doc.save()
-
+        frappe.db.commit()
         
-        return name
+        return doc
+    except frappe.PermissionError:
+        return gen_response(500, "Not permitted")
     except Exception as e:
         frappe.local.response['http_status_code'] = 500
         frappe.local.response['error_message'] = str(e)
     
+@frappe.whitelist()
+def submit_leave(name):
+    try:
+        request = frappe.get_doc("Leave Application", name)
+        request.status = "Approved"
+        request.submit()
+        frappe.db.commit()
 
+        return request
+    except frappe.PermissionError:
+        return gen_response(500, "Not permitted")
+    except Exception as e:
+        frappe.local.response['http_status_code'] = 500
+        frappe.local.response['error_message'] = str(e)
 
 @frappe.whitelist()
 def delete_leave(name):
@@ -147,10 +141,19 @@ def leave_up_sbm(name, action):
         """)
         frappe.db.commit()
         return val
+    except frappe.PermissionError:
+        return gen_response(500, "Not permitted")
     except Exception as e:
         frappe.local.response['http_status_code'] = 500
-        frappe.local.response['error_message'] = str(e)  
+        frappe.local.response['error_message'] = str(e) 
 
+@frappe.whitelist()
+def leave_status():
+    status = get_doctype_workflow_status("Leave Application")
+    if len(status) > 0:
+        return status
+    else:
+        return [{"status": "Open"}, {"status": "Approved"}, {"status": "Rejected"}, {"status": "Cancelled"}]
 
 @frappe.whitelist()
 def get_doctype(doctype):

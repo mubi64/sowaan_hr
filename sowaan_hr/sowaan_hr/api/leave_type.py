@@ -34,6 +34,8 @@ def get_leave_types(employee):
 @frappe.whitelist()
 def get_leave_allocation(employee):
     try:
+        if not employee:
+            employee = get_current_emp()
         leave_details = get_leave_details(employee, frappe.utils.nowdate())
         leave_allocation = leave_details["leave_allocation"]
         response = [

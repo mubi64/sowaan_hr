@@ -14,10 +14,10 @@ fixtures = [
 		"doctype":"Custom Field",
 		"filters":[
 			[
-				"dt",
+				"fieldname",
                 "in",
 				(
-					"Employee Checkin", "Attendance", "Shift Type", "Salary Slip", "Gratuity Rule Slab"
+					"gps_location", "marked_gps", "map"
 				)
 			]
 		]

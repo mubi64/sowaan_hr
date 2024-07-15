@@ -18,7 +18,7 @@ fixtures = [
                 "in",
 				(
 					"gps_location", "marked_gps", "map", "checkout_entry", "required_hours", "allow_to_complete_required_hours_during_the_whole_month",
-                    "late_approved"
+                    "late_approved", "custom_shift_roaster"
 				)
 			]
 		]

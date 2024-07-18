@@ -1,6 +1,6 @@
 {
  "actions": [],
- "autoname": "HR-LPOL-ASSGN-.#####",
+ "autoname": "HR-SLPOL-ASSGN-.#####",
  "creation": "2020-08-19 13:02:43.343666",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -113,7 +113,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-01-13 13:37:11.218882",
+ "modified": "2024-07-18 15:46:29.717211",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Sowaan Leave Policy Assignment",

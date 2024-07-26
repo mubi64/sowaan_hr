@@ -129,7 +129,8 @@ fixtures = [
 
 override_doctype_class = {
 	"Payment Entry": "sowaan_hr.overrides.employee_payment_entry.EmployeePaymentEntry",
-    "Salary Slip": "sowaan_hr.overrides.employee_salary_slip.EmployeeSalarySlip"
+    "Salary Slip": "sowaan_hr.overrides.employee_salary_slip.EmployeeSalarySlip",
+    # "Payroll Period": "sowaan_hr.overrides.employee_payroll_period.EmployeePayrollPeriod",
 }
 
 # Document Events

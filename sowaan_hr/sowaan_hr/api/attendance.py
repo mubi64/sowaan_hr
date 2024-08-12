@@ -14,7 +14,7 @@ from hrms.hr.doctype.shift_assignment.shift_assignment import (
     get_actual_start_end_datetime_of_shift, get_shifts_for_date
 )
 from erpnext.setup.doctype.employee.employee import is_holiday
-from sowaan_hr.sowaan_hr.api.api import gen_response
+from sowaan_hr.sowaan_hr.api.api import gen_response, sort_by_char_frequency
 
 
 @frappe.whitelist()
@@ -89,8 +89,15 @@ def get_attendance(employee, from_date, to_date, page):
             start=(page-1)*pageSize,
             page_length=pageSize,
         )
+        
+        attendance_statuses = frappe.db.get_all(
+            "Attendance",
+            fields=["status"],
+            distinct=True
+        )
+        shorted_attendance_statuses = sort_by_char_frequency(attendance_statuses)
 
-        return attendance
+        return [attendance, shorted_attendance_statuses]
     except frappe.PermissionError:
         return gen_response(500, "Not permitted")
     except Exception as e:

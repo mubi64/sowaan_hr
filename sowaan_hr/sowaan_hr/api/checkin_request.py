@@ -2,39 +2,53 @@ import frappe
 from frappe.desk.form.load import getdoc
 from sowaan_hr.sowaan_hr.api.employee import get_allowed_employees, get_current_emp
 from sowaan_hr.sowaan_hr.api.workflow import apply_actions
-from sowaan_hr.sowaan_hr.api.api import gen_response
+from sowaan_hr.sowaan_hr.api.api import gen_response, sort_by_char_frequency
+from sowaan_hr.sowaan_hr.api.workflow import apply_actions, get_doctype_workflow_status
 
 
 @frappe.whitelist()
-def get_checkin_request(employee, page):
-    pageSize = 20
-    page = int(page)
+def get_checkin_request(employee, status, page):
+    try:
+        workflow_status = get_doctype_workflow_status("Employee Checkin Request")
+        pageSize = 20
+        page = int(page)
 
-    if (page <= 0):
-        return "Page should be greater or equal of 1"
+        if (page <= 0):
+            return "Page should be greater or equal of 1"
 
-    filters = {}
+        filters = {}
 
-    allowed_employees = get_allowed_employees()
+        allowed_employees = get_allowed_employees()
 
-    if employee:
-        if (len(allowed_employees) > 0 and employee in allowed_employees) or len(allowed_employees) == 0:
-            filters["employee"] = employee
-        else:
-            filters["employee"] = get_current_emp()
-    elif len(allowed_employees) > 0:
-        filters["employee"] = ["in", allowed_employees]
+        if employee:
+            if (len(allowed_employees) > 0 and employee in allowed_employees) or len(allowed_employees) == 0:
+                filters["employee"] = employee
+            else:
+                filters["employee"] = get_current_emp()
+        elif len(allowed_employees) > 0:
+            filters["employee"] = ["in", allowed_employees]
 
-    getCheckinList = frappe.db.get_list(
-        "Employee Checkin Request",
-        filters=filters,
-        fields=['*'],
-        order_by="time DESC",
-        start=(page-1)*pageSize,
-        page_length=pageSize,
-    )
+        if status:
+            if len(workflow_status) > 0:
+                filters["workflow_state"] = status
+            else:
+                filters["status"] = status
 
-    return getCheckinList
+        getCheckinList = frappe.db.get_list(
+            "Employee Checkin Request",
+            filters=filters,
+            fields=['*'],
+            order_by="time DESC",
+            start=(page-1)*pageSize,
+            page_length=pageSize,
+        )
+
+        return getCheckinList
+    except frappe.PermissionError:
+        return gen_response(500, "Not permitted")
+    except Exception as e:
+        frappe.local.response['http_status_code'] = 500
+        frappe.local.response['error_message'] = str(e)
 
 
 @frappe.whitelist()
@@ -113,3 +127,12 @@ def checkin_request_up_sbm(name, action):
     except Exception as e:
         frappe.local.response['http_status_code'] = 500
         frappe.local.response['error_message'] = str(e)
+
+
+@frappe.whitelist()
+def checkin_request_status():
+    status = get_doctype_workflow_status("Employee Checkin Request")
+    if len(status) > 0:
+        return sort_by_char_frequency(status)
+    else:
+        return [{"status": "Draft"}, {"status": "Submitted"}, {"status": "Cancelled"}]

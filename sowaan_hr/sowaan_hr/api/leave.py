@@ -3,7 +3,7 @@ from frappe.desk.form.load import getdoc, getdoctype
 from frappe.utils import date_diff, now
 from sowaan_hr.sowaan_hr.api.workflow import apply_actions, get_doctype_workflow_status
 from sowaan_hr.sowaan_hr.api.employee import get_allowed_employees, get_current_emp, get_employee_info
-from sowaan_hr.sowaan_hr.api.api import gen_response
+from sowaan_hr.sowaan_hr.api.api import gen_response, sort_by_char_frequency
 
 
 @frappe.whitelist()
@@ -151,7 +151,7 @@ def leave_up_sbm(name, action):
 def leave_status():
     status = get_doctype_workflow_status("Leave Application")
     if len(status) > 0:
-        return status
+        return sort_by_char_frequency(status)
     else:
         return [{"status": "Open"}, {"status": "Approved"}, {"status": "Rejected"}, {"status": "Cancelled"}]
 

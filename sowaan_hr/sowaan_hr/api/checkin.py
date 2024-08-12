@@ -13,6 +13,7 @@ from hrms.hr.doctype.shift_assignment.shift_assignment import (
     get_actual_start_end_datetime_of_shift, get_shifts_for_date, get_shift_details
 )
 from sowaan_hr.sowaan_hr.api.employee import get_allowed_locations, get_employee_devices
+from sowaan_hr.sowaan_hr.api.api import gen_response
 
 
 @frappe.whitelist()
@@ -77,29 +78,38 @@ def get_my_today_checkins(employee):
 
 
 @frappe.whitelist()
-def get_checkins(employee, from_date, to_date, page):
-    pageSize = 20
-    page = int(page)
+def get_checkins(employee, status, from_date, to_date, page):
+    try:
+        pageSize = 20
+        page = int(page)
 
-    if (page <= 0):
-        return "Page should be greater or equal of 1"
+        if (page <= 0):
+            return "Page should be greater or equal of 1"
 
-    filters = {
-        "time": ["between", (getdate(from_date), getdate(to_date))]
-    }
-    if (employee):
-        filters["employee"] = employee
+        filters = {
+            "time": ["between", (getdate(from_date), getdate(to_date))]
+        }
+        if (employee):
+            filters["employee"] = employee
 
-    checkins = frappe.db.get_list(
-        "Employee Checkin",
-        filters=filters,
-        fields=["name", "employee_name", "log_type", "time"],
-        order_by="creation desc",
-        start=(page-1)*pageSize,
-        page_length=pageSize,
-    )
+        if status:
+            filters["log_type"] = status
 
-    return checkins
+        checkins = frappe.db.get_list(
+            "Employee Checkin",
+            filters=filters,
+            fields=["name", "employee_name", "log_type", "time"],
+            order_by="creation desc",
+            start=(page-1)*pageSize,
+            page_length=pageSize,
+        )
+
+        return checkins
+    except frappe.PermissionError:
+        return gen_response(500, "Not permitted")
+    except Exception as e:
+        frappe.local.response['http_status_code'] = 500
+        frappe.local.response['error_message'] = str(e) 
 
 
 @frappe.whitelist()

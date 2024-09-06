@@ -79,6 +79,7 @@ def get_my_today_checkins(employee):
 
 @frappe.whitelist()
 def get_checkins(employee, status, from_date, to_date, page):
+    # print(employee, status, from_date, to_date, page , "pages checing \n\n\n")
     try:
         pageSize = 20
         page = int(page)

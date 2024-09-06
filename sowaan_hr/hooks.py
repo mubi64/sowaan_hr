@@ -39,10 +39,10 @@ fixtures = [
 		"doctype":"Server Script",
 		"filters":[
 			[
-				"reference_doctype",
+				"module",
                 "in",
 				(
-					"Attendance"
+					"Sowaan Hr"
 				)
 			]
 		]

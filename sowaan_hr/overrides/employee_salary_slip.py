@@ -15,11 +15,6 @@ from frappe.utils import (
 	money_in_words,
 	rounded,
 )
-from hrms.payroll.doctype.salary_slip.salary_slip_loan_utils import (
-	set_loan_repayment,
-)
-from sowaan_hr.overrides.employee_payroll_period import (get_period_factor)
-
 
 class EmployeeSalarySlip(SalarySlip):
     def update_payment_status_for_gratuity(self):
@@ -92,7 +87,7 @@ class EmployeeSalarySlip(SalarySlip):
                 "to_date": self.end_date
             })[0][0])
 
-            
+
         return total_tax_paid + tax_deducted_till_date + total_extra_tax + extra_current_tax_amount
     
     def calculate_variable_tax(self, tax_component):
@@ -156,33 +151,4 @@ class EmployeeSalarySlip(SalarySlip):
                 "to_date": self.end_date
             })[0][0])
 
-        return current_tax_amount - extra_current_tax_amount
-    
-    def calculate_net_pay(self):
-        if self.salary_structure:
-            self.calculate_component_amounts("earnings")
-
-		# get remaining numbers of sub-period (period for which one salary is processed)
-        if self.payroll_period:
-            self.remaining_sub_periods = get_period_factor(
-				self.employee,
-				self.start_date,
-				self.end_date,
-				self.payroll_frequency,
-				self.payroll_period,
-				joining_date=self.joining_date,
-				relieving_date=self.relieving_date,
-			)[1]
-        
-        self.gross_pay = self.get_component_totals("earnings", depends_on_payment_days=1)
-        self.base_gross_pay = flt(
-			flt(self.gross_pay) * flt(self.exchange_rate), self.precision("base_gross_pay")
-		)
-        if self.salary_structure:
-            self.calculate_component_amounts("deductions")
-        
-        set_loan_repayment(self)
-        self.set_precision_for_component_amounts()
-        self.set_net_pay()
-        self.compute_income_tax_breakup()
-		
+        return current_tax_amount - extra_current_tax_amount		

@@ -15,19 +15,20 @@ def get_leave_list(employee):
 
 @frappe.whitelist()
 def get_leave_types(employee):
-    leaveAllocation = frappe.db.get_list(
-    "Leave Allocation",
-    filters={"employee": employee, "docstatus": 1},
-    fields=["leave_type", "total_leaves_allocated"]
-    )
-   
-    array_of_strings = [obj["leave_type"] for obj in leaveAllocation]
-    leaveTypeList = frappe.db.get_list(
-        "Leave Type",
-        filters=[['name', 'in', array_of_strings]]
-    )
-    
-    return leaveTypeList
+    try:
+        if not employee:
+            employee = get_current_emp()
+        leave_details = get_leave_details(employee, frappe.utils.nowdate())
+        leave_allocation = leave_details["leave_allocation"]
+        allowed_leave_types  = list(leave_allocation.keys())
+        allowed_leave_types = allowed_leave_types + leave_details["lwps"]
+
+        return {"name": allowed_leave_types}
+    except frappe.PermissionError:
+        return gen_response(500, "Not permitted")
+    except Exception as e:
+        frappe.local.response['http_status_code'] = 500
+        frappe.local.response['error_message'] = str(e)
 
 @frappe.whitelist()
 def get_leave_allocation(employee):
@@ -36,9 +37,10 @@ def get_leave_allocation(employee):
             employee = get_current_emp()
         leave_details = get_leave_details(employee, frappe.utils.nowdate())
         leave_allocation = leave_details["leave_allocation"]
+        print(leave_details, "Leave Allocation")
         response = [
                 {
-                    "leave_type": leave_type,
+                    "leave_type": leave_type,   
                     **leave_data
                 } for leave_type, leave_data in leave_allocation.items()
             ]

@@ -14,7 +14,7 @@ from hrms.hr.doctype.shift_assignment.shift_assignment import (
     get_actual_start_end_datetime_of_shift, get_shifts_for_date
 )
 from erpnext.setup.doctype.employee.employee import is_holiday
-from sowaan_hr.sowaan_hr.api.api import gen_response, sort_by_char_frequency
+from sowaan_hr.sowaan_hr.api.api import gen_response
 
 
 @frappe.whitelist()
@@ -55,7 +55,7 @@ def get_payroll_date(employee):
 
 
 @frappe.whitelist()
-def get_attendance(employee, status, from_date, to_date, page):
+def get_attendance(employee, from_date, to_date, page):
     try:
         pageSize = 20
         page = int(page)
@@ -69,6 +69,8 @@ def get_attendance(employee, status, from_date, to_date, page):
         }
 
         allowed_employees = get_allowed_employees()
+        current_emp = frappe.get_value(
+            "Employee", {'user_id': frappe.session.user}, 'name')
 
         if employee:
             if (len(allowed_employees) > 0 and employee in allowed_employees) or len(allowed_employees) == 0:
@@ -77,9 +79,6 @@ def get_attendance(employee, status, from_date, to_date, page):
                 filters["employee"] = get_current_emp()
         elif len(allowed_employees) > 0:
             filters["employee"] = ["in", allowed_employees]
-
-        if status:
-            filters["status"] = status
 
         attendance = frappe.db.get_all(
             "Attendance",
@@ -91,14 +90,7 @@ def get_attendance(employee, status, from_date, to_date, page):
             page_length=pageSize,
         )
 
-        attendance_statuses = frappe.db.get_all(
-            "Attendance",
-            fields=["status"],
-            distinct=True
-        )
-        shorted_attendance_statuses = sort_by_char_frequency(attendance_statuses)
-
-        return [attendance, shorted_attendance_statuses]
+        return attendance
     except frappe.PermissionError:
         return gen_response(500, "Not permitted")
     except Exception as e:

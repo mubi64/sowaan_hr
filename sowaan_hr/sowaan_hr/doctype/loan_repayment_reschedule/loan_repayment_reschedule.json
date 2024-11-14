@@ -1,0 +1,128 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-11-13 11:30:10.540057",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "applicant_type",
+  "applicant",
+  "applicant_name",
+  "column_break_edvw",
+  "payment_date",
+  "payment_amount",
+  "loan",
+  "loan_repayment_schedule",
+  "section_break_wenp",
+  "repayment_schedule",
+  "section_break_7jrj",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_7jrj",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Loan Repayment Reschedule",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "payment_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Payment Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_edvw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "payment_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Payment Amount",
+   "reqd": 1
+  },
+  {
+   "fieldname": "applicant_type",
+   "fieldtype": "Select",
+   "label": "Applicant Type",
+   "options": "Employee\nCustomer",
+   "reqd": 1
+  },
+  {
+   "fieldname": "applicant",
+   "fieldtype": "Dynamic Link",
+   "label": "Applicant",
+   "options": "applicant_type",
+   "reqd": 1
+  },
+  {
+   "fieldname": "applicant_name",
+   "fieldtype": "Data",
+   "in_global_search": 1,
+   "label": "Applicant Name",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval: doc.applicant ;",
+   "fieldname": "loan",
+   "fieldtype": "Link",
+   "label": "Loan",
+   "options": "Loan",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_wenp",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "repayment_schedule",
+   "fieldtype": "Table",
+   "label": "Repayment Schedule",
+   "options": "Repayment Reschedule",
+   "read_only": 1
+  },
+  {
+   "fieldname": "loan_repayment_schedule",
+   "fieldtype": "Link",
+   "label": "Loan Repayment Schedule",
+   "options": "Loan Repayment Schedule",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2024-11-14 10:06:09.508758",
+ "modified_by": "Administrator",
+ "module": "Sowaan Hr",
+ "name": "Loan Repayment Reschedule",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

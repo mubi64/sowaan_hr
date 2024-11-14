@@ -87,7 +87,7 @@ class EmployeeSalarySlip(SalarySlip):
                 "to_date": self.end_date
             })[0][0])
 
-
+            
         return total_tax_paid + tax_deducted_till_date + total_extra_tax + extra_current_tax_amount
     
     def calculate_variable_tax(self, tax_component):
@@ -151,4 +151,4 @@ class EmployeeSalarySlip(SalarySlip):
                 "to_date": self.end_date
             })[0][0])
 
-        return current_tax_amount - extra_current_tax_amount		
+        return current_tax_amount - extra_current_tax_amount

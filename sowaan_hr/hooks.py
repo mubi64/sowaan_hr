@@ -39,10 +39,10 @@ fixtures = [
 		"doctype":"Server Script",
 		"filters":[
 			[
-				"module",
+				"reference_doctype",
                 "in",
 				(
-					"Sowaan Hr"
+					"Attendance"
 				)
 			]
 		]
@@ -129,8 +129,7 @@ fixtures = [
 
 override_doctype_class = {
 	"Payment Entry": "sowaan_hr.overrides.employee_payment_entry.EmployeePaymentEntry",
-    "Salary Slip": "sowaan_hr.overrides.employee_salary_slip.EmployeeSalarySlip",
-    # "Payroll Period": "sowaan_hr.overrides.employee_payroll_period.EmployeePayrollPeriod",
+    "Salary Slip": "sowaan_hr.overrides.employee_salary_slip.EmployeeSalarySlip"
 }
 
 # Document Events

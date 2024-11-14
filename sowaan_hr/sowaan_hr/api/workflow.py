@@ -2,6 +2,17 @@ import frappe
 from frappe.query_builder import DocType
 from frappe.model.workflow import get_transitions, apply_workflow
 
+
+@frappe.whitelist()
+def get_wf_actions(name, doctype):
+    doc = {
+        "name": name,
+        "doctype": doctype
+    }
+    workflow = get_transitions(doc)
+    
+    return workflow
+
 @frappe.whitelist()
 def get_checkin_actions(name):
     doc = {
@@ -35,7 +46,7 @@ def get_late_approval_actions(name):
 @frappe.whitelist()
 def apply_actions(doc, action):
     workflow = apply_workflow(doc, action)
-    
+
     return workflow
 
 @frappe.whitelist()

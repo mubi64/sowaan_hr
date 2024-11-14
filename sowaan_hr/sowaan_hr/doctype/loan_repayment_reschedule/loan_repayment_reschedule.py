@@ -44,8 +44,10 @@ class LoanRepaymentReschedule(Document):
 												LIMIT 1"""
 												, values=values , as_dict=1)
 
-				if str(check_accrued_date[0].payment_date) >= str(self.payment_date) :
-					frappe.throw("Advance Payment can not be before last Accrued Date.")					
+				if check_accrued_date :								
+
+					if str(check_accrued_date[0].payment_date) >= str(self.payment_date) :
+						frappe.throw("Advance Payment can not be before last Accrued Date.")					
 
 				
 				repayment_schedule_table = frappe.db.sql("""

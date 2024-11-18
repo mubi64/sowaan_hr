@@ -8,14 +8,12 @@ import datetime
 
 class LoanRepaymentReschedule(Document):
 
-	
-
 
 	def before_save(self) :
 
 		next_row = []
 
-		leave_rp_sch_list = frappe.db.get_list("Loan Repayment Schedule",
+		loan_rp_sch_list = frappe.db.get_list("Loan Repayment Schedule",
 								filters = {
 									'loan' : self.loan ,
 									'docstatus' : 1 ,
@@ -23,173 +21,319 @@ class LoanRepaymentReschedule(Document):
 								}
 							)
 
-		if leave_rp_sch_list :
+		if loan_rp_sch_list :
 
-			if len(leave_rp_sch_list) > 1 :
+			if len(loan_rp_sch_list) > 1 :
 				frappe.throw("More than one Active Repayment Schedule found.")
 
-			else :
-				leave_rp_sch_doc = frappe.get_doc("Loan Repayment Schedule", leave_rp_sch_list[0].name)
-				self.loan_repayment_schedule = leave_rp_sch_list[0].name
-				
-				values = {
-							'loan_rep_sch': leave_rp_sch_list[0].name,
-						}
 
-				check_accrued_date = frappe.db.sql("""
-												SELECT payment_date
-												FROM `tabRepayment Schedule`
-												WHERE parent = %(loan_rep_sch)s AND is_accrued = 1
-												ORDER BY payment_date DESC
-												LIMIT 1"""
-												, values=values , as_dict=1)
+			loan_rp_sch_doc = frappe.get_doc("Loan Repayment Schedule", loan_rp_sch_list[0].name)
+			self.loan_repayment_schedule = loan_rp_sch_list[0].name
+			
+			values = {
+						'loan_rep_sch': loan_rp_sch_list[0].name,
+					}
 
-				if check_accrued_date :								
+			check_accrued_date = frappe.db.sql("""
+											SELECT payment_date
+											FROM `tabRepayment Schedule`
+											WHERE parent = %(loan_rep_sch)s AND is_accrued = 1
+											ORDER BY payment_date DESC
+											LIMIT 1"""
+											, values=values , as_dict=1)
 
-					if str(check_accrued_date[0].payment_date) >= str(self.payment_date) :
-						frappe.throw("Advance Payment can not be before last Accrued Date.")					
+			if check_accrued_date :								
+				if str(check_accrued_date[0].payment_date) >= str(self.payment_date) :
+					frappe.throw("Advance Payment can not be before last Accrued Date.")					
 
-				
-				repayment_schedule_table = frappe.db.sql("""
-												SELECT *
-												FROM `tabRepayment Schedule`
-												WHERE parent = %(loan_rep_sch)s
-												ORDER BY payment_date ASC"""
-												, values=values , as_dict=1)
+			repayment_schedule_table = frappe.db.sql("""
+											SELECT *
+											FROM `tabRepayment Schedule`
+											WHERE parent = %(loan_rep_sch)s
+											ORDER BY payment_date ASC"""
+											, values=values , as_dict=1)
+			
+			self.repayment_schedule = []
+			sig = 0
+			same_date_case = 0
+			last_balance = loan_rp_sch_doc.loan_amount
 
-				
-				
-				self.repayment_schedule = []
-				sig = 0
-				same_date_case = 0
-				last_balance = leave_rp_sch_doc.loan_amount
+			if self.adjustment_type == 'Leading Installments' :
+					
+				same_date_sig = 0
+				row_inserted = 0
+				same_date_sig = 0
+				less_amount = 0
+				next_row_amount = 0
+				extra_amount = 0
+				extra_amount_end = 0
+
 
 				for row in repayment_schedule_table :
 
-					if same_date_case == 1 :
-						cur_balance = last_balance - row.principal_amount
-						self.append('repayment_schedule',{
-							'payment_date' : row.payment_date ,
-							'number_of_days' : row.number_of_days ,
-							'principal_amount' : row.principal_amount ,
-							'interest_amount' : row.interest_amount ,
-							'total_payment' : row.total_payment ,
-							'balance_loan_amount' : cur_balance ,
-							'is_accrued' : row.is_accrued ,
-						})
-						last_balance = cur_balance
-				
-					elif str(row.payment_date) == str(self.payment_date) :
-						cur_balance = last_balance - self.payment_amount
-						self.append('repayment_schedule',{
-							'payment_date' : row.payment_date ,
-							'number_of_days' : row.number_of_days ,
-							'principal_amount' : self.payment_amount ,
-							'interest_amount' : row.interest_amount ,
-							'total_payment' : self.payment_amount ,
-							'balance_loan_amount' : cur_balance ,
-							'is_accrued' : row.is_accrued ,
-						})
-						last_balance = cur_balance
-						same_date_case = 1
-						sig = 1
-						
+					if str(self.payment_date) > str(row.payment_date) :
+							self.append('repayment_schedule',{
+								'payment_date' : row.payment_date ,
+								'number_of_days' : row.number_of_days ,
+								'principal_amount' : row.principal_amount ,
+								'interest_amount' : row.interest_amount ,
+								'total_payment' : row.total_payment ,
+								'balance_loan_amount' : row.balance_loan_amount ,
+								'is_accrued' : row.is_accrued ,
+							})
+							last_balance = row.balance_loan_amount
 
-					
-					elif str(row.payment_date) < str(self.payment_date) :
-						self.append('repayment_schedule',{
-							'payment_date' : row.payment_date ,
-							'number_of_days' : row.number_of_days ,
-							'principal_amount' : row.principal_amount ,
-							'interest_amount' : row.interest_amount ,
-							'total_payment' : row.total_payment ,
-							'balance_loan_amount' : row.balance_loan_amount ,
-							'is_accrued' : row.is_accrued ,
-						})
-						last_balance = row.balance_loan_amount
-						
-					
-					else :
+					elif str(self.payment_date) < str(row.payment_date) :
 
-						if sig == 1 :
+						if same_date_sig == 1 :
 							
-							if last_balance > 0 :
-								if last_balance <= next_row['total_payment'] :
-									self.append('repayment_schedule',{
-										'payment_date' : next_row['payment_date'] ,
-										'number_of_days' : next_row['number_of_days'] ,
-										'principal_amount' : last_balance ,
-										'interest_amount' : next_row['interest_amount'] ,
-										'total_payment' : last_balance ,
-										'balance_loan_amount' : 0 ,
-										'is_accrued' : next_row['is_accrued'] ,
-									})
-									break
-								else :
-									
-									cur_balance = last_balance - next_row['total_payment']
-									self.append('repayment_schedule',{
-										'payment_date' : next_row['payment_date'] ,
-										'number_of_days' : next_row['number_of_days'] ,
-										'principal_amount' : next_row['principal_amount'] ,
-										'interest_amount' : next_row['interest_amount'] ,
-										'total_payment' : next_row['total_payment'] ,
-										'balance_loan_amount' : cur_balance ,
-										'is_accrued' : next_row['is_accrued'] ,
-									})
-									next_row = {
-										'payment_date' : row.payment_date ,
-										'number_of_days' : row.number_of_days ,
-										'principal_amount' : row.principal_amount ,
-										'interest_amount' : row.interest_amount ,
-										'total_payment' : row.total_payment ,
-										'is_accrued' : row.is_accrued ,
-									}
-									last_balance = cur_balance
-
-							else :
-								break
-
-
-						if sig == 0 :
-							if self.payment_amount <= last_balance :
-								cur_balance = last_balance - self.payment_amount
+							if less_amount == 2 :
 								self.append('repayment_schedule',{
-									'payment_date' : self.payment_date ,
-									'number_of_days' : 1 ,
-									'principal_amount' : self.payment_amount ,
-									'interest_amount' : 0 ,
-									'total_payment' : self.payment_amount ,
-									'balance_loan_amount' : cur_balance ,
-									'is_accrued' : 0 ,
-								})
-								sig = 1
-								last_balance = cur_balance
-								
-								next_row = {
 									'payment_date' : row.payment_date ,
 									'number_of_days' : row.number_of_days ,
 									'principal_amount' : row.principal_amount ,
 									'interest_amount' : row.interest_amount ,
 									'total_payment' : row.total_payment ,
+									'balance_loan_amount' : row.balance_loan_amount ,
 									'is_accrued' : row.is_accrued ,
-								}
+								})
+								last_balance = row.balance_loan_amount
+							
+							if less_amount == 1 :
+								self.append('repayment_schedule',{
+									'payment_date' : row.payment_date ,
+									'number_of_days' : row.number_of_days ,
+									'principal_amount' : row.principal_amount + next_row_amount ,
+									'interest_amount' : row.interest_amount ,
+									'total_payment' : row.total_payment + next_row_amount ,
+									'balance_loan_amount' : row.balance_loan_amount ,
+									'is_accrued' : row.is_accrued ,
+								})
+								last_balance = row.balance_loan_amount
+								less_amount = 2
+
+							if less_amount == 0 :
+
+								if next_row_amount <= row.principal_amount :
+									self.append('repayment_schedule',{
+										'payment_date' : row.payment_date ,
+										'number_of_days' : row.number_of_days ,
+										'principal_amount' : row.principal_amount - next_row_amount ,
+										'interest_amount' : row.interest_amount ,
+										'total_payment' : row.total_payment - next_row_amount ,
+										'balance_loan_amount' : row.balance_loan_amount ,
+										'is_accrued' : row.is_accrued ,
+									})
+									last_balance = row.balance_loan_amount
+									less_amount = 2
+
+								else :
+									self.append('repayment_schedule',{
+										'payment_date' : row.payment_date ,
+										'number_of_days' : row.number_of_days ,
+										'principal_amount' : 0  ,
+										'interest_amount' : row.interest_amount ,
+										'total_payment' : 0 ,
+										'balance_loan_amount' : last_balance ,
+										'is_accrued' : row.is_accrued ,
+									})
+									last_balance = last_balance
+									next_row_amount = next_row_amount - row.principal_amount
+
+						elif same_date_sig == 0 :
+
+							if row_inserted == 0 :
+
+								if self.payment_amount > last_balance :
+									frappe.throw("Payment Amount cannot be greater than Balance Amount.")
 								
+								else :
+									cur_balance = last_balance - self.payment_amount
+									self.append('repayment_schedule',{
+										'payment_date' : self.payment_date ,
+										'number_of_days' : row.number_of_days ,
+										'principal_amount' : self.payment_amount ,
+										'interest_amount' : row.interest_amount ,
+										'total_payment' : self.payment_amount ,
+										'balance_loan_amount' : cur_balance ,
+										'is_accrued' : row.is_accrued ,
+									})
+									last_balance = cur_balance
+									extra_amount = self.payment_amount
+									row_inserted = 1
+									
+							if row_inserted == 1 :
+
+								if extra_amount_end == 1 :
+									self.append('repayment_schedule',{
+										'payment_date' : row.payment_date ,
+										'number_of_days' : row.number_of_days ,
+										'principal_amount' : row.principal_amount ,
+										'interest_amount' : row.interest_amount ,
+										'total_payment' : row.total_payment ,
+										'balance_loan_amount' : row.balance_loan_amount ,
+										'is_accrued' : row.is_accrued ,
+									})
+									last_balance = row.balance_loan_amount
+								
+								elif extra_amount <= row.principal_amount :
+									self.append('repayment_schedule',{
+										'payment_date' : row.payment_date ,
+										'number_of_days' : row.number_of_days ,
+										'principal_amount' : row.principal_amount - extra_amount ,
+										'interest_amount' : row.interest_amount ,
+										'total_payment' : row.total_payment - extra_amount ,
+										'balance_loan_amount' : row.balance_loan_amount ,
+										'is_accrued' : row.is_accrued ,
+									})
+									last_balance = row.balance_loan_amount
+									extra_amount_end = 1
+									
+								else :
+									self.append('repayment_schedule',{
+										'payment_date' : row.payment_date ,
+										'number_of_days' : row.number_of_days ,
+										'principal_amount' : 0  ,
+										'interest_amount' : row.interest_amount ,
+										'total_payment' : 0 ,
+										'balance_loan_amount' : last_balance ,
+										'is_accrued' : row.is_accrued ,
+									})
+									last_balance = last_balance
+									extra_amount = extra_amount - row.principal_amount
+									
+					elif str(self.payment_date) == str(row.payment_date) :
+
+						same_date_sig = 1
+						
+						if self.payment_amount <= row.total_payment :
+							cur_balance = last_balance - self.payment_amount
+							self.append('repayment_schedule',{
+								'payment_date' : row.payment_date ,
+								'number_of_days' : row.number_of_days ,
+								'principal_amount' : self.payment_amount ,
+								'interest_amount' : row.interest_amount ,
+								'total_payment' : self.payment_amount ,
+								'balance_loan_amount' : cur_balance ,
+								'is_accrued' : row.is_accrued ,
+							})
+							last_balance = cur_balance
+							next_row_amount = row.principal_amount - self.payment_amount
+							less_amount = 1
+
+						elif self.payment_amount > row.total_payment :
+
+							if self.payment_amount > last_balance :
+								frappe.throw("Payment Amount cannot be greater than Loan Balance.")
 
 							else :
-								frappe.throw("Payment amount cannot be greater than Loan Balance.")
-
-
+								cur_balance = last_balance - self.payment_amount
+								self.append('repayment_schedule',{
+									'payment_date' : row.payment_date ,
+									'number_of_days' : row.number_of_days ,
+									'principal_amount' : self.payment_amount ,
+									'interest_amount' : row.interest_amount ,
+									'total_payment' : self.payment_amount ,
+									'balance_loan_amount' : cur_balance ,
+									'is_accrued' : row.is_accrued ,
+								})
+								last_balance = cur_balance
+								next_row_amount = self.payment_amount - row.principal_amount
 				
 				final_amount = self.repayment_schedule[-1].principal_amount + self.repayment_schedule[-1].balance_loan_amount
 				self.repayment_schedule[-1].principal_amount = final_amount
 				self.repayment_schedule[-1].total_payment = final_amount
 				self.repayment_schedule[-1].balance_loan_amount = 0
-						
+
+
+			elif self.adjustment_type == 'Last Installments' :
+
+				same_date_sig = 0
+				installments = []
+
+				for row in repayment_schedule_table :
+					installment = {
+						'last_balance' : last_balance ,
+						'date' : row.payment_date ,
+						'amount' : row.principal_amount ,
+						'is_accrued' : row.is_accrued ,
+						'number_of_days' : row.number_of_days ,
+						'interest_amount' : row.interest_amount ,
+					}
+					installments.append(installment)
+					last_balance = row.balance_loan_amount
+
+				
+				for i in range(len(installments)) :
+
+					if str(installments[i]['date']) == str(self.payment_date) :
+						if installments[i]['last_balance'] < self.payment_amount :
+							frappe.throw("Balance Amount cannot be greater than Loan Balance.")
+						else :	
+							installments[i] = {
+								'last_balance' : installments[i]['last_balance'] ,
+								'date': self.payment_date,
+								'amount': self.payment_amount,
+								'is_accrued' : installments[i]['is_accrued'] ,
+								'number_of_days' : installments[i]['number_of_days'] ,
+								'interest_amount' : installments[i]['interest_amount'] ,
+							}
+							break
+
+					elif str(installments[i]['date']) > str(self.payment_date) :
+						if installments[i]['last_balance'] < self.payment_amount :
+							frappe.throw("Balance Amount cannot be greater than Loan Balance.")
+						else :	
+							installments.insert(i, {
+								'last_balance' : installments[i]['last_balance'] ,
+								'date': self.payment_date,
+								'amount': self.payment_amount,
+								'is_accrued' : installments[i]['is_accrued'] ,
+								'number_of_days' : installments[i]['number_of_days'] ,
+								'interest_amount' : installments[i]['interest_amount'] ,
+							})
+							break
+
+
+				balance = loan_rp_sch_doc.loan_amount
+				
+				for x in installments :	
+
+					if balance > x['amount'] :
+						self.append('repayment_schedule',{
+							'payment_date' : x['date'] ,
+							'number_of_days' : x['number_of_days'] ,
+							'principal_amount' : x['amount'] ,
+							'interest_amount' : x['interest_amount'] ,
+							'total_payment' : x['amount'] ,
+							'balance_loan_amount' : balance - x['amount'] ,
+							'is_accrued' : x['is_accrued'] ,
+						})
+						balance = balance - x['amount']
+
+					elif balance <= x['amount'] :
+						self.append('repayment_schedule',{
+							'payment_date' : x['date'] ,
+							'number_of_days' : x['number_of_days'] ,
+							'principal_amount' : balance ,
+							'interest_amount' : x['interest_amount'] ,
+							'total_payment' : balance ,
+							'balance_loan_amount' : 0 ,
+							'is_accrued' : x['is_accrued'] ,
+						})
+						break
+				
+
+				final_amount = self.repayment_schedule[-1].principal_amount + self.repayment_schedule[-1].balance_loan_amount
+				self.repayment_schedule[-1].principal_amount = final_amount
+				self.repayment_schedule[-1].total_payment = final_amount
+				self.repayment_schedule[-1].balance_loan_amount = 0		
+
+
+							
 
 		else :
 			frappe.throw("No Active Repayment Schedule found.")
-
 
 
 	def before_submit(self) :
@@ -290,7 +434,8 @@ class LoanRepaymentReschedule(Document):
 						'total_payment' : x.total_payment ,
 						'balance_loan_amount' : x.balance_loan_amount ,
 						'is_accrued' : x.is_accrued ,
-						'idx': x.idx
+						'idx': x.idx ,
+						'docstatus' : 1 ,
 					
 					})
 					repayment_schedule_doc.insert()

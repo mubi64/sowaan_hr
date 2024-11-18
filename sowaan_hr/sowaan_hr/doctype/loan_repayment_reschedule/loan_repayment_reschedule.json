@@ -8,6 +8,7 @@
   "applicant_type",
   "applicant",
   "applicant_name",
+  "adjustment_type",
   "column_break_edvw",
   "payment_date",
   "payment_amount",
@@ -97,12 +98,19 @@
    "label": "Loan Repayment Schedule",
    "options": "Loan Repayment Schedule",
    "read_only": 1
+  },
+  {
+   "fieldname": "adjustment_type",
+   "fieldtype": "Select",
+   "label": "Adjustment Type",
+   "options": "\nLeading Installments\nLast Installments",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-11-14 10:06:09.508758",
+ "modified": "2024-11-18 10:40:15.558230",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Loan Repayment Reschedule",

@@ -46,23 +46,25 @@ def get_salary_slip(salary_slip):
         deductions["amount"] = x.amount
         result["deductions"].append(deductions)
 
-    result["loans"] = []
-    for idx, x in enumerate(slip.loans):
-        loans = {}
-        loan_doc = frappe.get_doc("Loan", x.loan)
-        loans["loan_type"] = loan_doc.loan_type
-        loans["total_payment"] = x.total_payment
-        result["loans"].append(loans)
+    if hasattr(slip, 'loans') and slip.loans:
+        result["loans"] = []
+        for idx, x in enumerate(slip.loans):
+            loans = {}
+            loan_doc = frappe.get_doc("Loan", x.loan)
+            loans["loan_type"] = loan_doc.loan_type
+            loans["total_payment"] = x.total_payment
+            result["loans"].append(loans)
 
-    result["leave_details"] = []
-    for idx, x in enumerate(slip.leave_details):
-        leave_details = {}
-        leave_details["leave_type"] = x.leave_type
-        leave_details["allocated"] = x.total_allocated_leaves
-        leave_details["used"] = x.used_leaves
-        leave_details["pending"] = x.pending_leaves
-        leave_details["expired"] = x.expired_leaves
-        leave_details["available"] = x.available_leaves
-        result["leave_details"].append(leave_details)
-
+    if hasattr(slip, 'leave_details') and slip.leave_details:
+        result["leave_details"] = []
+        for idx, x in enumerate(slip.leave_details):
+            leave_details = {}
+            leave_details["leave_type"] = x.leave_type
+            leave_details["allocated"] = x.total_allocated_leaves
+            leave_details["used"] = x.used_leaves
+            leave_details["pending"] = x.pending_leaves
+            leave_details["expired"] = x.expired_leaves
+            leave_details["available"] = x.available_leaves
+            result["leave_details"].append(leave_details)
+    
     return result

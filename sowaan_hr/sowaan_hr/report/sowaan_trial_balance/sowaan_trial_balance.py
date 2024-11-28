@@ -79,6 +79,7 @@ def validate_filters(filters):
 		filters.to_date = filters.year_end_date
 
 
+
 def get_data(filters):
 	accounts = frappe.db.sql(
 		"""select name, account_number, parent_account, account_name, root_type, report_type, lft, rgt
@@ -122,7 +123,6 @@ def get_data(filters):
 	data = filter_out_zero_value_rows(
 		data, parent_children_map, show_zero_values=filters.get("show_zero_values")
 	)
-
 	return data
 
 
@@ -135,6 +135,8 @@ def get_opening_balances(filters):
 
 
 def get_rootwise_opening_balances(filters, report_type):
+	print(filters, "filters")
+
 	gle = []
 
 	last_period_closing_voucher = ""
@@ -227,8 +229,12 @@ def get_opening_balance(
 			opening_balance = opening_balance.where(closing_balance.is_opening == "No")
 		else:
 			opening_balance = opening_balance.where(
-				(closing_balance.posting_date < filters.from_date) | (closing_balance.is_opening == "Yes") and (closing_balance.posting_date <= filters.to_date)
+				(closing_balance.posting_date <= filters.from_date) 
+				| (closing_balance.is_opening == "Yes")
+				& (closing_balance.posting_date < filters.from_date)
 			)
+			# opening_balance = opening_balance.where(closing_balance.is_opening == "Yes")
+			print(closing_balance.posting_date, filters.from_date, filters.to_date, "opening_balance \n\n\n\n\n\n\n")
 
 	if doctype == "GL Entry":
 		opening_balance = opening_balance.where(closing_balance.is_cancelled == 0)
@@ -290,12 +296,12 @@ def get_opening_balance(
 					opening_balance = opening_balance.where(
 						closing_balance[dimension.fieldname].isin(filters[dimension.fieldname])
 					)
-
 	gle = opening_balance.run(as_dict=1)
 
 	if filters and filters.get("presentation_currency"):
 		convert_to_presentation_currency(gle, get_currency(filters))
 
+	print(gle, "filnal opening_balance \n\n\n\n\n")
 	return gle
 
 
@@ -392,8 +398,8 @@ def prepare_data(accounts, filters, parent_children_map, company_currency):
 		data.append(row)
 
 	total_row = calculate_total_row(accounts, company_currency)
-	data.extend([{}, total_row])
 
+	data.extend([{}, total_row])
 	return data
 
 

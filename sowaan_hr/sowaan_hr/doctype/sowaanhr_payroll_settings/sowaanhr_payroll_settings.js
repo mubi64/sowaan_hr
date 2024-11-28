@@ -5,22 +5,24 @@ frappe.ui.form.on("SowaanHR Payroll Settings", {
 	refresh(frm) {
 
 
-        frm.set_query("negative_salary_adjustment_component", function () {
+        frm.set_query('component', 'earning', () => {
             return {
-                    filters: [
-                        ["Salary Component", "type", "=", "Earning"] ,
-                    ],
+                filters: [
+                    ["Salary Component","disabled","=",0],
+                    ["Salary Component","type","=","Earning"] ,
+                ]
             };
         });
 
-
-        frm.set_query("negative_salary_repayment_component_copy", function () {
+        frm.set_query('component', 'deduction', () => {
             return {
-                    filters: [
-                        ["Salary Component", "type", "=", "Deduction"] ,
-                    ],
+                filters: [
+                    ["Salary Component","disabled","=",0],
+                    ["Salary Component","type","=","Deduction"] ,
+                ]
             };
         });
+
 
 	},
 });

@@ -130,7 +130,8 @@ doctype_js = {"Salary Slip" : "sowaan_hr/api/salary_slip.js"}
 
 override_doctype_class = {
 	"Payment Entry": "sowaan_hr.overrides.employee_payment_entry.EmployeePaymentEntry",
-    "Salary Slip": "sowaan_hr.overrides.employee_salary_slip.EmployeeSalarySlip"
+    "Salary Slip": "sowaan_hr.overrides.employee_salary_slip.EmployeeSalarySlip",
+    "Additional Salary": "sowaan_hr.overrides.employee_additional_salary.EmployeeAdditionalSalary"
 }
 
 # Document Events

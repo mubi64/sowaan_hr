@@ -7,6 +7,8 @@ import json
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import add_days, getdate
 from datetime import datetime
+# from hrms.payroll.doctype.salary_slip.salary_slip import (calculate_net_pay, compute_year_to_date, compute_month_to_date, compute_component_wise_year_to_date)
+
 
 
 def gen_response(status, message, data=[]):
@@ -157,7 +159,48 @@ def get_dates(from_date , frequency) :
             date = frappe.utils.add_days(date, 1)
 
 
-    return {"dates": dates, "days": days}       
+    return {"dates": dates, "days": days}     
+
+
+@frappe.whitelist()
+def create_salary_adjustment_for_negative_salary(doc_name) :
+
+    ss_doc = frappe.get_doc("Salary Slip", doc_name)
+    earn_comp = frappe.db.get_single_value('SowaanHR Payroll Settings', 'negative_salary_adjustment_component')
+    ded_comp = frappe.db.get_single_value('SowaanHR Payroll Settings', 'negative_salary_repayment_component')
+
+    frappe.get_doc(dict(
+        doctype = 'Additional Salary',
+        employee = ss_doc.employee ,
+        company = ss_doc.company ,
+        payroll_date = ss_doc.end_date ,
+        salary_component = earn_comp ,
+        amount = -ss_doc.net_pay ,
+        docstatus = 1 ,
+        custom_salary_slip = ss_doc.name
+    )).insert()
+
+    day_after_end_date = frappe.utils.add_days(ss_doc.end_date, 1)
+
+    frappe.get_doc(dict(
+        doctype = 'Additional Salary',
+        employee = ss_doc.employee ,
+        company = ss_doc.company ,
+        payroll_date = day_after_end_date ,
+        salary_component = ded_comp ,
+        amount = -ss_doc.net_pay ,
+        docstatus = 1 ,
+        custom_salary_slip = ss_doc.name
+    )).insert()
+
+
+
+
+
+
+
+   
+
 
 
 

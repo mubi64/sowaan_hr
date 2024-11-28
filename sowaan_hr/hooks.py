@@ -18,7 +18,8 @@ fixtures = [
                 "in",
 				(
 					"gps_location", "marked_gps", "map", "checkout_entry", "required_hours", "allow_to_complete_required_hours_during_the_whole_month",
-                    "late_approved", "custom_shift_roaster", "custom_fraction_of_total_earnings"
+                    "late_approved", "custom_shift_roaster", "custom_fraction_of_total_earnings" , "custom_salary_slip", "custom_adjust_negative_salary" ,
+					"custom_check_adjustment"
 				)
 			]
 		]
@@ -71,7 +72,7 @@ fixtures = [
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+doctype_js = {"Salary Slip" : "sowaan_hr/api/salary_slip.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -129,7 +130,8 @@ fixtures = [
 
 override_doctype_class = {
 	"Payment Entry": "sowaan_hr.overrides.employee_payment_entry.EmployeePaymentEntry",
-    "Salary Slip": "sowaan_hr.overrides.employee_salary_slip.EmployeeSalarySlip"
+    "Salary Slip": "sowaan_hr.overrides.employee_salary_slip.EmployeeSalarySlip",
+    "Additional Salary": "sowaan_hr.overrides.employee_additional_salary.EmployeeAdditionalSalary"
 }
 
 # Document Events
@@ -166,9 +168,9 @@ override_doctype_class = {
 # 	"weekly": [
 # 		"sowaan_hr.tasks.weekly"
 # 	]
-# 	"monthly": [
-# 		"sowaan_hr.tasks.monthly"
-# 	]
+#    "monthly": [
+#    "sowaan_hr.tasks.monthly"
+#    ]
 # }
 
 # Testing

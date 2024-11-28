@@ -1,5 +1,6 @@
 import frappe
 from hrms.payroll.doctype.salary_slip.salary_slip import (SalarySlip, calculate_tax_by_tax_slab)
+from sowaan_hr.sowaan_hr.api.api import create_salary_adjustment_for_negative_salary
 from frappe.utils import (
 	add_days,
 	ceil,
@@ -152,3 +153,23 @@ class EmployeeSalarySlip(SalarySlip):
             })[0][0])
 
         return current_tax_amount - extra_current_tax_amount
+
+    def before_save(self) :
+
+        if self.custom_adjust_negative_salary == 1 and self.custom_check_adjustment == 1 and self.net_pay < 0 :
+            create_salary_adjustment_for_negative_salary(self.name)
+        
+        elif self.net_pay < 0 :
+            self.custom_adjust_negative_salary = 0
+
+        self.custom_check_adjustment = 0
+
+        self.calculate_net_pay()
+        self.compute_year_to_date()
+        self.compute_month_to_date()
+        self.compute_component_wise_year_to_date()
+
+
+
+
+

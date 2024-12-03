@@ -12,6 +12,7 @@ class LoanRepaymentReschedule(Document):
 	def before_save(self) :
 
 		next_row = []
+		indx = 0
 
 		loan_rp_sch_list = frappe.db.get_list("Loan Repayment Schedule",
 								filters = {
@@ -299,14 +300,14 @@ class LoanRepaymentReschedule(Document):
 				
 				for x in installments :	
 
-					if balance > x['amount'] :
+					if round(balance,2) > round(x['amount'],2) :
 						self.append('repayment_schedule',{
 							'payment_date' : x['date'] ,
 							'number_of_days' : x['number_of_days'] ,
-							'principal_amount' : x['amount'] ,
+							'principal_amount' : round(x['amount'],2) ,
 							'interest_amount' : x['interest_amount'] ,
-							'total_payment' : x['amount'] ,
-							'balance_loan_amount' : balance - x['amount'] ,
+							'total_payment' : round(x['amount'],2) ,
+							'balance_loan_amount' : round(balance,2) - round(x['amount'],2) ,
 							'is_accrued' : x['is_accrued'] ,
 						})
 						balance = balance - x['amount']
@@ -315,9 +316,9 @@ class LoanRepaymentReschedule(Document):
 						self.append('repayment_schedule',{
 							'payment_date' : x['date'] ,
 							'number_of_days' : x['number_of_days'] ,
-							'principal_amount' : balance ,
+							'principal_amount' : round(balance,2) ,
 							'interest_amount' : x['interest_amount'] ,
-							'total_payment' : balance ,
+							'total_payment' : round(balance,2) ,
 							'balance_loan_amount' : 0 ,
 							'is_accrued' : x['is_accrued'] ,
 						})
@@ -328,6 +329,15 @@ class LoanRepaymentReschedule(Document):
 				self.repayment_schedule[-1].principal_amount = final_amount
 				self.repayment_schedule[-1].total_payment = final_amount
 				self.repayment_schedule[-1].balance_loan_amount = 0		
+
+			for xy in self.repayment_schedule :
+				if xy.balance_loan_amount == 0 :
+					indx = xy.idx
+					break
+
+			self.repayment_schedule = [
+				row for row in self.repayment_schedule if row.idx <= indx
+			]	
 
 
 							

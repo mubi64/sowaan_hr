@@ -5,27 +5,33 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "negative_salary_adjustment_component",
-  "negative_salary_repayment_component"
+  "section_break_tleq",
+  "earning",
+  "deduction"
  ],
  "fields": [
   {
-   "fieldname": "negative_salary_adjustment_component",
-   "fieldtype": "Link",
-   "label": "Negative Salary Adjustment Component",
-   "options": "Salary Component"
+   "fieldname": "section_break_tleq",
+   "fieldtype": "Section Break",
+   "label": "Salary Adjustment"
   },
   {
-   "fieldname": "negative_salary_repayment_component",
-   "fieldtype": "Link",
-   "label": "Negative Salary Repayment Component",
-   "options": "Salary Component"
+   "fieldname": "earning",
+   "fieldtype": "Table",
+   "label": "Earning",
+   "options": "Company Wise Component"
+  },
+  {
+   "fieldname": "deduction",
+   "fieldtype": "Table",
+   "label": "Deduction",
+   "options": "Company Wise Component"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2024-11-26 15:25:23.553019",
+ "modified": "2024-11-28 14:18:38.700261",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "SowaanHR Payroll Settings",

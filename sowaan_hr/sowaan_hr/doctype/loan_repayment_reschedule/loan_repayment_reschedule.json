@@ -7,6 +7,7 @@
  "field_order": [
   "applicant_type",
   "applicant",
+  "company",
   "applicant_name",
   "adjustment_type",
   "column_break_edvw",
@@ -105,12 +106,20 @@
    "label": "Adjustment Type",
    "options": "\nLeading Installments\nLast Installments",
    "reqd": 1
+  },
+  {
+   "fetch_from": "loan.company",
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-11-18 10:40:15.558230",
+ "modified": "2024-12-03 15:33:04.267650",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Loan Repayment Reschedule",

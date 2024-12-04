@@ -166,32 +166,66 @@ def get_dates(from_date , frequency) :
 def create_salary_adjustment_for_negative_salary(doc_name) :
 
     ss_doc = frappe.get_doc("Salary Slip", doc_name)
-    earn_comp = frappe.db.get_single_value('SowaanHR Payroll Settings', 'negative_salary_adjustment_component')
-    ded_comp = frappe.db.get_single_value('SowaanHR Payroll Settings', 'negative_salary_repayment_component')
+    earn_comp = None
+    ded_comp = None
 
-    frappe.get_doc(dict(
-        doctype = 'Additional Salary',
-        employee = ss_doc.employee ,
-        company = ss_doc.company ,
-        payroll_date = ss_doc.end_date ,
-        salary_component = earn_comp ,
-        amount = -ss_doc.net_pay ,
-        docstatus = 1 ,
-        custom_salary_slip = ss_doc.name
-    )).insert()
+    payroll_settings_doc = frappe.get_doc('SowaanHR Payroll Settings')
 
-    day_after_end_date = frappe.utils.add_days(ss_doc.end_date, 1)
+    for earn in payroll_settings_doc.earning :
+        if earn.company == ss_doc.company :
+            earn_comp = earn.component
+            break
 
-    frappe.get_doc(dict(
-        doctype = 'Additional Salary',
-        employee = ss_doc.employee ,
-        company = ss_doc.company ,
-        payroll_date = day_after_end_date ,
-        salary_component = ded_comp ,
-        amount = -ss_doc.net_pay ,
-        docstatus = 1 ,
-        custom_salary_slip = ss_doc.name
-    )).insert()
+    for ded in payroll_settings_doc.deduction :
+        if ded.company == ss_doc.company :
+            ded_comp = ded.component
+            break
+
+    if earn_comp and not ded_comp :
+        frappe.throw(f'Deduction Component is not set for {ss_doc.company}.')  
+        
+    elif ded_comp and not earn_comp :
+        frappe.throw(f'Earning Component is not set for {ss_doc.company}.')
+
+    elif not earn_comp and not ded_comp :
+        frappe.throw(f'Earning and Deduction Components are not set for {ss_doc.company}.')
+
+    else :    
+        frappe.get_doc(dict(
+            doctype = 'Additional Salary',
+            employee = ss_doc.employee ,
+            company = ss_doc.company ,
+            payroll_date = ss_doc.end_date ,
+            salary_component = earn_comp ,
+            amount = -ss_doc.net_pay ,
+            docstatus = 1
+        )).insert()
+        
+        day_after_end_date = frappe.utils.add_days(ss_doc.end_date, 1)
+
+        frappe.get_doc(dict(
+            doctype = 'Additional Salary',
+            employee = ss_doc.employee ,
+            company = ss_doc.company ,
+            payroll_date = day_after_end_date ,
+            salary_component = ded_comp ,
+            amount = -ss_doc.net_pay ,
+            docstatus = 1
+        )).insert()
+
+
+    
+        
+          
+
+
+
+
+
+    
+
+    
+
 
 
 

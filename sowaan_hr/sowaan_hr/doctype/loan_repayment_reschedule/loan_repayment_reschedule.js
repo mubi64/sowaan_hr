@@ -17,6 +17,7 @@ frappe.ui.form.on("Loan Repayment Reschedule", {
                 return {
                         filters: [
                             ["Loan", "docstatus", "=", 1] ,
+                            ["Loan", "status", "NOT IN", ['Loan Closure Requested','Closed']] ,
                             ["Loan", "applicant", "=", frm.doc.applicant] ,
                         ],
                 };

@@ -59,7 +59,42 @@ class LoanRepaymentReschedule(Document):
 			same_date_case = 0
 			last_balance = loan_rp_sch_doc.loan_amount
 
-			if self.adjustment_type == 'Leading Installments' :
+			if str(self.payment_date) > str(repayment_schedule_table[-1].payment_date) :
+				frappe.throw("Payment Date cannot be after Last Installment Date.")
+
+
+			if str(self.payment_date) == str(repayment_schedule_table[-1].payment_date) and repayment_schedule_table[-1].principal_amount > self.payment_amount :
+				repayment_schedule_table[-1].balance_loan_amount = repayment_schedule_table[-1].principal_amount - self.payment_amount
+				repayment_schedule_table[-1].principal_amount = self.payment_amount
+				repayment_schedule_table[-1].total_payment = self.payment_amount
+
+				last_row_month = frappe.utils.add_to_date(repayment_schedule_table[-1].payment_date, months=1)
+
+				last_row = {
+					'payment_date' : last_row_month ,
+					'number_of_days' : 1 ,
+					'principal_amount' : repayment_schedule_table[-1].balance_loan_amount - self.payment_amount ,
+					'interest_amount' : 0 ,
+					'total_payment' : repayment_schedule_table[-1].balance_loan_amount - self.payment_amount ,
+					'balance_loan_amount' : 0 ,
+					'is_accrued' : 0 ,
+				}
+				repayment_schedule_table.append(last_row)
+
+
+				for x in repayment_schedule_table :	
+					self.append('repayment_schedule',{
+						'payment_date' : x['payment_date'] ,
+						'number_of_days' : x['number_of_days'] ,
+						'principal_amount' : round(x['principal_amount']) ,
+						'interest_amount' : x['interest_amount'] ,
+						'total_payment' : round(x['total_payment'],2) ,
+						'balance_loan_amount' : round(x['balance_loan_amount'] ,2) ,
+						'is_accrued' : x['is_accrued'] ,
+					})
+
+
+			elif self.adjustment_type == 'Leading Installments' :
 					
 				same_date_sig = 0
 				row_inserted = 0

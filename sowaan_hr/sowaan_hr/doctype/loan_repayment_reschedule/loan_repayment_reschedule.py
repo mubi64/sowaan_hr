@@ -73,9 +73,9 @@ class LoanRepaymentReschedule(Document):
 				last_row = {
 					'payment_date' : last_row_month ,
 					'number_of_days' : 1 ,
-					'principal_amount' : repayment_schedule_table[-1].balance_loan_amount - self.payment_amount ,
+					'principal_amount' : repayment_schedule_table[-1].balance_loan_amount ,
 					'interest_amount' : 0 ,
-					'total_payment' : repayment_schedule_table[-1].balance_loan_amount - self.payment_amount ,
+					'total_payment' : repayment_schedule_table[-1].balance_loan_amount ,
 					'balance_loan_amount' : 0 ,
 					'is_accrued' : 0 ,
 				}

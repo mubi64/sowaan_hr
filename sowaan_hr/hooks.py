@@ -146,11 +146,11 @@ override_doctype_class = {
 #	}
 # }
 
-# doc_events = {
-# 	"Salary Slip":{
-# 		"validate": "sowaan_hr.sowaan_hr.api.salary_slip.validate"
-# 	}
-# }
+doc_events = {
+	"Salary Slip":{
+		"validate": "sowaan_hr.sowaan_hr.doctype.arrears_process.arrears_process.add_arrears_to_earnings"
+	}
+}
 
 # Scheduled Tasks
 # ---------------

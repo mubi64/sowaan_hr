@@ -1,21 +1,7 @@
 import frappe
 from hrms.payroll.doctype.salary_slip.salary_slip import (SalarySlip, calculate_tax_by_tax_slab)
 from sowaan_hr.sowaan_hr.api.api import create_salary_adjustment_for_negative_salary
-from frappe.utils import (
-	add_days,
-	ceil,
-	cint,
-	cstr,
-	date_diff,
-	floor,
-	flt,
-	formatdate,
-	get_first_day,
-	get_link_to_form,
-	getdate,
-	money_in_words,
-	rounded,
-)
+from frappe.utils import flt
 
 class EmployeeSalarySlip(SalarySlip):
     def update_payment_status_for_gratuity(self):

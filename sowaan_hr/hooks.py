@@ -148,7 +148,7 @@ override_doctype_class = {
 
 doc_events = {
 	"Salary Slip":{
-		"validate": "sowaan_hr.sowaan_hr.doctype.arrears_process.arrears_process.add_arrears_to_earnings"
+		"before_save": "sowaan_hr.sowaan_hr.doctype.arrears_process.arrears_process.add_arrears_to_earnings"
 	}
 }
 

@@ -8,15 +8,20 @@
   "section_break_ogzj",
   "salary_component",
   "company",
-  "department",
   "employee",
+  "create_employee_arrears",
+  "employee_increment",
   "column_break_iiio",
   "from_date",
   "to_date",
-  "location",
+  "department",
   "section_break_tacg",
   "arrear_process_detail",
-  "amended_from"
+  "amended_from",
+  "earnings_and_deductions_tab",
+  "a_p_earnings",
+  "column_break_gsgj",
+  "a_p_deductions"
  ],
  "fields": [
   {
@@ -53,12 +58,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "location",
-   "fieldtype": "Link",
-   "label": "Location",
-   "options": "Branch"
-  },
-  {
    "fieldname": "section_break_tacg",
    "fieldtype": "Section Break"
   },
@@ -92,18 +91,55 @@
    "fieldtype": "Link",
    "label": "Employee",
    "options": "Employee"
+  },
+  {
+   "fieldname": "earnings_and_deductions_tab",
+   "fieldtype": "Tab Break",
+   "label": "Earnings & Deductions"
+  },
+  {
+   "fieldname": "column_break_gsgj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "create_employee_arrears",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Create Employee Arrears",
+   "read_only": 1
+  },
+  {
+   "fieldname": "a_p_earnings",
+   "fieldtype": "Table",
+   "label": "Earnings",
+   "options": "Arrear Process Earning Detail"
+  },
+  {
+   "fieldname": "a_p_deductions",
+   "fieldtype": "Table",
+   "label": "Deductions",
+   "options": "Arrear Process Deduction Detail"
+  },
+  {
+   "fieldname": "employee_increment",
+   "fieldtype": "Link",
+   "label": "Employee Increment",
+   "options": "Employee Increment",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-31 15:18:04.951250",
+ "modified": "2025-01-04 15:30:44.404817",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Arrears Process",
  "owner": "Administrator",
  "permissions": [
   {
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,

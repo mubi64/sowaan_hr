@@ -78,9 +78,11 @@ class EmployeeSalarySlip(SalarySlip):
         return total_tax_paid + tax_deducted_till_date + total_extra_tax + extra_current_tax_amount
     
     def calculate_variable_tax(self, tax_component):
+        print("Total  Piad Tax \n\n\n\n")
         self.previous_total_paid_taxes = self.get_tax_paid_in_period(
             self.payroll_period.start_date, self.start_date, tax_component
         )
+
 
         # Structured tax amount
         eval_locals, default_data = self.get_data_for_eval()

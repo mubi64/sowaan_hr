@@ -1,0 +1,45 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-01-04 14:47:27.969683",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "salary_component",
+  "column_break_bmge",
+  "amount"
+ ],
+ "fields": [
+  {
+   "fieldname": "salary_component",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Salary Component",
+   "link_filters": "[[\"Salary Component\",\"type\",\"=\",\"Earning\"]]",
+   "options": "Salary Component",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_bmge",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Amount"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-01-04 14:51:14.528815",
+ "modified_by": "Administrator",
+ "module": "Sowaan Hr",
+ "name": "Employee Earning Detail",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

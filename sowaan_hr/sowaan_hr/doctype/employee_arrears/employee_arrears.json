@@ -1,0 +1,138 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-01-03 11:46:39.961841",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_epes",
+  "employee",
+  "earning_component",
+  "arrears_process",
+  "column_break_npsk",
+  "from_date",
+  "to_date",
+  "section_break_mthe",
+  "e_a_earnings",
+  "total_earning",
+  "column_break_jfls",
+  "e_a_deductions",
+  "total_deduction",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_epes",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_mthe",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_jfls",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_npsk",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "from_date",
+   "fieldtype": "Date",
+   "label": "From Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "to_date",
+   "fieldtype": "Date",
+   "label": "To Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "earning_component",
+   "fieldtype": "Link",
+   "label": "Earning Component",
+   "link_filters": "[[\"Salary Component\",\"type\",\"=\",\"Earning\"]]",
+   "options": "Salary Component",
+   "reqd": 1
+  },
+  {
+   "fieldname": "total_earning",
+   "fieldtype": "Currency",
+   "label": "Total Earning",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_deduction",
+   "fieldtype": "Currency",
+   "label": "Total Deduction",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Employee Arrears",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "e_a_earnings",
+   "fieldtype": "Table",
+   "label": "Earnings",
+   "options": "Employee Earning Detail"
+  },
+  {
+   "fieldname": "e_a_deductions",
+   "fieldtype": "Table",
+   "label": "Deductions",
+   "options": "Employee Deduction Detail"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "arrears_process",
+   "fieldtype": "Link",
+   "label": "Arrears Process",
+   "options": "Arrears Process",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2025-01-04 15:48:59.608988",
+ "modified_by": "Administrator",
+ "module": "Sowaan Hr",
+ "name": "Employee Arrears",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

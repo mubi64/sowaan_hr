@@ -17,13 +17,9 @@ frappe.ui.form.on("Employee Increment", {
                 }
             });
         }
-        if (frm.doc.increment_amount) {
-            frm.trigger("increment_amount");
-        }
+        frm.trigger("increment_amount");
     },
     increment_amount(frm) {
-        if (frm.doc.increment_amount && frm.doc.employee) {
-            frm.set_value("revised_salary", frm.doc.current_salary + frm.doc.increment_amount);
-        }
+        frm.set_value("revised_salary", frm.doc.current_salary + frm.doc.increment_amount);
     }
 });

@@ -1,0 +1,65 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-01-04 12:57:10.146890",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "example_salary_slip",
+  "section_break_gevm",
+  "earnings",
+  "column_break_pjbv",
+  "deductions"
+ ],
+ "fields": [
+  {
+   "fieldname": "example_salary_slip",
+   "fieldtype": "Link",
+   "label": "Example Salary Slip",
+   "options": "Salary Slip"
+  },
+  {
+   "fieldname": "section_break_gevm",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "earnings",
+   "fieldtype": "Table",
+   "label": "Earnings",
+   "options": "Employee Earning Detail"
+  },
+  {
+   "fieldname": "column_break_pjbv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "deductions",
+   "fieldtype": "Table",
+   "label": "Deductions",
+   "options": "Employee Deduction Detail"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2025-01-04 14:52:29.528156",
+ "modified_by": "Administrator",
+ "module": "Sowaan Hr",
+ "name": "Arrears Process Setting",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

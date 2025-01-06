@@ -19,8 +19,8 @@ class ArrearsProcess(Document):
 		if self.company:
 			filters.append(["company", "=", self.company])
 
-		if self.location:
-			filters.append(["location", "=", self.location])
+		# if self.location:
+		# 	filters.append(["location", "=", self.location])
 
 		if self.department:
 			filters.append(["department", "=", self.department])
@@ -131,47 +131,54 @@ class ArrearsProcess(Document):
 				
 			total_basic = sal_2_basic + sal_1_basic
 
-			if self.create_employee_arrears:
-				emp_arrears = frappe.get_doc({
-					"doctype": "Employee Arrears",
-					"employee": emp.employee,
-					"from_date": self.from_date,
-					"to_date": self.to_date,
-					"earning_component": self.salary_component,
-					"docstatus": 1
-				})  
-				earn_existing = []
-				deduct_existing = []
-				for x in self.a_p_earnings:
-					if not x.salary_component in earn_existing:
-						earn_existing.append(x.salary_component)
-						emp_arrears.append("e_a_earnings", x)
+			emp_arrears = frappe.get_doc({
+				"doctype": "Employee Arrears",
+				"employee": emp.employee,
+				"from_date": self.from_date,
+				"to_date": self.to_date,
+				"earning_component": self.salary_component,
+				"docstatus": 1
+			})  
+			earn_existing = []
+			deduct_existing = []
+			for x in self.a_p_earnings:
+				if not x.salary_component in earn_existing:
+					earn_existing.append(x.salary_component)
+					emp_arrears.append("e_a_earnings", x)
 
-				for x in self.a_p_deductions:
-					if not x.salary_component in deduct_existing:
-						deduct_existing.append(x.salary_component)
-						emp_arrears.append("e_a_deductions", x)
-				
-				for f_salary in first_salary.earnings:
-					for s_salary in second_salary.earnings:
-						for d_salary in default_salary.earnings:
-							for c_salary in emp_arrears.e_a_earnings:
-								if f_salary.salary_component == s_salary.salary_component == d_salary.salary_component == c_salary.salary_component:
-									arrears_basic = (s_salary.amount + f_salary.amount) - d_salary.amount
-									c_salary.amount = arrears_basic
-									break
+			for x in self.a_p_deductions:
+				if not x.salary_component in deduct_existing:
+					deduct_existing.append(x.salary_component)
+					emp_arrears.append("e_a_deductions", x)
+			
+			for f_salary in first_salary.earnings:
+				for s_salary in second_salary.earnings:
+					for d_salary in default_salary.earnings:
+						for c_salary in emp_arrears.e_a_earnings:
+							if f_salary.salary_component == s_salary.salary_component == d_salary.salary_component == c_salary.salary_component:
+								arrears_basic = (s_salary.amount + f_salary.amount) - d_salary.amount
+								c_salary.amount = arrears_basic
+								break
 
-				for f_salary in first_salary.deductions:
-					for s_salary in second_salary.deductions:
-						for d_salary in default_salary.deductions:
-							for c_salary in emp_arrears.e_a_deductions:
-								if f_salary.salary_component == s_salary.salary_component == d_salary.salary_component == c_salary.salary_component:
-									# print(f_salary.salary_component, s_salary.salary_component, d_salary.salary_component, "Deductions \n\n\n\n")
-									arrears_basic = (s_salary.amount + f_salary.amount) - d_salary.amount
-									c_salary.amount = arrears_basic
-									break
-								
-				emp_arrears.save()
+			for f_salary in first_salary.deductions:
+				for s_salary in second_salary.deductions:
+					for d_salary in default_salary.deductions:
+						for c_salary in emp_arrears.e_a_deductions:
+							if f_salary.salary_component == s_salary.salary_component == d_salary.salary_component == c_salary.salary_component:
+								# print(f_salary.salary_component, s_salary.salary_component, d_salary.salary_component, "Deductions \n\n\n\n")
+								arrears_basic = (s_salary.amount + f_salary.amount) - d_salary.amount
+								c_salary.amount = arrears_basic
+								break
+			emp_arrears_exit = frappe.db.exists("Employee Arrears", {
+				"employee": emp.employee,
+				"from_date": self.from_date,
+				"to_date": self.to_date,
+				"earning_component": self.salary_component,
+			})
+			
+			if not emp_arrears_exit:
+				emp_arrears.insert(ignore_permissions=True)
+
 			arrears_basic = total_basic - curr_basic
 			
 			if len(self.arrear_process_detail) > 0:
@@ -186,7 +193,7 @@ class ArrearsProcess(Document):
 				new_row.to = self.to_date
 				# new_row.base_salary = salary_structure_assignment.base
 				new_row.amount = arrears_basic
-
+	
 
 def add_arrears_to_earnings(doc, method):
 	# pass

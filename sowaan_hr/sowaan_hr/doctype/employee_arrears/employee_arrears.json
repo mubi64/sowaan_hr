@@ -26,6 +26,7 @@
    "fieldtype": "Section Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "employee",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -46,32 +47,40 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "from_date",
    "fieldtype": "Date",
    "label": "From Date",
+   "read_only": 1,
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "to_date",
    "fieldtype": "Date",
    "label": "To Date",
+   "read_only": 1,
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "earning_component",
    "fieldtype": "Link",
    "label": "Earning Component",
    "link_filters": "[[\"Salary Component\",\"type\",\"=\",\"Earning\"]]",
    "options": "Salary Component",
+   "read_only": 1,
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "total_earning",
    "fieldtype": "Currency",
    "label": "Total Earning",
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "total_deduction",
    "fieldtype": "Currency",
    "label": "Total Deduction",
@@ -88,16 +97,20 @@
    "search_index": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "e_a_earnings",
    "fieldtype": "Table",
    "label": "Earnings",
-   "options": "Employee Earning Detail"
+   "options": "Employee Earning Detail",
+   "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "e_a_deductions",
    "fieldtype": "Table",
    "label": "Deductions",
-   "options": "Employee Deduction Detail"
+   "options": "Employee Deduction Detail",
+   "read_only": 1
   },
   {
    "allow_on_submit": 1,
@@ -111,7 +124,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-01-04 15:48:59.608988",
+ "modified": "2025-01-06 12:57:52.362224",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Employee Arrears",

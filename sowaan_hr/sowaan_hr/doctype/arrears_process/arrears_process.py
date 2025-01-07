@@ -9,6 +9,18 @@ class ArrearsProcess(Document):
 	def before_save(self):
 		self.validate_arrears_process()
 
+	
+	def on_submit(self):
+		for row in self.arrear_process_detail:
+			emp_arrears_exit = frappe.db.exists("Employee Arrears", {
+					"employee": row.employee,
+					"from_date": self.from_date,
+					"to_date": self.to_date,
+					"earning_component": self.salary_component,
+				})
+			if emp_arrears_exit:
+				frappe.db.set_value("Employee Arrears", emp_arrears_exit, "arrears_process", self.name)
+
 	def validate_arrears_process(self):
 		filters = [
 			["from_date", ">", self.from_date],
@@ -194,6 +206,8 @@ class ArrearsProcess(Document):
 				# new_row.base_salary = salary_structure_assignment.base
 				new_row.amount = arrears_basic
 	
+
+
 
 def add_arrears_to_earnings(doc, method):
 	# pass

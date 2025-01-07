@@ -1,0 +1,102 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:PTI-{payroll_period}-{#####}",
+ "creation": "2025-01-07 12:40:16.175415",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_uokm",
+  "employee",
+  "amount",
+  "amended_from",
+  "column_break_iuuu",
+  "payroll_period",
+  "period_from",
+  "period_to"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_uokm",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Previous Taxable Income",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_iuuu",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "payroll_period",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Payroll Period",
+   "options": "Payroll Period",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "payroll_period.start_date",
+   "fieldname": "period_from",
+   "fieldtype": "Date",
+   "label": "Period From",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "payroll_period.end_date",
+   "fieldname": "period_to",
+   "fieldtype": "Date",
+   "label": "Period To",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Float",
+   "label": "Amount",
+   "precision": "2",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2025-01-07 13:10:09.693611",
+ "modified_by": "Administrator",
+ "module": "Sowaan Hr",
+ "name": "Previous Taxable Income",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -78,7 +78,7 @@ class EmployeeSalarySlip(SalarySlip):
         return total_tax_paid + tax_deducted_till_date + total_extra_tax + extra_current_tax_amount
     
     def calculate_variable_tax(self, tax_component):
-        print("Total  Piad Tax \n\n\n\n")
+        # print("Total  Piad Tax \n\n\n\n")
         self.previous_total_paid_taxes = self.get_tax_paid_in_period(
             self.payroll_period.start_date, self.start_date, tax_component
         )
@@ -141,6 +141,46 @@ class EmployeeSalarySlip(SalarySlip):
             })[0][0])
 
         return current_tax_amount - extra_current_tax_amount
+
+    def get_taxable_earnings_for_prev_period(self, start_date, end_date, allow_tax_exemption=False):
+	    
+        
+
+        exempted_amount = 0
+        taxable_earnings = self.get_salary_slip_details(
+            start_date, end_date, parentfield="earnings", is_tax_applicable=1
+        )
+
+        if allow_tax_exemption:
+            exempted_amount = self.get_salary_slip_details(
+                start_date, end_date, parentfield="deductions", exempted_from_income_tax=1
+            )
+
+        opening_taxable_earning = self.get_opening_for("taxable_earnings_till_date", start_date, end_date)
+
+        # Plus the amount earned before in the same payroll period
+        prev_taxable_amount = 0
+        if frappe.db.exists("DocType", "Paid Income Tax Monthly"):
+            prev_taxable_amount = flt(frappe.db.sql("""
+                select 
+                    sum(pti.amount) 
+                from 
+                    `tabPrevious Taxable Income` pti
+                where
+                    pti.docstatus=1
+                    and %(from_date)s>=pti.period_from
+                    and  %(to_date)s<=pti.period_to
+                    and pti.employee=%(employee)s
+            """,{
+                "employee": self.employee,
+                "from_date": self.start_date,
+                "to_date": self.end_date
+            })[0][0])
+
+        print("*******************")
+        print(prev_taxable_amount)
+
+        return (taxable_earnings + opening_taxable_earning + prev_taxable_amount) - exempted_amount, exempted_amount
 
     def before_save(self) :
 

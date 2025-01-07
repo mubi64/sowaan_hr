@@ -160,7 +160,7 @@ class EmployeeSalarySlip(SalarySlip):
 
         # Plus the amount earned before in the same payroll period
         prev_taxable_amount = 0
-        if frappe.db.exists("DocType", "Paid Income Tax Monthly"):
+        if frappe.db.exists("DocType", "Previous Taxable Income"):
             prev_taxable_amount = flt(frappe.db.sql("""
                 select 
                     sum(pti.amount) 
@@ -177,8 +177,6 @@ class EmployeeSalarySlip(SalarySlip):
                 "to_date": self.end_date
             })[0][0])
 
-        print("*******************")
-        print(prev_taxable_amount)
 
         return (taxable_earnings + opening_taxable_earning + prev_taxable_amount) - exempted_amount, exempted_amount
 

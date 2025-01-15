@@ -1,0 +1,166 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-12-24 14:14:36.902531",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_q4ea",
+  "amended_from",
+  "fund_name",
+  "calculation_type",
+  "column_break_zatb",
+  "minimum_months_required",
+  "section_break_ntti",
+  "fund_component",
+  "own_value",
+  "dependent_components",
+  "column_break_apji",
+  "company_fund_component",
+  "company_value",
+  "company_dependent_components",
+  "description",
+  "withdrawal_settings_tab",
+  "loan",
+  "allowed__of_own_contribution",
+  "allowed__of_company_contribution"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_q4ea",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Fund Setting",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "fund_name",
+   "fieldtype": "Data",
+   "label": "Fund Name"
+  },
+  {
+   "fieldname": "fund_component",
+   "fieldtype": "Link",
+   "label": "Own Fund Component",
+   "link_filters": "[]",
+   "options": "Salary Component",
+   "unique": 1
+  },
+  {
+   "fieldname": "calculation_type",
+   "fieldtype": "Select",
+   "label": "Calculation Type",
+   "options": "\nFixed\n% of Payment\n% of Rate"
+  },
+  {
+   "fieldname": "column_break_zatb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "own_value",
+   "fieldtype": "Float",
+   "label": "Own Value"
+  },
+  {
+   "fieldname": "company_value",
+   "fieldtype": "Float",
+   "label": "Company Value"
+  },
+  {
+   "fieldname": "minimum_months_required",
+   "fieldtype": "Int",
+   "label": "Minimum Months Required"
+  },
+  {
+   "depends_on": "eval: doc.calculation_type != \"Fixed\"",
+   "fieldname": "dependent_components",
+   "fieldtype": "Table",
+   "label": "Own Dependent Components ",
+   "options": "Dependent Components Table"
+  },
+  {
+   "fieldname": "withdrawal_settings_tab",
+   "fieldtype": "Tab Break",
+   "label": "Withdrawal Settings"
+  },
+  {
+   "fieldname": "loan",
+   "fieldtype": "Link",
+   "label": "Loan",
+   "options": "Loan Product"
+  },
+  {
+   "fieldname": "allowed__of_own_contribution",
+   "fieldtype": "Percent",
+   "label": "Allowed % of Own Contribution"
+  },
+  {
+   "fieldname": "allowed__of_company_contribution",
+   "fieldtype": "Percent",
+   "label": "Allowed % of Company Contribution"
+  },
+  {
+   "fieldname": "section_break_ntti",
+   "fieldtype": "Section Break",
+   "label": "Own Fund"
+  },
+  {
+   "fieldname": "company_fund_component",
+   "fieldtype": "Link",
+   "label": "Company Fund Component",
+   "link_filters": "[]",
+   "options": "Salary Component",
+   "unique": 1
+  },
+  {
+   "depends_on": "eval: doc.calculation_type != \"Fixed\"",
+   "fieldname": "company_dependent_components",
+   "fieldtype": "Table",
+   "label": "Company Dependent Components",
+   "options": "Dependent Components Table"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "HTML",
+   "label": "Description",
+   "options": "Note: PF Employer Contribution is Earning Type\n<br>\n\u25cf Is Tax Applicable : False"
+  },
+  {
+   "fieldname": "column_break_apji",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2024-12-31 19:15:05.486378",
+ "modified_by": "Administrator",
+ "module": "Sowaan Hr",
+ "name": "Fund Setting",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

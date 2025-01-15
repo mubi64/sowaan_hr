@@ -1,0 +1,46 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-12-24 14:31:30.976216",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "contribution_type",
+  "amount",
+  "date"
+ ],
+ "fields": [
+  {
+   "fieldname": "contribution_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Contribution Type",
+   "options": "\nOwn\nCompany"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Amount"
+  },
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2024-12-24 14:41:10.551742",
+ "modified_by": "Administrator",
+ "module": "Sowaan Hr",
+ "name": "Fund Contribution Entry",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

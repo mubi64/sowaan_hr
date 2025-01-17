@@ -209,7 +209,7 @@ def create_salary_adjustment_for_negative_salary(doc_name) :
             company = ss_doc.company ,
             payroll_date = day_after_end_date ,
             salary_component = ded_comp ,
-            amount = -ss_doc.net_pay ,
+            amount = -(ss_doc.net_pay + 1) ,
             docstatus = 1
         )).insert()
 

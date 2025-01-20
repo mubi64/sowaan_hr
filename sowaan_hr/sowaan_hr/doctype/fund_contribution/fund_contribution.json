@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "EMP-FC-.#####",
  "creation": "2024-12-24 14:27:56.887574",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -13,7 +14,10 @@
   "start_date",
   "disabled",
   "section_break_nrye",
-  "fund_contribution_entry"
+  "fund_contribution_entry",
+  "opening_balance_tab",
+  "opening_own_balance",
+  "opening_company_balance"
  ],
  "fields": [
   {
@@ -40,6 +44,7 @@
    "fieldname": "fund_setting",
    "fieldtype": "Link",
    "label": "Fund Setting",
+   "link_filters": "[[\"Fund Setting\",\"docstatus\",\"=\",\"1\"]]",
    "options": "Fund Setting"
   },
   {
@@ -62,20 +67,37 @@
    "fieldtype": "Section Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "fund_contribution_entry",
    "fieldtype": "Table",
    "label": "Fund Contribution Entry",
    "options": "Fund Contribution Entry",
    "read_only": 1
+  },
+  {
+   "fieldname": "opening_balance_tab",
+   "fieldtype": "Tab Break",
+   "label": "Opening Balance"
+  },
+  {
+   "fieldname": "opening_own_balance",
+   "fieldtype": "Float",
+   "label": "Opening Own Balance"
+  },
+  {
+   "fieldname": "opening_company_balance",
+   "fieldtype": "Float",
+   "label": "Opening Company Balance"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-24 15:20:29.107520",
+ "modified": "2025-01-20 17:44:59.881840",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Fund Contribution",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {

@@ -8,7 +8,9 @@
  "field_order": [
   "contribution_type",
   "amount",
-  "date"
+  "date",
+  "salary_slip",
+  "is_opening_balance"
  ],
  "fields": [
   {
@@ -29,12 +31,24 @@
    "fieldtype": "Date",
    "in_list_view": 1,
    "label": "Date"
+  },
+  {
+   "fieldname": "salary_slip",
+   "fieldtype": "Link",
+   "label": "Salary Slip",
+   "options": "Salary Slip"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_opening_balance",
+   "fieldtype": "Check",
+   "label": "Is Opening Balance"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-12-24 14:41:10.551742",
+ "modified": "2025-01-20 15:33:00.899704",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Fund Contribution Entry",

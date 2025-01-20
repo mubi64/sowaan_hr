@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "field:fund_name",
  "creation": "2024-12-24 14:14:36.902531",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -43,15 +44,15 @@
   {
    "fieldname": "fund_name",
    "fieldtype": "Data",
-   "label": "Fund Name"
+   "label": "Fund Name",
+   "unique": 1
   },
   {
    "fieldname": "fund_component",
    "fieldtype": "Link",
    "label": "Own Fund Component",
    "link_filters": "[]",
-   "options": "Salary Component",
-   "unique": 1
+   "options": "Salary Component"
   },
   {
    "fieldname": "calculation_type",
@@ -116,8 +117,7 @@
    "fieldtype": "Link",
    "label": "Company Fund Component",
    "link_filters": "[]",
-   "options": "Salary Component",
-   "unique": 1
+   "options": "Salary Component"
   },
   {
    "depends_on": "eval: doc.calculation_type != \"Fixed\"",
@@ -140,10 +140,11 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-31 19:15:05.486378",
+ "modified": "2025-01-15 17:13:07.103990",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Fund Setting",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {

@@ -23,31 +23,32 @@ fixtures = [
 				)
 			]
 		]
-	}, 
-	{
-		"doctype":"Client Script",
-		"filters":[
-			[
-				"dt",
-                "in",
-				(
-					"Employee Checkin"
-				)
-			]
-		]
-	},
-	{
-		"doctype":"Server Script",
-		"filters":[
-			[
-				"reference_doctype",
-                "in",
-				(
-					"Attendance"
-				)
-			]
-		]
 	}
+    # , 
+	# {
+	# 	"doctype":"Client Script",
+	# 	"filters":[
+	# 		[
+	# 			"dt",
+    #             "in",
+	# 			(
+	# 				"Employee Checkin"
+	# 			)
+	# 		]
+	# 	]
+	# },
+	# {
+	# 	"doctype":"Server Script",
+	# 	"filters":[
+	# 		[
+	# 			"reference_doctype",
+    #             "in",
+	# 			(
+	# 				"Attendance"
+	# 			)
+	# 		]
+	# 	]
+	# }
 ]
 
 # Includes in <head>
@@ -72,7 +73,8 @@ fixtures = [
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-doctype_js = {"Salary Slip" : "sowaan_hr/api/salary_slip.js"}
+doctype_js = {"Salary Slip" : "sowaan_hr/api/salary_slip.js" , "Employee Checkin":"sowaan_hr/client_scripts/employee_checkin_form.js"}
+
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -154,6 +156,9 @@ doc_events = {
 	},
     "Loan Application":{
 		"before_save": "sowaan_hr.sowaan_hr.events.Salary_slip.loan_withdrawal"
+	},
+    "Attendance":{
+		"before_insert": "sowaan_hr.sowaan_hr.events.Attendance.late_approval"
 	}
 
 }

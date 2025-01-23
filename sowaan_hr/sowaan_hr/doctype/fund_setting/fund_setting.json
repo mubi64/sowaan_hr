@@ -12,6 +12,7 @@
   "calculation_type",
   "column_break_zatb",
   "minimum_months_required",
+  "on_confirmation",
   "section_break_ntti",
   "fund_component",
   "own_value",
@@ -135,12 +136,18 @@
   {
    "fieldname": "column_break_apji",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "on_confirmation",
+   "fieldtype": "Check",
+   "label": "On Confirmation"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-01-15 17:13:07.103990",
+ "modified": "2025-01-22 17:45:18.087474",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Fund Setting",

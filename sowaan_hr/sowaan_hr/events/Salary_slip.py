@@ -20,9 +20,18 @@ def fund_management_and_negative_salary(self, method):
             
         )
     if fund_contribution:
+        days = 0
         contribution_doc = frappe.get_doc("Fund Contribution", fund_contribution[0])
         fund_setting_name = contribution_doc.fund_setting
         fund_setting = frappe.get_doc("Fund Setting", fund_setting_name)
+        start_date = frappe.utils.getdate(self.start_date)
+        end_date = frappe.utils.getdate(self.end_date)
+        if fund_setting.on_confirmation == 1:
+            confirmation_date = frappe.get_value("Employee", self.employee, "final_confirmation_date")
+            confirmation_date = frappe.utils.getdate(confirmation_date)
+            if start_date <= confirmation_date <= end_date:
+               days = frappe.utils.date_diff(self.end_date, confirmation_date)+1
+                
 
 
 
@@ -30,20 +39,27 @@ def fund_management_and_negative_salary(self, method):
 
 
         if fund_setting.calculation_type == "Fixed":
+            if days and fund_setting.own_value and fund_setting.company_value:
+                    own_fund_value = (fund_setting.own_value / 30) * days
+                    company_fund_value = (fund_setting.company_value / 30) * days
+            else:
+                own_fund_value = fund_setting.own_value
+                company_fund_value = fund_setting.company_value
 
             if fund_setting.fund_component and fund_setting.own_value:
                 self.deductions = [
                         row for row in self.deductions
                         if row.salary_component != fund_setting.fund_component
                     ]
-                row1 = {"salary_component": fund_setting.fund_component , "amount" : fund_setting.own_value, "year_to_date" : fund_setting.own_value }
+                
+                row1 = {"salary_component": fund_setting.fund_component , "amount" : own_fund_value, "year_to_date" : own_fund_value }
                 self.append("deductions", row1)
                 
                 found_own_entry = False
                 for row in contribution_doc.fund_contribution_entry:
                     if row.contribution_type == "Own" and row.salary_slip == self.name:
                         # row.amount = fund_setting.own_value  # Update the amount
-                        frappe.db.set_value("Fund Contribution Entry", row.name, "amount", fund_setting.own_value)
+                        frappe.db.set_value("Fund Contribution Entry", row.name, "amount", own_fund_value)
                         found_own_entry = True
                         break
 
@@ -52,7 +68,7 @@ def fund_management_and_negative_salary(self, method):
 
                     contribution_doc.append("fund_contribution_entry", {
                         "contribution_type": "Own",
-                        "amount": fund_setting.own_value,
+                        "amount": own_fund_value,
                         "date": self.posting_date,
                         "salary_slip": self.name
                     })
@@ -64,20 +80,20 @@ def fund_management_and_negative_salary(self, method):
                         row for row in self.earnings
                         if row.salary_component != fund_setting.company_fund_component
                     ]
-                row2 = {"salary_component": fund_setting.company_fund_component , "amount" : fund_setting.company_value, "year_to_date" : fund_setting.company_value }
+                row2 = {"salary_component": fund_setting.company_fund_component , "amount" : company_fund_value, "year_to_date" : company_fund_value }
                 self.append("earnings", row2)
                 
                 found_company_entry = False
                 for row in contribution_doc.fund_contribution_entry:
                     if row.contribution_type == "Company" and row.salary_slip == self.name:
                         # row.amount = fund_setting.company_value
-                        frappe.db.set_value("Fund Contribution Entry", row.name, "amount", fund_setting.company_value)
+                        frappe.db.set_value("Fund Contribution Entry", row.name, "amount", company_fund_value)
                         found_company_entry = True
                         break
                 if not found_company_entry:
                     contribution_doc.append("fund_contribution_entry", {
                         "contribution_type": "Company",
-                        "amount": fund_setting.company_value,
+                        "amount": company_fund_value,
                         "date": self.posting_date,
                         "salary_slip": self.name
                     })
@@ -99,6 +115,8 @@ def fund_management_and_negative_salary(self, method):
                         earnings_amount = earnings_dict[component.component]
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                         total_fund_amount11 = total_fund_amount11 + calculated_amount
+                if days:
+                    total_fund_amount11 = (total_fund_amount11 / 30) * days
 
                 self.deductions = [
                     row for row in self.deductions
@@ -142,6 +160,8 @@ def fund_management_and_negative_salary(self, method):
                         earnings_amount = earnings_dict[component.component]
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                         total_fund_amount = total_fund_amount + calculated_amount
+                if days:
+                    total_fund_amount = (total_fund_amount / 30) * days
 
                 self.earnings = [
                     row for row in self.earnings
@@ -208,6 +228,8 @@ def fund_management_and_negative_salary(self, method):
                         earnings_amount = frappe.safe_eval(formula, {}, {"custom_base": base_value})
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                         total_fund_amount1 = total_fund_amount1 + calculated_amount
+                if days:
+                    total_fund_amount1 = (total_fund_amount1 / 30) * days
                 self.deductions = [
                     row for row in self.deductions
                     if row.salary_component not in [fund_setting.fund_component]
@@ -249,6 +271,8 @@ def fund_management_and_negative_salary(self, method):
                         earnings_amount = frappe.safe_eval(formula, {}, {"custom_base": base_value})
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                         total_fund_amount2 = total_fund_amount2 + calculated_amount
+                if days:
+                    total_fund_amount2 = (total_fund_amount2 / 30) * days
                 self.earnings = [
                     row for row in self.earnings
                     if row.salary_component not in [fund_setting.company_fund_component]
@@ -276,8 +300,8 @@ def fund_management_and_negative_salary(self, method):
                         })
                         contribution_doc.save()
         
-    else:
-        frappe.msgprint("Fund Contribution not found for this employee")
+    # else:
+    #     frappe.msgprint("Fund Contribution not found for this employee")
 
     self.custom_check_adjustment = 0
     self.calculate_net_pay()

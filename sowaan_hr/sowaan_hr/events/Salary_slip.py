@@ -213,10 +213,11 @@ def fund_management_and_negative_salary(self, method):
                 SELECT base 
                 FROM `tabSalary Structure Assignment`
                 WHERE salary_structure = %s
-                AND from_date BETWEEN %s AND %s
+                AND from_date <= %s
+                AND employee = %s
                 ORDER BY from_date DESC
                 LIMIT 1
-            """, (self.salary_structure, self.start_date, self.end_date), as_dict=True)
+            """, (self.salary_structure, self.end_date, self.employee), as_dict=True)
             base_value = salary_structure_assignment[0].base if salary_structure_assignment else 0
             total_fund_amount1 = 0
 
@@ -226,8 +227,10 @@ def fund_management_and_negative_salary(self, method):
                     if component.component in earnings_dict1:
                         formula = earnings_dict1[component.component]
                         earnings_amount = frappe.safe_eval(formula, {}, {"custom_base": base_value})
+                        
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                         total_fund_amount1 = total_fund_amount1 + calculated_amount
+                        
                 if days:
                     total_fund_amount1 = (total_fund_amount1 / 30) * days
                 self.deductions = [
@@ -244,7 +247,7 @@ def fund_management_and_negative_salary(self, method):
                     found_own_entry = False
                     for row in contribution_doc.fund_contribution_entry:
                         if row.contribution_type == "Own" and row.salary_slip == self.name:
-                            # row.amount = total_fund_amount1
+                        
                             frappe.db.set_value("Fund Contribution Entry", row.name, "amount", total_fund_amount1)
                             found_own_entry = True
                             break

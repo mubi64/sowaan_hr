@@ -133,6 +133,8 @@ doctype_js = {"Salary Slip" : "sowaan_hr/api/salary_slip.js" , "Employee Checkin
 override_doctype_class = {
 	"Payment Entry": "sowaan_hr.overrides.employee_payment_entry.EmployeePaymentEntry",
     "Salary Slip": "sowaan_hr.overrides.employee_salary_slip.EmployeeSalarySlip",
+    
+ "Payroll Entry": "sowaan_hr.overrides.override_payment_entry.OverridePayrollEntry",
     "Additional Salary": "sowaan_hr.overrides.employee_additional_salary.EmployeeAdditionalSalary"
 }
 

@@ -4,6 +4,7 @@ from sowaan_hr.sowaan_hr.api.api import create_salary_adjustment_for_negative_sa
 
 
 def fund_management_and_negative_salary(self, method):
+    # print('hamara ni hai')
     if self.custom_adjust_negative_salary == 1 and self.custom_check_adjustment == 1 and self.net_pay < 0 :
             create_salary_adjustment_for_negative_salary(self.name)
         

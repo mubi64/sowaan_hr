@@ -150,9 +150,9 @@ override_doctype_class = {
 
 doc_events = {
 	"Salary Slip":{
-		"before_save": "sowaan_hr.sowaan_hr.doctype.arrears_process.arrears_process.add_arrears_to_earnings",
+		# "before_save": "sowaan_hr.sowaan_hr.doctype.arrears_process.arrears_process.add_arrears_to_earnings",
+		"before_save": "sowaan_hr.sowaan_hr.events.Salary_slip.fund_management_and_negative_salary",
 	
-		"before_save": "sowaan_hr.sowaan_hr.events.Salary_slip.fund_management_and_negative_salary"
 	},
     "Loan Application":{
 		"before_save": "sowaan_hr.sowaan_hr.events.Salary_slip.loan_withdrawal"
@@ -160,6 +160,7 @@ doc_events = {
     "Attendance":{
 		"before_insert": "sowaan_hr.sowaan_hr.events.Attendance.late_approval"
 	}
+
 
 }
 

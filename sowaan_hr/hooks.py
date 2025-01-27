@@ -155,13 +155,11 @@ doc_events = {
 	
 	},
     "Loan Application":{
-		"before_save": "sowaan_hr.sowaan_hr.events.Salary_slip.loan_withdrawal"
+		"before_save": "sowaan_hr.sowaan_hr.events.loan_application.loan_withdrawal"
 	},
     "Attendance":{
 		"before_insert": "sowaan_hr.sowaan_hr.events.Attendance.late_approval"
 	}
-
-
 }
 
 # Scheduled Tasks

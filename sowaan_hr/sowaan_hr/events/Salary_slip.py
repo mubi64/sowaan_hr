@@ -1,6 +1,7 @@
 import frappe
 from hrms.payroll.doctype.salary_slip.salary_slip import (SalarySlip, calculate_tax_by_tax_slab)
 from sowaan_hr.sowaan_hr.api.api import create_salary_adjustment_for_negative_salary
+from datetime import datetime
 
 
 def fund_management_and_negative_salary(self, method):
@@ -22,16 +23,26 @@ def fund_management_and_negative_salary(self, method):
         )
     if fund_contribution:
         days = 0
+        w_days = 0
         contribution_doc = frappe.get_doc("Fund Contribution", fund_contribution[0])
         fund_setting_name = contribution_doc.fund_setting
         fund_setting = frappe.get_doc("Fund Setting", fund_setting_name)
+        if fund_setting.calculation_method == "Fixed Days":
+            w_days = fund_setting.days
+        elif fund_setting.calculation_method == "Working Days":
+            w_days = self.total_working_days
         start_date = frappe.utils.getdate(self.start_date)
         end_date = frappe.utils.getdate(self.end_date)
         if fund_setting.on_confirmation == 1:
             confirmation_date = frappe.get_value("Employee", self.employee, "final_confirmation_date")
             confirmation_date = frappe.utils.getdate(confirmation_date)
             if start_date <= confirmation_date <= end_date:
-               days = frappe.utils.date_diff(self.end_date, confirmation_date)+1
+                days = frappe.utils.date_diff(self.end_date, confirmation_date)+1
+                if confirmation_date.month == 2:
+                    if days == 29 or days == 28:
+                        days = 30
+                elif days == 31:
+                    days = 30
                 
 
 
@@ -41,8 +52,8 @@ def fund_management_and_negative_salary(self, method):
 
         if fund_setting.calculation_type == "Fixed":
             if days and fund_setting.own_value and fund_setting.company_value:
-                    own_fund_value = (fund_setting.own_value / 30) * days
-                    company_fund_value = (fund_setting.company_value / 30) * days
+                    own_fund_value = (fund_setting.own_value / w_days) * days
+                    company_fund_value = (fund_setting.company_value / w_days) * days
             else:
                 own_fund_value = fund_setting.own_value
                 company_fund_value = fund_setting.company_value
@@ -117,7 +128,7 @@ def fund_management_and_negative_salary(self, method):
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                         total_fund_amount11 = total_fund_amount11 + calculated_amount
                 if days:
-                    total_fund_amount11 = (total_fund_amount11 / 30) * days
+                    total_fund_amount11 = (total_fund_amount11 / w_days) * days
 
                 self.deductions = [
                     row for row in self.deductions
@@ -162,7 +173,7 @@ def fund_management_and_negative_salary(self, method):
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                         total_fund_amount = total_fund_amount + calculated_amount
                 if days:
-                    total_fund_amount = (total_fund_amount / 30) * days
+                    total_fund_amount = (total_fund_amount / w_days) * days
 
                 self.earnings = [
                     row for row in self.earnings
@@ -233,7 +244,7 @@ def fund_management_and_negative_salary(self, method):
                         total_fund_amount1 = total_fund_amount1 + calculated_amount
                         
                 if days:
-                    total_fund_amount1 = (total_fund_amount1 / 30) * days
+                    total_fund_amount1 = (total_fund_amount1 / w_days) * days
                 self.deductions = [
                     row for row in self.deductions
                     if row.salary_component not in [fund_setting.fund_component]
@@ -248,7 +259,6 @@ def fund_management_and_negative_salary(self, method):
                     found_own_entry = False
                     for row in contribution_doc.fund_contribution_entry:
                         if row.contribution_type == "Own" and row.salary_slip == self.name:
-                        
                             frappe.db.set_value("Fund Contribution Entry", row.name, "amount", total_fund_amount1)
                             found_own_entry = True
                             break
@@ -276,7 +286,7 @@ def fund_management_and_negative_salary(self, method):
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                         total_fund_amount2 = total_fund_amount2 + calculated_amount
                 if days:
-                    total_fund_amount2 = (total_fund_amount2 / 30) * days
+                    total_fund_amount2 = (total_fund_amount2 / w_days) * days
                 self.earnings = [
                     row for row in self.earnings
                     if row.salary_component not in [fund_setting.company_fund_component]
@@ -304,9 +314,7 @@ def fund_management_and_negative_salary(self, method):
                         })
                         contribution_doc.save()
         
-    # else:
-    #     frappe.msgprint("Fund Contribution not found for this employee")
-
+    
     self.custom_check_adjustment = 0
     self.calculate_net_pay()
     self.compute_year_to_date()
@@ -314,33 +322,7 @@ def fund_management_and_negative_salary(self, method):
     self.compute_component_wise_year_to_date()
 
 
-def loan_withdrawal(self, method):
-    if self.loan_product and self.loan_amount:
-        fund_setting_name = frappe.get_list("Fund Setting" , filters = {"loan":self.loan_product,
-        "docstatus": 1})
-        fund_setting_loan = frappe.get_value("Fund Setting",fund_setting_name[0].name, "loan")
-        fund_setting_own_allowed = frappe.get_value("Fund Setting",fund_setting_name[0].name, "allowed__of_own_contribution")
-        fund_setting_company_allowed = frappe.get_value("Fund Setting",fund_setting_name[0].name, "allowed__of_company_contribution")
-        fund_contribution_name = frappe.get_list("Fund Contribution", filters={"fund_setting": fund_setting_name[0].name , "employee": self.applicant, "start_date": ["<=", self.posting_date],"docstatus": 1})
-        fund_contribution = frappe.get_doc("Fund Contribution",fund_contribution_name[0].name )
-        total_own_fund = 0
-        total_company_fund = 0
-        applied_own= 0
-        applied_company = 0
-        if fund_setting_own_allowed:
-            for i in fund_contribution.fund_contribution_entry:
-                if i.contribution_type == "Own":
-                    total_own_fund = total_own_fund + i.amount
-            applied_own = (total_own_fund * fund_setting_own_allowed ) / 100
 
-        if fund_setting_company_allowed:
-            for i in fund_contribution.fund_contribution_entry:
-                if i.contribution_type == "Company":
-                    total_company_fund = total_company_fund + i.amount
-            applied_company = (total_company_fund * fund_setting_company_allowed ) / 100
-
-        if self.loan_amount > (applied_own + applied_company):
-            frappe.throw("Loan amount can not exceed allowed percentage")
 
         
 

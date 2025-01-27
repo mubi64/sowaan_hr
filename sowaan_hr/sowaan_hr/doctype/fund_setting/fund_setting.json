@@ -13,6 +13,8 @@
   "column_break_zatb",
   "minimum_months_required",
   "on_confirmation",
+  "calculation_method",
+  "days",
   "section_break_ntti",
   "fund_component",
   "own_value",
@@ -23,6 +25,7 @@
   "company_dependent_components",
   "description",
   "withdrawal_settings_tab",
+  "fund_setting_loan_product",
   "loan",
   "allowed__of_own_contribution",
   "allowed__of_company_contribution"
@@ -142,12 +145,32 @@
    "fieldname": "on_confirmation",
    "fieldtype": "Check",
    "label": "On Confirmation"
+  },
+  {
+   "fieldname": "calculation_method",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Calculation Method",
+   "options": "Fixed Days\nWorking Days",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval: doc.calculation_method == \"Fixed Days\";",
+   "fieldname": "days",
+   "fieldtype": "Int",
+   "label": "Days"
+  },
+  {
+   "fieldname": "fund_setting_loan_product",
+   "fieldtype": "Table",
+   "label": "Fund Setting Loan Product",
+   "options": "Fund Setting Loan Product"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-01-22 17:45:18.087474",
+ "modified": "2025-01-27 11:15:26.712566",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Fund Setting",

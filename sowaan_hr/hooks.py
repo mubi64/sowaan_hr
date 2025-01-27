@@ -154,8 +154,6 @@ doc_events = {
 	"Salary Slip":{
 		# "before_save": "sowaan_hr.sowaan_hr.doctype.arrears_process.arrears_process.add_arrears_to_earnings",
 		"before_save": "sowaan_hr.sowaan_hr.events.Salary_slip.fund_management_and_negative_salary",
-	
-		"before_save": "sowaan_hr.sowaan_hr.events.Salary_slip.fund_management_and_negative_salary",
         "after_insert": "sowaan_hr.sowaan_hr.events.Salary_slip.salary_slip_after_submit"
 	},
     "Loan Application":{

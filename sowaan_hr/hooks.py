@@ -133,6 +133,8 @@ doctype_js = {"Salary Slip" : "sowaan_hr/api/salary_slip.js" , "Employee Checkin
 override_doctype_class = {
 	"Payment Entry": "sowaan_hr.overrides.employee_payment_entry.EmployeePaymentEntry",
     "Salary Slip": "sowaan_hr.overrides.employee_salary_slip.EmployeeSalarySlip",
+    
+ "Payroll Entry": "sowaan_hr.overrides.override_payment_entry.OverridePayrollEntry",
     "Additional Salary": "sowaan_hr.overrides.employee_additional_salary.EmployeeAdditionalSalary"
 }
 
@@ -150,7 +152,8 @@ override_doctype_class = {
 
 doc_events = {
 	"Salary Slip":{
-		"before_save": "sowaan_hr.sowaan_hr.doctype.arrears_process.arrears_process.add_arrears_to_earnings",
+		# "before_save": "sowaan_hr.sowaan_hr.doctype.arrears_process.arrears_process.add_arrears_to_earnings",
+		"before_save": "sowaan_hr.sowaan_hr.events.Salary_slip.fund_management_and_negative_salary",
 	
 		"before_save": "sowaan_hr.sowaan_hr.events.Salary_slip.fund_management_and_negative_salary",
         "after_insert": "sowaan_hr.sowaan_hr.events.Salary_slip.salary_slip_after_submit"

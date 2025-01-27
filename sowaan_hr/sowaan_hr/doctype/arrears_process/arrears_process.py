@@ -1,6 +1,7 @@
 # Copyright (c) 2024, Sowaan and contributors
 # For license information, please see license.txt
 
+from pydoc import doc
 import frappe
 from frappe.model.document import Document
 
@@ -195,66 +196,84 @@ class ArrearsProcess(Document):
 				new_row.amount = arrears_basic
 	
 
-def add_arrears_to_earnings(doc, method):
-	# pass
-	start_date = doc.start_date
-	end_date = doc.end_date
-	# basic_arrear = 0
+# def add_arrears_to_earnings(doc, method):
+# 	# print('hamara hai')
+# 	# pass
+# 	start_date = doc.start_date
+# 	end_date = doc.end_date
+# 	# basic_arrear = 0
 
-	# arrear_process_details = frappe.get_all(
-	# 	'Arrear Process Detail',
-	# 	filters={
-	# 		'employee': doc.employee,
-	# 	}, fields=['amount'])
+# 	# arrear_process_details = frappe.get_all(
+# 	# 	'Arrear Process Detail',
+# 	# 	filters={
+# 	# 		'employee': doc.employee,
+# 	# 	}, fields=['amount'])
 
 
-	arrears_process = frappe.get_all(
-		'Employee Arrears',
-		filters=[
-			['from_date', '>=', start_date],
-			['from_date', '<', end_date],
-			['employee', '=', doc.employee]
-		])
+# 	arrears_process = frappe.get_all(
+# 		'Employee Arrears',
+# 		filters=[
+# 			['from_date', '>=', start_date],
+# 			['from_date', '<', end_date],
+# 			['employee', '=', doc.employee]
+# 		])
 
-	if arrears_process:
-		arr_process = frappe.get_doc('Employee Arrears', arrears_process[0].name)
-		er_amount = 0
-		for arr_earning in arr_process.e_a_earnings:
-			er_amount = er_amount + arr_earning.amount
+# 	if arrears_process:
+# 		arr_process = frappe.get_doc('Employee Arrears', arrears_process[0].name)
+# 		# inc_amt = arr_process.total_earning
+# 		er_amount = 0
+# 		for arr_earning in arr_process.e_a_earnings:
+# 			er_amount = er_amount + arr_earning.amount
 
-			earning_row_exists = False
-			for row in doc.earnings:
-				if row.salary_component == arr_process.earning_component:
-					row.amount = er_amount
-					# print(row.salary_component, arr_process.earning_component, row.amount, er_amount,  "arr_process.earnings \n\n\n\n")
-					earning_row_exists = True
-					break
-			if not earning_row_exists:
-				doc.append("earnings", {
-					"salary_component": arr_process.earning_component,
-					"amount": er_amount
-				})
+# 			earning_row_exists = False
+# 			for row in doc.earnings:
+# 				if row.salary_component == arr_process.earning_component:
+# 					row.amount = er_amount
+# 					# print(row.salary_component, arr_process.earning_component, row.amount, er_amount,  "arr_process.earnings \n\n\n\n")
+# 					earning_row_exists = True
+# 					break
+# 			if not earning_row_exists:
+# 				# print(arr_process.earning_component, er_amount ,'\n\n\n\n')
+# 				doc.append("earnings", {
+# 					"salary_component": arr_process.earning_component,
+# 					"amount": er_amount
+# 				})
+# 				# frappe.msgprint(str(arr_process.earning_component ))
 		
-		for arr_deduction in arr_process.e_a_deductions:
-			if arr_deduction.amount > 0:
-				doc.append("deductions", {
-					"salary_component": arr_deduction.salary_component,
-					"amount": arr_deduction.amount
-				})
-	# if arrear_process_details and arrears_process:
-	# 	basic_arrear = arrear_process_details[0].amount
-	# 	salary_component = arrears_process[0].salary_component
-		
-		
-		# basic_arrears_row_exists = False
-		# for row in doc.earnings:
-		# 	if row.salary_component == salary_component:
-		# 		row.amount = basic_arrear
-		# 		basic_arrears_row_exists = True
-		# 		break
+# 		for arr_deduction in arr_process.e_a_deductions:
+# 			if arr_deduction.amount > 0:
+# 				doc.append("deductions", {
+# 					"salary_component": arr_deduction.salary_component,
+# 					"amount": arr_deduction.amount
+# 				})
 
-	# 	if not basic_arrears_row_exists:
-	# 		doc.append("earnings", {
-	# 			"salary_component": salary_component,
-	# 			"amount": basic_arrear
-	# 		})
+# 		# doc.gross_pay = doc.gross_pay + er_amount
+# 		# doc.net_pay = doc.net_pay + er_amount
+# 		# doc.rounded_total = round(doc.rounded_total + er_amount)
+
+
+# 	# doc.calculate_net_pay()
+# 	# doc.compute_year_to_date()
+# 	# doc.compute_month_to_date()
+# 	# doc.compute_component_wise_year_to_date()
+
+
+
+
+# 	# if arrear_process_details and arrears_process:
+# 	# 	basic_arrear = arrear_process_details[0].amount
+# 	# 	salary_component = arrears_process[0].salary_component
+		
+		
+# 		# basic_arrears_row_exists = False
+# 		# for row in doc.earnings:
+# 		# 	if row.salary_component == salary_component:
+# 		# 		row.amount = basic_arrear
+# 		# 		basic_arrears_row_exists = True
+# 		# 		break
+
+# 	# 	if not basic_arrears_row_exists:
+# 	# 		doc.append("earnings", {
+# 	# 			"salary_component": salary_component,
+# 	# 			"amount": basic_arrear
+# 	# 		})

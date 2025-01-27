@@ -1,0 +1,127 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-01-24 14:33:52.487270",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "payroll_settings_tab",
+  "section_break_kprp",
+  "calculation_criteria",
+  "days",
+  "attendance_settings_tab",
+  "late_section_section",
+  "late_exemptions_applicable",
+  "late_exemptions",
+  "early_section_section",
+  "early_exemptions_applicable",
+  "early_exemptions",
+  "half_day_section_section",
+  "half_day_exemptions_applicable",
+  "half_day_exemptions"
+ ],
+ "fields": [
+  {
+   "fieldname": "attendance_settings_tab",
+   "fieldtype": "Tab Break",
+   "label": "Attendance Settings"
+  },
+  {
+   "fieldname": "late_section_section",
+   "fieldtype": "Section Break",
+   "label": "Late Section"
+  },
+  {
+   "fieldname": "early_section_section",
+   "fieldtype": "Section Break",
+   "label": "Early Section"
+  },
+  {
+   "fieldname": "half_day_section_section",
+   "fieldtype": "Section Break",
+   "label": "Half Day Section"
+  },
+  {
+   "default": "Number of Days in a month",
+   "fieldname": "calculation_criteria",
+   "fieldtype": "Select",
+   "label": "Calculation Criteria ",
+   "options": "Number of Days in a month\nFix Days"
+  },
+  {
+   "depends_on": "eval: doc.calculation_criteria == 'Fix Days';",
+   "fieldname": "days",
+   "fieldtype": "Select",
+   "label": "Days",
+   "options": "\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31"
+  },
+  {
+   "fieldname": "section_break_kprp",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval: doc.late_exemptions_applicable == true;",
+   "fieldname": "late_exemptions",
+   "fieldtype": "Int",
+   "label": "Late Exemptions"
+  },
+  {
+   "depends_on": "eval: doc.early_exemptions_applicable == true;",
+   "fieldname": "early_exemptions",
+   "fieldtype": "Int",
+   "label": "Early Exemptions"
+  },
+  {
+   "depends_on": "eval: doc.half_day_exemptions_applicable == true;",
+   "fieldname": "half_day_exemptions",
+   "fieldtype": "Int",
+   "label": "Half Day Exemptions"
+  },
+  {
+   "fieldname": "payroll_settings_tab",
+   "fieldtype": "Tab Break",
+   "label": "Payroll Settings"
+  },
+  {
+   "default": "0",
+   "fieldname": "late_exemptions_applicable",
+   "fieldtype": "Check",
+   "label": "Late Exemptions Applicable?"
+  },
+  {
+   "default": "0",
+   "fieldname": "early_exemptions_applicable",
+   "fieldtype": "Check",
+   "label": "Early Exemptions Applicable?"
+  },
+  {
+   "default": "0",
+   "fieldname": "half_day_exemptions_applicable",
+   "fieldtype": "Check",
+   "label": "Half Day Exemptions Applicable?"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2025-01-25 13:10:56.249707",
+ "modified_by": "Administrator",
+ "module": "Sowaan Hr",
+ "name": "Sowaan HR Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

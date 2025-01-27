@@ -3,6 +3,7 @@
 
 frappe.ui.form.on("Arrears Process", {
     refresh(frm) {
+        console.log('hello');
         if (frm.doc.a_p_earnings.length === 0 && frm.doc.a_p_deductions.length === 0) {
             frappe.call({
                 method: "frappe.client.get",

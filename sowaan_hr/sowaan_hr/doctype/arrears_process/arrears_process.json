@@ -15,6 +15,7 @@
   "from_date",
   "to_date",
   "department",
+  "for_new_employees",
   "section_break_tacg",
   "arrear_process_detail",
   "amended_from",
@@ -127,12 +128,18 @@
    "label": "Employee Increment",
    "options": "Employee Increment",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "for_new_employees",
+   "fieldtype": "Check",
+   "label": "For New Employees"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-01-04 15:30:44.404817",
+ "modified": "2025-01-27 14:00:46.412180",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Arrears Process",

@@ -6,6 +6,7 @@ from frappe.model.document import Document
 
 
 class FundContribution(Document):
+
     def before_submit(self):
         if self.opening_own_balance:
             self.append("fund_contribution_entry", {

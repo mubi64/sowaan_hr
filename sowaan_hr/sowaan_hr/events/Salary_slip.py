@@ -66,24 +66,24 @@ def fund_management_and_negative_salary(self, method):
                 row1 = {"salary_component": fund_setting.fund_component , "amount" : own_fund_value, "year_to_date" : own_fund_value }
                 self.append("deductions", row1)
                 
-                found_own_entry = False
+                # found_own_entry = False
                 for row in contribution_doc.fund_contribution_entry:
                     if row.contribution_type == "Own" and row.salary_slip == self.name:
                         # row.amount = fund_setting.own_value  # Update the amount
                         frappe.db.set_value("Fund Contribution Entry", row.name, "amount", own_fund_value)
-                        found_own_entry = True
+                        # found_own_entry = True
                         break
 
 
-                if not found_own_entry:
+                # if not found_own_entry:
 
-                    contribution_doc.append("fund_contribution_entry", {
-                        "contribution_type": "Own",
-                        "amount": own_fund_value,
-                        "date": self.posting_date,
-                        "salary_slip": self.name
-                    })
-                    contribution_doc.save()
+                #     contribution_doc.append("fund_contribution_entry", {
+                #         "contribution_type": "Own",
+                #         "amount": own_fund_value,
+                #         "date": self.posting_date,
+                #         "salary_slip": self.name
+                #     })
+                #     contribution_doc.save()
 
 
             if fund_setting.company_fund_component and fund_setting.company_value:
@@ -94,21 +94,21 @@ def fund_management_and_negative_salary(self, method):
                 row2 = {"salary_component": fund_setting.company_fund_component , "amount" : company_fund_value, "year_to_date" : company_fund_value }
                 self.append("earnings", row2)
                 
-                found_company_entry = False
+                # found_company_entry = False
                 for row in contribution_doc.fund_contribution_entry:
                     if row.contribution_type == "Company" and row.salary_slip == self.name:
                         # row.amount = fund_setting.company_value
                         frappe.db.set_value("Fund Contribution Entry", row.name, "amount", company_fund_value)
-                        found_company_entry = True
+                        # found_company_entry = True
                         break
-                if not found_company_entry:
-                    contribution_doc.append("fund_contribution_entry", {
-                        "contribution_type": "Company",
-                        "amount": company_fund_value,
-                        "date": self.posting_date,
-                        "salary_slip": self.name
-                    })
-                    contribution_doc.save()
+                # if not found_company_entry:
+                #     contribution_doc.append("fund_contribution_entry", {
+                #         "contribution_type": "Company",
+                #         "amount": company_fund_value,
+                #         "date": self.posting_date,
+                #         "salary_slip": self.name
+                #     })
+                #     contribution_doc.save()
 
 
 
@@ -142,24 +142,24 @@ def fund_management_and_negative_salary(self, method):
                     })
                    
 
-                    found_own_entry = False
+                    # found_own_entry = False
                     for row in contribution_doc.fund_contribution_entry:
                         if row.contribution_type == "Own" and row.salary_slip == self.name:
                             # row.amount = total_fund_amount11
                             frappe.db.set_value("Fund Contribution Entry", row.name, "amount", total_fund_amount11)
-                            found_own_entry = True
+                            # found_own_entry = True
                             break
 
 
-                    if not found_own_entry:
-                        # contribution_doc.fund_contribution_entry = []
-                        contribution_doc.append("fund_contribution_entry", {
-                            "contribution_type": "Own",
-                            "amount": total_fund_amount11,
-                            "date": self.posting_date,
-                            "salary_slip": self.name
-                        })
-                        contribution_doc.save()
+                    # if not found_own_entry:
+                    #     # contribution_doc.fund_contribution_entry = []
+                    #     contribution_doc.append("fund_contribution_entry", {
+                    #         "contribution_type": "Own",
+                    #         "amount": total_fund_amount11,
+                    #         "date": self.posting_date,
+                    #         "salary_slip": self.name
+                    #     })
+                    #     contribution_doc.save()
 
 
 
@@ -186,22 +186,22 @@ def fund_management_and_negative_salary(self, method):
                         "year_to_date": total_fund_amount
                     })
                   
-                    found_company_entry = False
+                    # found_company_entry = False
                     for row in contribution_doc.fund_contribution_entry:
                         if row.contribution_type == "Company" and row.salary_slip == self.name:
                             # row.amount = total_fund_amount
                             frappe.db.set_value("Fund Contribution Entry", row.name, "amount", total_fund_amount)
-                            found_company_entry = True
+                            # found_company_entry = True
                             break
-                    if not found_company_entry:
-                        # contribution_doc.fund_contribution_entry = []
-                        contribution_doc.append("fund_contribution_entry", {
-                            "contribution_type": "Company",
-                            "amount": total_fund_amount,
-                            "date": self.posting_date,
-                            "salary_slip": self.name
-                        })
-                        contribution_doc.save()
+                    # if not found_company_entry:
+                    #     # contribution_doc.fund_contribution_entry = []
+                    #     contribution_doc.append("fund_contribution_entry", {
+                    #         "contribution_type": "Company",
+                    #         "amount": total_fund_amount,
+                    #         "date": self.posting_date,
+                    #         "salary_slip": self.name
+                    #     })
+                    #     contribution_doc.save()
 
 
 
@@ -255,20 +255,20 @@ def fund_management_and_negative_salary(self, method):
                         "year_to_date": total_fund_amount1
                     })
         
-                    found_own_entry = False
+                    # found_own_entry = False
                     for row in contribution_doc.fund_contribution_entry:
                         if row.contribution_type == "Own" and row.salary_slip == self.name:
                             frappe.db.set_value("Fund Contribution Entry", row.name, "amount", total_fund_amount1)
-                            found_own_entry = True
+                            # found_own_entry = True
                             break
-                    if not found_own_entry:
-                        contribution_doc.append("fund_contribution_entry", {
-                            "contribution_type": "Own",
-                            "amount": total_fund_amount1,
-                            "date": self.posting_date,
-                            "salary_slip": self.name
-                        })
-                        contribution_doc.save()
+                    # if not found_own_entry:
+                    #     contribution_doc.append("fund_contribution_entry", {
+                    #         "contribution_type": "Own",
+                    #         "amount": total_fund_amount1,
+                    #         "date": self.posting_date,
+                    #         "salary_slip": self.name
+                    #     })
+                    #     contribution_doc.save()
 
 
 
@@ -302,16 +302,16 @@ def fund_management_and_negative_salary(self, method):
                         if row.contribution_type == "Company" and row.salary_slip == self.name:
                             # row.amount = total_fund_amount2
                             frappe.db.set_value("Fund Contribution Entry", row.name, "amount", total_fund_amount2)
-                            found_company_entry = True
+                            # found_company_entry = True
                             break
-                    if not found_company_entry:
-                        contribution_doc.append("fund_contribution_entry", {
-                            "contribution_type": "Company",
-                            "amount": total_fund_amount2,
-                            "date": self.posting_date,
-                            "salary_slip": self.name
-                        })
-                        contribution_doc.save()
+                    # if not found_company_entry:
+                    #     contribution_doc.append("fund_contribution_entry", {
+                    #         "contribution_type": "Company",
+                    #         "amount": total_fund_amount2,
+                    #         "date": self.posting_date,
+                    #         "salary_slip": self.name
+                    #     })
+                    #     contribution_doc.save()
         
     
     self.custom_check_adjustment = 0
@@ -323,6 +323,76 @@ def fund_management_and_negative_salary(self, method):
 
 
 
-        
+def salary_slip_after_submit(self,method):
+    print("Hello\n\n\n\n\n")
+    fund_contribution = frappe.get_list(
+            "Fund Contribution",
+            filters={
+                "employee": self.employee,
+                "docstatus": 1
+            },
+            fields=["*"],
+            
+        )
+    if fund_contribution:
+        own_fund_value = 0
+        company_fund_value = 0
+        contribution_doc = frappe.get_doc("Fund Contribution", fund_contribution[0])
+        fund_setting_name = contribution_doc.fund_setting
+        fund_setting = frappe.get_doc("Fund Setting", fund_setting_name)
+        own_component_name = fund_setting.fund_component
+        company_component_name = fund_setting.company_fund_component
+
+        for row in self.deductions:
+            if row.salary_component == own_component_name:
+                own_fund_value = row.amount
+                break
+        for row in self.earnings:
+            if row.salary_component == company_component_name:
+                company_fund_value = row.amount
+                break
+
+
+
+        found_own_entry = False
+        for row in contribution_doc.fund_contribution_entry:
+            if row.contribution_type == "Own" and row.salary_slip == self.name:
+                # row.amount = fund_setting.own_value  # Update the amount
+                frappe.db.set_value("Fund Contribution Entry", row.name, "amount", own_fund_value)
+                found_own_entry = True
+                break
+
+
+        if not found_own_entry:
+
+            contribution_doc.append("fund_contribution_entry", {
+                "contribution_type": "Own",
+                "amount": own_fund_value,
+                "date": self.posting_date,
+                "salary_slip": self.name
+            })
+            contribution_doc.save()
+
+
+
+        found_company_entry = False
+        for row in contribution_doc.fund_contribution_entry:
+            if row.contribution_type == "Company" and row.salary_slip == self.name:
+                frappe.db.set_value("Fund Contribution Entry", row.name, "amount", company_fund_value)
+                found_company_entry = True
+                break
+        if not found_company_entry:
+            contribution_doc.append("fund_contribution_entry", {
+                "contribution_type": "Company",
+                "amount": company_fund_value,
+                "date": self.posting_date,
+                "salary_slip": self.name
+            })
+            contribution_doc.save()
+
+
+
+
+
 
 

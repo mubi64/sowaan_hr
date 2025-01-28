@@ -113,11 +113,13 @@ class EmployeeIncrement(Document):
 
 	@frappe.whitelist()
 	def get_structure_asignment(self):
+		
 		get_last_salary_structure = frappe.get_last_doc("Salary Structure Assignment", filters=[
 			["employee", "=", self.employee],
 			["from_date", "<=", self.increment_date],
 			["docstatus", "=", 1]
-		])
+		], order_by="from_date desc")
+		# print(get_last_salary_structure.base)
 
 		return get_last_salary_structure
 

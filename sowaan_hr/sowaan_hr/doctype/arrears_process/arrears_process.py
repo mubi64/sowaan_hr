@@ -11,6 +11,7 @@ class ArrearsProcess(Document):
 		self.validate_arrears_process()
 
 	def validate_arrears_process(self):
+		print("validate_arrears_process")
 		filters = [
 			["from_date", ">", self.from_date],
 			["from_date", "<=", self.to_date],

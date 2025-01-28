@@ -6,7 +6,8 @@ from frappe.model.document import Document
 
 
 class EmployeeArrears(Document):
-	def before_insert(self):
+	# pass
+	def before_submit(self):
 		self.create_additional_salary()
 
 	def on_cancel(self):
@@ -15,6 +16,7 @@ class EmployeeArrears(Document):
 
 
 	def create_additional_salary(self):
+		# print(self.total_earning, '\n\n\n\n\n\n\n\n')
 
 
 		additional_salary = frappe.get_doc({

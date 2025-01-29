@@ -393,6 +393,21 @@ def salary_slip_after_submit(self,method):
 
 
 
+def set_fix_days(self,method):
+    calculation_criteria = frappe.db.get_single_value('Sowaan HR Settings', 'calculation_criteria')
+    if calculation_criteria == "Fix Days":
+        self.total_working_days = int(frappe.db.get_single_value('Sowaan HR Settings', 'days'))
+        
+
+        
+
+
+
+
+
+
+
+
 
 
 

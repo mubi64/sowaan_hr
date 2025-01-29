@@ -11,14 +11,17 @@
   "days",
   "attendance_settings_tab",
   "late_section_section",
-  "late_exemptions_applicable",
+  "is_late_deduction_applicable",
   "late_exemptions",
+  "late_salary_component",
   "early_section_section",
-  "early_exemptions_applicable",
+  "is_early_deduction_applicable",
   "early_exemptions",
+  "early_salary_component",
   "half_day_section_section",
-  "half_day_exemptions_applicable",
-  "half_day_exemptions"
+  "is_half_day_deduction_applicable",
+  "half_day_exemptions",
+  "half_day_salary_component"
  ],
  "fields": [
   {
@@ -60,19 +63,19 @@
    "fieldtype": "Section Break"
   },
   {
-   "depends_on": "eval: doc.late_exemptions_applicable == true;",
+   "depends_on": "eval: doc.is_late_deduction_applicable == true;",
    "fieldname": "late_exemptions",
    "fieldtype": "Int",
    "label": "Late Exemptions"
   },
   {
-   "depends_on": "eval: doc.early_exemptions_applicable == true;",
+   "depends_on": "eval: doc.is_early_deduction_applicable == true;",
    "fieldname": "early_exemptions",
    "fieldtype": "Int",
    "label": "Early Exemptions"
   },
   {
-   "depends_on": "eval: doc.half_day_exemptions_applicable == true;",
+   "depends_on": "eval: doc.is_half_day_deduction_applicable == true;",
    "fieldname": "half_day_exemptions",
    "fieldtype": "Int",
    "label": "Half Day Exemptions"
@@ -83,28 +86,52 @@
    "label": "Payroll Settings"
   },
   {
-   "default": "0",
-   "fieldname": "late_exemptions_applicable",
-   "fieldtype": "Check",
-   "label": "Late Exemptions Applicable?"
+   "fieldname": "late_salary_component",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Late Salary Component",
+   "options": "Salary Component",
+   "reqd": 1
+  },
+  {
+   "fieldname": "early_salary_component",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Early Salary Component",
+   "options": "Salary Component",
+   "reqd": 1
+  },
+  {
+   "fieldname": "half_day_salary_component",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Half Day Salary Component",
+   "options": "Salary Component",
+   "reqd": 1
   },
   {
    "default": "0",
-   "fieldname": "early_exemptions_applicable",
+   "fieldname": "is_late_deduction_applicable",
    "fieldtype": "Check",
-   "label": "Early Exemptions Applicable?"
+   "label": "Is Late Deduction Applicable?"
   },
   {
    "default": "0",
-   "fieldname": "half_day_exemptions_applicable",
+   "fieldname": "is_early_deduction_applicable",
    "fieldtype": "Check",
-   "label": "Half Day Exemptions Applicable?"
+   "label": "Is Early Deduction Applicable?"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_half_day_deduction_applicable",
+   "fieldtype": "Check",
+   "label": "Is Half Day Deduction Applicable?"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-01-25 13:10:56.249707",
+ "modified": "2025-01-29 16:08:34.365531",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Sowaan HR Settings",

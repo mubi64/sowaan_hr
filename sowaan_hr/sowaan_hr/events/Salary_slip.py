@@ -19,7 +19,8 @@ def fund_management_and_negative_salary(self, method):
                 "docstatus": 1
             },
             fields=["*"],
-            
+
+
         )
     if fund_contribution:
         days = 0
@@ -76,16 +77,6 @@ def fund_management_and_negative_salary(self, method):
                         break
 
 
-                # if not found_own_entry:
-
-                #     contribution_doc.append("fund_contribution_entry", {
-                #         "contribution_type": "Own",
-                #         "amount": own_fund_value,
-                #         "date": self.posting_date,
-                #         "salary_slip": self.name
-                #     })
-                #     contribution_doc.save()
-
 
             if fund_setting.company_fund_component and fund_setting.company_value:
                 self.earnings = [
@@ -102,14 +93,7 @@ def fund_management_and_negative_salary(self, method):
                         frappe.db.set_value("Fund Contribution Entry", row.name, "amount", company_fund_value)
                         # found_company_entry = True
                         break
-                # if not found_company_entry:
-                #     contribution_doc.append("fund_contribution_entry", {
-                #         "contribution_type": "Company",
-                #         "amount": company_fund_value,
-                #         "date": self.posting_date,
-                #         "salary_slip": self.name
-                #     })
-                #     contribution_doc.save()
+               
 
 
 
@@ -122,9 +106,24 @@ def fund_management_and_negative_salary(self, method):
             if fund_setting.dependent_components:
                 total_fund_amount11 = 0
 
+                employee_arrears = frappe.get_list("Employee Arrears", filters={"employee": self.employee, "from_date":self.start_date,"to_date":self.end_date, "docstatus": 1}, fields=["*"])
+                if employee_arrears:
+                    employee_arrears_doc = frappe.get_doc("Employee Arrears", employee_arrears[0])
+                    earnings_dict_arrears = {earning.salary_component: earning.amount for earning in employee_arrears_doc.e_a_earnings}
+
+
+
                 for component in fund_setting.dependent_components:
                     if component.component in earnings_dict:
-                        earnings_amount = earnings_dict[component.component]
+                        earnings_amount = 0
+
+                        if component.component in earnings_dict:
+                            earnings_amount += earnings_dict[component.component]
+
+                        # Check if component exists in earnings_dict_arrears and add its amount
+                        if employee_arrears and component.component in earnings_dict_arrears:
+                            earnings_amount += earnings_dict_arrears[component.component]
+                        # earnings_amount = earnings_dict[component.component]
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                         total_fund_amount11 = total_fund_amount11 + calculated_amount
                 if days:
@@ -152,16 +151,6 @@ def fund_management_and_negative_salary(self, method):
                             break
 
 
-                    # if not found_own_entry:
-                    #     # contribution_doc.fund_contribution_entry = []
-                    #     contribution_doc.append("fund_contribution_entry", {
-                    #         "contribution_type": "Own",
-                    #         "amount": total_fund_amount11,
-                    #         "date": self.posting_date,
-                    #         "salary_slip": self.name
-                    #     })
-                    #     contribution_doc.save()
-
 
 
             if fund_setting.company_dependent_components:
@@ -169,7 +158,14 @@ def fund_management_and_negative_salary(self, method):
 
                 for component in fund_setting.company_dependent_components:
                     if component.component in earnings_dict:
-                        earnings_amount = earnings_dict[component.component]
+                        earnings_amount = 0
+                        if component.component in earnings_dict:
+                            earnings_amount += earnings_dict[component.component]
+
+                        # Check if component exists in earnings_dict_arrears and add its amount
+                        if employee_arrears and component.component in earnings_dict_arrears:
+                            earnings_amount += earnings_dict_arrears[component.component]
+                        # earnings_amount = earnings_dict[component.component]
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                         total_fund_amount = total_fund_amount + calculated_amount
                 if days:
@@ -194,18 +190,7 @@ def fund_management_and_negative_salary(self, method):
                             frappe.db.set_value("Fund Contribution Entry", row.name, "amount", total_fund_amount)
                             # found_company_entry = True
                             break
-                    # if not found_company_entry:
-                    #     # contribution_doc.fund_contribution_entry = []
-                    #     contribution_doc.append("fund_contribution_entry", {
-                    #         "contribution_type": "Company",
-                    #         "amount": total_fund_amount,
-                    #         "date": self.posting_date,
-                    #         "salary_slip": self.name
-                    #     })
-                    #     contribution_doc.save()
-
-
-
+ 
             else:
                 self.earnings = [
                     row for row in self.earnings
@@ -215,61 +200,102 @@ def fund_management_and_negative_salary(self, method):
 
 
 
+        
         elif fund_setting.calculation_type == "% of Rate":
+            # print("working")
+            employee_increment = frappe.get_list(
+                "Employee Increment",
+                filters={
+                    "employee": self.employee,
+                    "increment_date": ["between", [self.start_date, self.end_date]],
+                    "docstatus": 1
+                },
+                fields=["name", "increment_date"]
+            )
+
+            if employee_increment:
+                increment_date = frappe.get_value("Employee Increment", employee_increment[0].name, "increment_date")
+            else:
+                increment_date = None
+
             salary_structure = frappe.get_doc("Salary Structure", self.salary_structure)
             earnings_dict1 = {
                 earning.salary_component: earning.formula
                 for earning in salary_structure.get("earnings")
             }
-            salary_structure_assignment = frappe.db.sql("""
+
+            # Fetch base salary before increment
+            previous_salary_structure_assignment = frappe.db.sql("""
+                SELECT base 
+                FROM `tabSalary Structure Assignment`
+                WHERE salary_structure = %s
+                AND from_date < %s
+                AND employee = %s
+                AND docstatus = 1
+                ORDER BY from_date DESC
+                LIMIT 1
+            """, (self.salary_structure, increment_date if increment_date else self.start_date, self.employee), as_dict=True)
+            
+            previous_base_value = previous_salary_structure_assignment[0].base if previous_salary_structure_assignment else 0
+
+            # Fetch base salary after increment
+            latest_salary_structure_assignment = frappe.db.sql("""
                 SELECT base 
                 FROM `tabSalary Structure Assignment`
                 WHERE salary_structure = %s
                 AND from_date <= %s
                 AND employee = %s
+                AND docstatus = 1
                 ORDER BY from_date DESC
                 LIMIT 1
             """, (self.salary_structure, self.end_date, self.employee), as_dict=True)
-            base_value = salary_structure_assignment[0].base if salary_structure_assignment else 0
+            
+            latest_base_value = latest_salary_structure_assignment[0].base if latest_salary_structure_assignment else previous_base_value
+
             total_fund_amount1 = 0
 
             if fund_setting.dependent_components:
+                # Part 1: Calculation before increment date
+                if increment_date:
+                    days_before_increment = frappe.utils.date_diff(increment_date, self.start_date)
+                    for component in fund_setting.dependent_components:
+                        if component.component in earnings_dict1:
+                            formula = earnings_dict1[component.component]
+                            # print(previous_base_value)
+                            earnings_amount = frappe.safe_eval(formula, {}, {"custom_base": previous_base_value})
+                            
+                            calculated_amount = round((earnings_amount * component.percent) / 100, 2)
+                            total_fund_amount1 += (calculated_amount / w_days) * days_before_increment
+
+                # Part 2: Calculation after increment date
+                days_after_increment = frappe.utils.date_diff(self.end_date, increment_date)+1 if increment_date else w_days
                 for component in fund_setting.dependent_components:
-                    
                     if component.component in earnings_dict1:
                         formula = earnings_dict1[component.component]
-                        earnings_amount = frappe.safe_eval(formula, {}, {"custom_base": base_value})
+                        # print(latest_base_value)
+                        earnings_amount = frappe.safe_eval(formula, {}, {"custom_base": latest_base_value})
                         
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
-                        total_fund_amount1 = total_fund_amount1 + calculated_amount
-                        
-                if days:
-                    total_fund_amount1 = (total_fund_amount1 / w_days) * days
-                self.deductions = [
-                    row for row in self.deductions
-                    if row.salary_component not in [fund_setting.fund_component]
-                ]   
-                if total_fund_amount1 > 0:
-                    self.append("deductions", {
-                        "salary_component": fund_setting.fund_component,
-                        "amount": total_fund_amount1,
-                        "year_to_date": total_fund_amount1
-                    })
-        
-                    # found_own_entry = False
-                    for row in contribution_doc.fund_contribution_entry:
-                        if row.contribution_type == "Own" and row.salary_slip == self.name:
-                            frappe.db.set_value("Fund Contribution Entry", row.name, "amount", total_fund_amount1)
-                            # found_own_entry = True
-                            break
-                    # if not found_own_entry:
-                    #     contribution_doc.append("fund_contribution_entry", {
-                    #         "contribution_type": "Own",
-                    #         "amount": total_fund_amount1,
-                    #         "date": self.posting_date,
-                    #         "salary_slip": self.name
-                    #     })
-                    #     contribution_doc.save()
+                        total_fund_amount1 += (calculated_amount / w_days) * days_after_increment
+
+            # Deduction logic remains the same
+            self.deductions = [
+                row for row in self.deductions
+                if row.salary_component not in [fund_setting.fund_component]
+            ]   
+            if total_fund_amount1 > 0:
+                self.append("deductions", {
+                    "salary_component": fund_setting.fund_component,
+                    "amount": total_fund_amount1,
+                    "year_to_date": total_fund_amount1
+                })
+
+                # Update Fund Contribution Entry
+                for row in contribution_doc.fund_contribution_entry:
+                    if row.contribution_type == "Own" and row.salary_slip == self.name:
+                        frappe.db.set_value("Fund Contribution Entry", row.name, "amount", total_fund_amount1)
+                        break
+
 
 
 
@@ -277,44 +303,47 @@ def fund_management_and_negative_salary(self, method):
 
 
             total_fund_amount2 = 0
+
             if fund_setting.company_dependent_components:
+                # Part 1: Calculation before increment date
+                if increment_date:
+                    days_before_increment = frappe.utils.date_diff(increment_date, self.start_date)
+                    for component in fund_setting.company_dependent_components:
+                        if component.component in earnings_dict1:
+                            formula = earnings_dict1[component.component]
+                            earnings_amount = frappe.safe_eval(formula, {}, {"custom_base": previous_base_value})
+                            calculated_amount = round((earnings_amount * component.percent) / 100, 2)
+                            total_fund_amount2 += (calculated_amount / w_days) * days_before_increment
+
+                # Part 2: Calculation after increment date
+                days_after_increment = frappe.utils.date_diff(self.end_date, increment_date) + 1 if increment_date else w_days
                 for component in fund_setting.company_dependent_components:
-                    
                     if component.component in earnings_dict1:
                         formula = earnings_dict1[component.component]
-                        earnings_amount = frappe.safe_eval(formula, {}, {"custom_base": base_value})
+                        earnings_amount = frappe.safe_eval(formula, {}, {"custom_base": latest_base_value})
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
-                        total_fund_amount2 = total_fund_amount2 + calculated_amount
-                if days:
-                    total_fund_amount2 = (total_fund_amount2 / w_days) * days
+                        total_fund_amount2 += (calculated_amount / w_days) * days_after_increment
+
+                # Removing previous earnings entry
                 self.earnings = [
                     row for row in self.earnings
                     if row.salary_component not in [fund_setting.company_fund_component]
                 ]
+
+                # Adding new earnings entry
                 if total_fund_amount2 > 0:
                     self.append("earnings", {
                         "salary_component": fund_setting.company_fund_component,
                         "amount": total_fund_amount2,
                         "year_to_date": total_fund_amount2
                     })
-        
-                    found_company_entry = False
+
+                    # Updating Fund Contribution Entry
                     for row in contribution_doc.fund_contribution_entry:
                         if row.contribution_type == "Company" and row.salary_slip == self.name:
-                            # row.amount = total_fund_amount2
                             frappe.db.set_value("Fund Contribution Entry", row.name, "amount", total_fund_amount2)
-                            # found_company_entry = True
                             break
-                    # if not found_company_entry:
-                    #     contribution_doc.append("fund_contribution_entry", {
-                    #         "contribution_type": "Company",
-                    #         "amount": total_fund_amount2,
-                    #         "date": self.posting_date,
-                    #         "salary_slip": self.name
-                    #     })
-                    #     contribution_doc.save()
-        
-    
+   
     self.custom_check_adjustment = 0
     self.calculate_net_pay()
     self.compute_year_to_date()
@@ -325,7 +354,7 @@ def fund_management_and_negative_salary(self, method):
 
 
 def salary_slip_after_submit(self,method):
-    print("Hello\n\n\n\n\n")
+    # print("Hello\n\n\n\n\n")
     fund_contribution = frappe.get_list(
             "Fund Contribution",
             filters={

@@ -11,7 +11,6 @@ from erpnext.accounts.doctype.accounting_dimension.accounting_dimension import (
 class OverridePayrollEntry(PayrollEntry):
     @frappe.whitelist()
     def make_bank_entry(self):
-        print("Loan payroll")
         self.check_permission("write")
         self.employee_based_payroll_payable_entries = {}
         employee_wise_accounting_enabled = frappe.db.get_single_value(
@@ -28,7 +27,8 @@ class OverridePayrollEntry(PayrollEntry):
                 employee_wise_loan_details[employee] = {
                     'earnings': 0,
                     'deductions': 0,
-                    'loan_amount': 0
+                    'loan_amount': 0,
+                    'loan_processed': False
                 }
             
             if salary_detail.parentfield == "earnings":
@@ -68,10 +68,16 @@ class OverridePayrollEntry(PayrollEntry):
                         employee_wise_loan_details[employee]['deductions'] += salary_detail.amount
                     else:
                         salary_slip_total -= salary_detail.amount
+                        
+            
 
-            # Track loan repayments separately
-            if hasattr(salary_detail, 'total_loan_repayment') and salary_detail.total_loan_repayment:
+            if (hasattr(salary_detail, 'total_loan_repayment') and 
+            salary_detail.total_loan_repayment and 
+            not employee_wise_loan_details[employee]['loan_processed']):
+
+
                 employee_wise_loan_details[employee]['loan_amount'] += salary_detail.total_loan_repayment
+                employee_wise_loan_details[employee]['loan_processed'] = True
                 if not employee_wise_accounting_enabled:
                     salary_slip_total -= salary_detail.total_loan_repayment
 

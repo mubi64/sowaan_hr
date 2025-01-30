@@ -5,7 +5,7 @@ from datetime import datetime
 
 
 def fund_management_and_negative_salary(self, method):
-    # print('hamara ni hai')
+    print('hamara ni hai')
     if self.custom_adjust_negative_salary == 1 and self.custom_check_adjustment == 1 and self.net_pay < 0 :
             create_salary_adjustment_for_negative_salary(self.name)
         
@@ -34,16 +34,24 @@ def fund_management_and_negative_salary(self, method):
             w_days = self.total_working_days
         start_date = frappe.utils.getdate(self.start_date)
         end_date = frappe.utils.getdate(self.end_date)
-        if fund_setting.on_confirmation == 1:
-            confirmation_date = frappe.get_value("Employee", self.employee, "final_confirmation_date")
-            confirmation_date = frappe.utils.getdate(confirmation_date)
-            if start_date <= confirmation_date <= end_date:
-                days = frappe.utils.date_diff(self.end_date, confirmation_date)+1
-                if confirmation_date.month == 2:
-                    if days == 29 or days == 28:
-                        days = 30
-                elif days == 31:
-                    days = 30
+
+        fc_start_date = contribution_doc.start_date
+        fc_start_date = frappe.utils.getdate(fc_start_date)
+        print(fc_start_date)
+
+        # if fund_setting.on_confirmation == 1:
+        #     confirmation_date = frappe.get_value("Employee", self.employee, "final_confirmation_date")
+        #     confirmation_date = frappe.utils.getdate(confirmation_date)
+        #     if start_date <= confirmation_date <= end_date:
+        #         days = frappe.utils.date_diff(self.end_date, confirmation_date)+1
+        #         if confirmation_date.month == 2:
+        #             if days == 29 or days == 28:
+        #                 days = 30
+        #         elif days == 31:
+        #             days = 30
+        if fc_start_date:
+            start_days = frappe.utils.date_diff(self.end_date, fc_start_date)+1
+            print(start_days)
                 
 
 
@@ -52,9 +60,9 @@ def fund_management_and_negative_salary(self, method):
 
 
         if fund_setting.calculation_type == "Fixed":
-            if days and fund_setting.own_value and fund_setting.company_value:
-                    own_fund_value = (fund_setting.own_value / w_days) * days
-                    company_fund_value = (fund_setting.company_value / w_days) * days
+            if start_days and fund_setting.own_value and fund_setting.company_value:
+                    own_fund_value = (fund_setting.own_value / w_days) * start_days
+                    company_fund_value = (fund_setting.company_value / w_days) * start_days
             else:
                 own_fund_value = fund_setting.own_value
                 company_fund_value = fund_setting.company_value
@@ -101,7 +109,7 @@ def fund_management_and_negative_salary(self, method):
 
         
         elif fund_setting.calculation_type == "% of Payment":
-
+            # print("Hello")
             earnings_dict = {earning.salary_component: earning.amount for earning in self.earnings}
             if fund_setting.dependent_components:
                 total_fund_amount11 = 0
@@ -126,8 +134,9 @@ def fund_management_and_negative_salary(self, method):
                         # earnings_amount = earnings_dict[component.component]
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                         total_fund_amount11 = total_fund_amount11 + calculated_amount
-                if days:
-                    total_fund_amount11 = (total_fund_amount11 / w_days) * days
+                if start_days:
+                    total_fund_amount11 = (total_fund_amount11 / w_days) * start_days
+                print(total_fund_amount11)
 
                 self.deductions = [
                     row for row in self.deductions
@@ -168,8 +177,9 @@ def fund_management_and_negative_salary(self, method):
                         # earnings_amount = earnings_dict[component.component]
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                         total_fund_amount = total_fund_amount + calculated_amount
-                if days:
-                    total_fund_amount = (total_fund_amount / w_days) * days
+                if start_days:
+                    total_fund_amount = (total_fund_amount / w_days) * start_days
+                print(total_fund_amount)
 
                 self.earnings = [
                     row for row in self.earnings
@@ -432,8 +442,28 @@ def set_fix_days(self,method):
 
 
 
+# def cancel_related_docs(self, method):
+#     if self.employee:
+#         fund_contribution = frappe.get_list(
+#             "Fund Contribution",
+#             filters={
+#                 "employee": self.employee,
+#                 "docstatus": 1
+#             },
+#             fields=["name"],
+#         )
 
-
+        # if fund_contribution:
+        #     contribution_doc = frappe.get_doc("Fund Contribution", fund_contribution[0].name)
+        #     updated_entries = [
+        #         row for row in contribution_doc.fund_contribution_entry
+        #         if row.salary_slip != self.name
+        #     ]
+            
+        #     # Update the fund contribution entries
+        #     contribution_doc.fund_contribution_entry = updated_entries
+        #     contribution_doc.save()
+        
 
 
 

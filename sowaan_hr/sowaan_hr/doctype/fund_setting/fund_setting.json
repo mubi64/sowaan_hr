@@ -11,8 +11,6 @@
   "fund_name",
   "calculation_type",
   "column_break_zatb",
-  "minimum_months_required",
-  "on_confirmation",
   "calculation_method",
   "days",
   "section_break_ntti",
@@ -56,7 +54,8 @@
    "fieldtype": "Link",
    "label": "Own Fund Component",
    "link_filters": "[]",
-   "options": "Salary Component"
+   "options": "Salary Component",
+   "reqd": 1
   },
   {
    "fieldname": "calculation_type",
@@ -69,19 +68,18 @@
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval: doc.calculation_type == \"Fixed\";",
    "fieldname": "own_value",
    "fieldtype": "Float",
-   "label": "Own Value"
+   "label": "Own Value",
+   "mandatory_depends_on": "eval: doc.calculation_type == \"Fixed\";"
   },
   {
+   "depends_on": "eval: doc.calculation_type == \"Fixed\";",
    "fieldname": "company_value",
    "fieldtype": "Float",
-   "label": "Company Value"
-  },
-  {
-   "fieldname": "minimum_months_required",
-   "fieldtype": "Int",
-   "label": "Minimum Months Required"
+   "label": "Company Value",
+   "mandatory_depends_on": "eval: doc.calculation_type == \"Fixed\";"
   },
   {
    "depends_on": "eval: doc.calculation_type != \"Fixed\"",
@@ -121,7 +119,8 @@
    "fieldtype": "Link",
    "label": "Company Fund Component",
    "link_filters": "[]",
-   "options": "Salary Component"
+   "options": "Salary Component",
+   "reqd": 1
   },
   {
    "depends_on": "eval: doc.calculation_type != \"Fixed\"",
@@ -141,24 +140,20 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "0",
-   "fieldname": "on_confirmation",
-   "fieldtype": "Check",
-   "label": "On Confirmation"
-  },
-  {
+   "depends_on": "eval: doc.calculation_type != \"Fixed\" && doc.calculation_type != \"\";",
    "fieldname": "calculation_method",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Calculation Method",
-   "options": "Fixed Days\nWorking Days",
+   "options": "\nFixed Days\nWorking Days",
    "reqd": 1
   },
   {
    "depends_on": "eval: doc.calculation_method == \"Fixed Days\";",
    "fieldname": "days",
    "fieldtype": "Int",
-   "label": "Days"
+   "label": "Days",
+   "mandatory_depends_on": "eval: doc.calculation_method == \"Fixed Days\";"
   },
   {
    "fieldname": "fund_setting_loan_product",
@@ -170,7 +165,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-01-27 11:15:26.712566",
+ "modified": "2025-01-30 20:10:40.962729",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Fund Setting",

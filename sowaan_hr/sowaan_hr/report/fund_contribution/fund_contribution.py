@@ -39,16 +39,16 @@ def get_data(filters):
         conditions.append("fc.employee = %s")
         params.append(filters.get("employee"))
     if filters.get("branch"):
-        conditions.append("fc.branch = %s")
+        conditions.append("emp.branch = %s")
         params.append(filters.get("branch"))
     if filters.get("department"):
-        conditions.append("fc.department = %s")
+        conditions.append("emp.department = %s")
         params.append(filters.get("department"))
     if filters.get("designation"):
-        conditions.append("fc.designation = %s")
+        conditions.append("emp.designation = %s")
         params.append(filters.get("designation"))
     if filters.get("company"):
-        conditions.append("fc.company = %s")
+        conditions.append("emp.company = %s")
         params.append(filters.get("company"))
 
     # Join conditions and form query string
@@ -135,6 +135,7 @@ def get_data(filters):
     ON 
         fc.employee = emp.name
     WHERE 
+        fc.docstatus = 1 AND
         {conditions_str}
     GROUP BY 
         fc.employee

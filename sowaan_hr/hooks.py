@@ -19,7 +19,8 @@ fixtures = [
 				(
 					"gps_location", "marked_gps", "map", "checkout_entry", "required_hours", "allow_to_complete_required_hours_during_the_whole_month",
                     "late_approved", "custom_shift_roaster", "custom_fraction_of_total_earnings" , "custom_adjust_negative_salary" ,
-					"custom_check_adjustment"
+					"custom_check_adjustment", "custom_is_half_day_fix", "custom_half_day_start_time", "custom_half_day_end_time",
+                    "custom_total_half_days", "custom_early_exit_minutes", "custom_late_entry_minutes"
 				)
 			]
 		]
@@ -161,7 +162,12 @@ doc_events = {
 		"before_save": "sowaan_hr.sowaan_hr.events.loan_application.loan_withdrawal"
 	},
     "Attendance":{
-		"before_insert": "sowaan_hr.sowaan_hr.events.Attendance.late_approval"
+		"before_insert": "sowaan_hr.sowaan_hr.events.Attendance.late_approval",
+        "validate": "sowaan_hr.sowaan_hr.events.Attendance.handle_half_day"
+        
+	},
+    "Shift Type":{
+		"validate": "sowaan_hr.sowaan_hr.events.shift_type.half_day_msg"
 	}
 }
 

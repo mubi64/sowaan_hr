@@ -17,6 +17,8 @@ class EmployeeArrears(Document):
 
 	def create_additional_salary(self):
 		# print(self.total_earning, '\n\n\n\n\n\n\n\n')
+		comp_name = frappe.db.get_value("Employee", self.employee, 'company')
+		curr = frappe.db.get_value("Company", comp_name, 'default_currency')
 
 
 		additional_salary = frappe.get_doc({
@@ -27,6 +29,8 @@ class EmployeeArrears(Document):
 			'from_date': self.from_date,  
 			'to_date': self.to_date,
 			'is_recurring': 1,
+			'company':comp_name,
+			'currency':curr
 		})
 		
 		additional_salary.insert()

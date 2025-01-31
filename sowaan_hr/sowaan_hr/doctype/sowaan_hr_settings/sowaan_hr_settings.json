@@ -5,23 +5,24 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "payroll_settings_tab",
-  "section_break_kprp",
+  "attendance_settings_tab",
+  "payroll_settings_section",
   "calculation_criteria",
   "days",
-  "attendance_settings_tab",
   "late_section_section",
   "is_late_deduction_applicable",
-  "late_exemptions",
   "late_salary_component",
+  "late_entry_exemptions",
+  "late_deduction_grace_period",
   "early_section_section",
   "is_early_deduction_applicable",
-  "early_exemptions",
   "early_salary_component",
+  "early_exit_exemptions",
+  "early_deduction_grace_period",
   "half_day_section_section",
   "is_half_day_deduction_applicable",
-  "half_day_exemptions",
-  "half_day_salary_component"
+  "half_day_salary_component",
+  "half_day_exemptions"
  ],
  "fields": [
   {
@@ -32,17 +33,17 @@
   {
    "fieldname": "late_section_section",
    "fieldtype": "Section Break",
-   "label": "Late Section"
+   "label": "Late Settings"
   },
   {
    "fieldname": "early_section_section",
    "fieldtype": "Section Break",
-   "label": "Early Section"
+   "label": "Early Settings"
   },
   {
    "fieldname": "half_day_section_section",
    "fieldtype": "Section Break",
-   "label": "Half Day Section"
+   "label": "Half Day Settings"
   },
   {
    "default": "Number of Days in a month",
@@ -59,55 +60,35 @@
    "options": "\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31"
   },
   {
-   "fieldname": "section_break_kprp",
-   "fieldtype": "Section Break"
-  },
-  {
-   "depends_on": "eval: doc.is_late_deduction_applicable == true;",
-   "fieldname": "late_exemptions",
-   "fieldtype": "Int",
-   "label": "Late Exemptions"
-  },
-  {
-   "depends_on": "eval: doc.is_early_deduction_applicable == true;",
-   "fieldname": "early_exemptions",
-   "fieldtype": "Int",
-   "label": "Early Exemptions"
-  },
-  {
+   "default": "0",
    "depends_on": "eval: doc.is_half_day_deduction_applicable == true;",
    "fieldname": "half_day_exemptions",
    "fieldtype": "Int",
-   "label": "Half Day Exemptions"
+   "label": "Monthly Half Day Exemptions"
   },
   {
-   "fieldname": "payroll_settings_tab",
-   "fieldtype": "Tab Break",
-   "label": "Payroll Settings"
-  },
-  {
+   "depends_on": "eval: doc.is_late_deduction_applicable == true;",
    "fieldname": "late_salary_component",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Late Salary Component",
-   "options": "Salary Component",
-   "reqd": 1
+   "options": "Salary Component"
   },
   {
+   "depends_on": "eval: doc.is_early_deduction_applicable == true;",
    "fieldname": "early_salary_component",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Early Salary Component",
-   "options": "Salary Component",
-   "reqd": 1
+   "options": "Salary Component"
   },
   {
+   "depends_on": "eval: doc.is_half_day_deduction_applicable == true;",
    "fieldname": "half_day_salary_component",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Half Day Salary Component",
-   "options": "Salary Component",
-   "reqd": 1
+   "options": "Salary Component"
   },
   {
    "default": "0",
@@ -126,12 +107,45 @@
    "fieldname": "is_half_day_deduction_applicable",
    "fieldtype": "Check",
    "label": "Is Half Day Deduction Applicable?"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval: doc.is_early_deduction_applicable == true;",
+   "fieldname": "early_exit_exemptions",
+   "fieldtype": "Int",
+   "label": "Monthly Early Exit Exemptions"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval: doc.is_late_deduction_applicable == true;",
+   "fieldname": "late_entry_exemptions",
+   "fieldtype": "Int",
+   "label": "Monthly Late Entry Exemptions"
+  },
+  {
+   "depends_on": "eval: doc.is_late_deduction_applicable == true;",
+   "description": "With a grace period, late deduction is based on check-in within that time from shift start. Otherwise, deduction follows 'Late Entry' in attendance.",
+   "fieldname": "late_deduction_grace_period",
+   "fieldtype": "Float",
+   "label": "Late Deduction Grace Period(Minutes)"
+  },
+  {
+   "depends_on": "eval: doc.is_early_deduction_applicable == true;",
+   "description": "With a grace period, early deduction is based on check-out within that time from shift end. Otherwise, deduction follows 'Earlt Exit' in attendance.",
+   "fieldname": "early_deduction_grace_period",
+   "fieldtype": "Float",
+   "label": "Early Deduction Grace Period(Minutes)"
+  },
+  {
+   "fieldname": "payroll_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Payroll Settings"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-01-29 16:08:34.365531",
+ "modified": "2025-01-31 10:52:21.904497",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Sowaan HR Settings",

@@ -8,10 +8,10 @@ def loan_withdrawal(self, method):
             filters={"loan_product": self.loan_product},
             fields=["parent"]
         )
-        if not fund_setting_name:
-            frappe.msgprint("No Fund Setting found for this loan product")
+        # if not fund_setting_name:
+        #     frappe.msgprint("No Fund Setting found for this loan product")
 
-        else:
+        if fund_setting_name:
             # fund_setting_loan = frappe.get_value("Fund Setting",fund_setting_name[0].parent, "loan")
             fund_setting_own_allowed = frappe.get_value("Fund Setting",fund_setting_name[0].parent, "allowed__of_own_contribution")
             fund_setting_company_allowed = frappe.get_value("Fund Setting",fund_setting_name[0].parent, "allowed__of_company_contribution")

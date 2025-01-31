@@ -155,7 +155,7 @@ doc_events = {
 		"before_save": "sowaan_hr.sowaan_hr.events.Salary_slip.fund_management_and_negative_salary",
         # "before_save": "sowaan_hr.sowaan_hr.events.Salary_slip.set_fix_days",
         "before_submit": "sowaan_hr.sowaan_hr.events.Salary_slip.salary_slip_after_submit",
-        # "on_cancel": "sowaan_hr.sowaan_hr.events.Salary_slip.cancel_related_docs"
+        "before_cancel": "sowaan_hr.sowaan_hr.events.Salary_slip.cancel_related_docs"
 	},
     "Loan Application":{
 		"before_save": "sowaan_hr.sowaan_hr.events.loan_application.loan_withdrawal"

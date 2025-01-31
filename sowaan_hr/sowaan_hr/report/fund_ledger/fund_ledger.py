@@ -40,7 +40,7 @@ def get_data(filters):
 				WHEN fce.is_opening_balance = 1 THEN 'Opening Fund'
 				WHEN fce.is_profit_fund = 1 THEN 'Profit Fund'
 				WHEN fce.is_fund_withdrawal = 1 THEN 'Fund Withdrawal'
-               	WHEN fce.salary_slip IS NOT NULL THEN 'Salary Slip'
+               	WHEN fce.reference_doctype = "Salary Slip" THEN 'Salary Slip'
 				ELSE 'Other' 
 			END AS type
 		FROM 
@@ -55,7 +55,7 @@ def get_data(filters):
         ORDER BY 
     CASE 
         WHEN fce.is_opening_balance = 1 THEN 1  -- Opening Fund
-        WHEN fce.salary_slip IS NOT NULL THEN 2 -- Salary Slip
+        WHEN fce.reference_doctype = "Salary Slip" THEN 2 -- Salary Slip
         WHEN fce.is_fund_withdrawal = 1 THEN 3 -- Fund Withdrawal
         WHEN fce.is_profit_fund = 1 THEN 4 -- Profit Fund
         ELSE 5 -- Other

@@ -395,7 +395,7 @@ def salary_slip_after_submit(self,method):
 
         found_own_entry = False
         for row in contribution_doc.fund_contribution_entry:
-            if row.contribution_type == "Own" and row.salary_slip == self.name:
+            if row.contribution_type == "Own" and row.reference_doctype == "Salary Slip" and row.document_name == self.name:
                 # row.amount = fund_setting.own_value  # Update the amount
                 frappe.db.set_value("Fund Contribution Entry", row.name, "amount", own_fund_value)
                 found_own_entry = True
@@ -408,7 +408,8 @@ def salary_slip_after_submit(self,method):
                 "contribution_type": "Own",
                 "amount": own_fund_value,
                 "date": self.posting_date,
-                "salary_slip": self.name
+                "reference_doctype": "Salary Slip",
+                "document_name":self.name
             })
             contribution_doc.save()
 
@@ -416,7 +417,7 @@ def salary_slip_after_submit(self,method):
 
         found_company_entry = False
         for row in contribution_doc.fund_contribution_entry:
-            if row.contribution_type == "Company" and row.salary_slip == self.name:
+            if row.contribution_type == "Company" and row.reference_doctype == "Salary Slip" and row.document_name == self.name:
                 frappe.db.set_value("Fund Contribution Entry", row.name, "amount", company_fund_value)
                 found_company_entry = True
                 break
@@ -425,7 +426,8 @@ def salary_slip_after_submit(self,method):
                 "contribution_type": "Company",
                 "amount": company_fund_value,
                 "date": self.posting_date,
-                "salary_slip": self.name
+                "reference_doctype": "Salary Slip",
+                "document_name":self.name
             })
             contribution_doc.save()
 
@@ -441,27 +443,20 @@ def set_fix_days(self):
 
 
 
-# def cancel_related_docs(self, method):
-#     if self.employee:
-#         fund_contribution = frappe.get_list(
-#             "Fund Contribution",
-#             filters={
-#                 "employee": self.employee,
-#                 "docstatus": 1
-#             },
-#             fields=["name"],
-#         )
+def cancel_related_docs(self, method):
+    fund_contribution = frappe.get_list("Fund Contribution", filters={"employee": self.employee,"docstatus": 1})
+    
+    if fund_contribution:
+        fund_contribution_doc = frappe.get_doc("Fund Contribution", fund_contribution[0].name)
 
-        # if fund_contribution:
-        #     contribution_doc = frappe.get_doc("Fund Contribution", fund_contribution[0].name)
-        #     updated_entries = [
-        #         row for row in contribution_doc.fund_contribution_entry
-        #         if row.salary_slip != self.name
-        #     ]
-            
-        #     # Update the fund contribution entries
-        #     contribution_doc.fund_contribution_entry = updated_entries
-        #     contribution_doc.save()
+        if fund_contribution_doc:
+            for i in range(len(fund_contribution_doc.fund_contribution_entry) - 1, -1, -1):
+                row = fund_contribution_doc.fund_contribution_entry[i]
+                if row.reference_doctype == "Salary Slip" and str(row.document_name) == str(self.name):
+                    print("Working in Condition")
+                    del fund_contribution_doc.fund_contribution_entry[i]
+
+            fund_contribution_doc.save()
         
 
 

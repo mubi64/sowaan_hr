@@ -62,7 +62,7 @@ def get_data(filters):
         
         SUM(
 			CASE 
-				WHEN fce.contribution_type = 'Own' AND fce.salary_slip IS NOT NULL THEN fce.amount 
+				WHEN fce.contribution_type = 'Own' AND fce.reference_doctype = "Salary Slip" THEN fce.amount 
 				ELSE 0 
 			END
 		) + SUM(
@@ -74,7 +74,7 @@ def get_data(filters):
         
         SUM(
 			CASE 
-				WHEN fce.contribution_type = 'Company' AND fce.salary_slip IS NOT NULL THEN fce.amount 
+				WHEN fce.contribution_type = 'Company' AND fce.reference_doctype = "Salary Slip" THEN fce.amount
 				ELSE 0 
 			END
 		) + SUM(
@@ -90,7 +90,7 @@ def get_data(filters):
         (
         SUM(
             CASE 
-                WHEN fce.contribution_type = 'Own' AND fce.salary_slip IS NOT NULL THEN fce.amount 
+                WHEN fce.contribution_type = 'Own' AND fce.reference_doctype = "Salary Slip" THEN fce.amount 
                 ELSE 0 
             END
         ) + SUM(
@@ -101,7 +101,7 @@ def get_data(filters):
         ) + 
         SUM(
             CASE 
-                WHEN fce.contribution_type = 'Company' AND fce.salary_slip IS NOT NULL THEN fce.amount 
+                WHEN fce.contribution_type = 'Company' AND fce.reference_doctype = "Salary Slip" THEN fce.amount 
                 ELSE 0 
             END
         ) + SUM(

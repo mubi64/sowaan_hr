@@ -9,7 +9,6 @@
   "contribution_type",
   "amount",
   "date",
-  "salary_slip",
   "is_opening_balance",
   "is_fund_withdrawal",
   "is_profit_fund",
@@ -38,12 +37,6 @@
    "label": "Date"
   },
   {
-   "fieldname": "salary_slip",
-   "fieldtype": "Link",
-   "label": "Salary Slip",
-   "options": "Salary Slip"
-  },
-  {
    "default": "0",
    "fieldname": "is_opening_balance",
    "fieldtype": "Check",
@@ -62,23 +55,22 @@
    "label": "Is Profit Fund"
   },
   {
-   "default": "Salary Slip",
    "fieldname": "reference_doctype",
-   "fieldtype": "Link",
-   "label": "Reference Doctype",
-   "options": "DocType"
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Reference Doctype"
   },
   {
    "fieldname": "document_name",
-   "fieldtype": "Dynamic Link",
-   "label": "Document Name",
-   "options": "reference_doctype"
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Document Name"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-01-30 17:16:53.474942",
+ "modified": "2025-01-31 13:08:54.943003",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Fund Contribution Entry",

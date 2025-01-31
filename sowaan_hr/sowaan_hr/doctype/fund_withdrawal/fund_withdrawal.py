@@ -25,13 +25,30 @@ class FundWithdrawal(Document):
 						"contribution_type": "Own",
 						"amount": -amount,
 						"date": self.withdrawal_date,
-						"is_fund_withdrawal" : 1
+						"is_fund_withdrawal" : 1,
+						"reference_doctype": "Fund Withdrawal",
+                		"document_name":self.name
 					})
 				fund_contribution_doc.append("fund_contribution_entry", {
 						"contribution_type": "Company",
 						"amount": -amount,
 						"date": self.withdrawal_date,
-						"is_fund_withdrawal" : 1
+						"is_fund_withdrawal" : 1,
+						"reference_doctype": "Fund Withdrawal",
+                		"document_name":self.name
 					})
 				fund_contribution_doc.save()
+	def before_cancel(self):
+		fund_contribution = frappe.get_list("Fund Contribution", filters={"employee": self.employee,"docstatus": 1})
+		
+		if fund_contribution:
+			fund_contribution_doc = frappe.get_doc("Fund Contribution", fund_contribution[0].name)
 
+			if fund_contribution_doc:
+				for i in range(len(fund_contribution_doc.fund_contribution_entry) - 1, -1, -1):
+					row = fund_contribution_doc.fund_contribution_entry[i]
+					if row.reference_doctype == "Fund Withdrawal" and str(row.document_name) == str(self.name):
+						print("Working in Condition")
+						del fund_contribution_doc.fund_contribution_entry[i]
+
+				fund_contribution_doc.save()

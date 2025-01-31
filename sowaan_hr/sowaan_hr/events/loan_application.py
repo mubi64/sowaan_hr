@@ -9,7 +9,7 @@ def loan_withdrawal(self, method):
             fields=["parent"]
         )
         if not fund_setting_name:
-            frappe.throw("No Fund Setting found for this loan product")
+            frappe.msgprint("No Fund Setting found for this loan product")
 
         else:
             # fund_setting_loan = frappe.get_value("Fund Setting",fund_setting_name[0].parent, "loan")

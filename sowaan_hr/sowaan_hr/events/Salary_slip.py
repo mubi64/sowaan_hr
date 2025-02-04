@@ -133,8 +133,12 @@ def fund_management_and_negative_salary(self, method):
                         # earnings_amount = earnings_dict[component.component]
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                         total_fund_amount11 = total_fund_amount11 + calculated_amount
+                        
                 if start_days:
                     total_fund_amount11 = (total_fund_amount11 / w_days) * start_days
+            
+                if total_fund_amount11 and fund_setting.own_value:
+                            total_fund_amount11 = total_fund_amount11 * (fund_setting.own_value / 100)
                 
 
                 self.deductions = [
@@ -178,6 +182,9 @@ def fund_management_and_negative_salary(self, method):
                         total_fund_amount = total_fund_amount + calculated_amount
                 if start_days:
                     total_fund_amount = (total_fund_amount / w_days) * start_days
+                if total_fund_amount and fund_setting.company_value:
+                            total_fund_amount = total_fund_amount * (fund_setting.company_value / 100)
+                
                 
 
                 self.earnings = [
@@ -275,6 +282,7 @@ def fund_management_and_negative_salary(self, method):
                             
                             calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                             total_fund_amount1 += (calculated_amount / w_days) * days_before_increment
+                            
 
                 # Part 2: Calculation after increment date
                 days_after_increment = frappe.utils.date_diff(self.end_date, increment_date)+1 if increment_date else w_days
@@ -286,6 +294,9 @@ def fund_management_and_negative_salary(self, method):
                         
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                         total_fund_amount1 += (calculated_amount / w_days) * days_after_increment
+                        
+            if total_fund_amount1 and fund_setting.own_value:
+                                total_fund_amount1 = total_fund_amount1 * (fund_setting.own_value / 100)
 
             # Deduction logic remains the same
             self.deductions = [
@@ -307,10 +318,6 @@ def fund_management_and_negative_salary(self, method):
 
 
 
-
-
-
-
             total_fund_amount2 = 0
 
             if fund_setting.company_dependent_components:
@@ -323,7 +330,7 @@ def fund_management_and_negative_salary(self, method):
                             earnings_amount = frappe.safe_eval(formula, {}, {"custom_base": previous_base_value})
                             calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                             total_fund_amount2 += (calculated_amount / w_days) * days_before_increment
-
+                            
                 # Part 2: Calculation after increment date
                 days_after_increment = frappe.utils.date_diff(self.end_date, increment_date) + 1 if increment_date else w_days
                 for component in fund_setting.company_dependent_components:
@@ -332,6 +339,10 @@ def fund_management_and_negative_salary(self, method):
                         earnings_amount = frappe.safe_eval(formula, {}, {"custom_base": latest_base_value})
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                         total_fund_amount2 += (calculated_amount / w_days) * days_after_increment
+                        
+                if total_fund_amount2 and fund_setting.company_value:
+                            total_fund_amount2 = total_fund_amount2 * (fund_setting.company_value / 100)
+
 
                 # Removing previous earnings entry
                 self.earnings = [
@@ -352,6 +363,7 @@ def fund_management_and_negative_salary(self, method):
                         if row.contribution_type == "Company" and row.salary_slip == self.name:
                             frappe.db.set_value("Fund Contribution Entry", row.name, "amount", total_fund_amount2)
                             break
+
    
     self.custom_check_adjustment = 0
     self.calculate_net_pay()
@@ -359,6 +371,7 @@ def fund_management_and_negative_salary(self, method):
     self.compute_month_to_date()
     self.compute_component_wise_year_to_date()
     set_fix_days(self)
+
 
 
 

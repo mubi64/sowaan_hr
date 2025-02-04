@@ -134,8 +134,8 @@ def fund_management_and_negative_salary(self, method):
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                         total_fund_amount11 = total_fund_amount11 + calculated_amount
                         
-                if start_days:
-                    total_fund_amount11 = (total_fund_amount11 / w_days) * start_days
+                # if start_days:
+                #     total_fund_amount11 = (total_fund_amount11 / w_days) * start_days
             
                 if total_fund_amount11 and fund_setting.own_value:
                             total_fund_amount11 = total_fund_amount11 * (fund_setting.own_value / 100)
@@ -180,8 +180,8 @@ def fund_management_and_negative_salary(self, method):
                         # earnings_amount = earnings_dict[component.component]
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                         total_fund_amount = total_fund_amount + calculated_amount
-                if start_days:
-                    total_fund_amount = (total_fund_amount / w_days) * start_days
+                # if start_days:
+                #     total_fund_amount = (total_fund_amount / w_days) * start_days
                 if total_fund_amount and fund_setting.company_value:
                             total_fund_amount = total_fund_amount * (fund_setting.company_value / 100)
                 

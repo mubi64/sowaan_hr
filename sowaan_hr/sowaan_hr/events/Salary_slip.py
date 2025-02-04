@@ -141,8 +141,8 @@ def fund_management_and_negative_salary(self, method):
                 # self.append("earnings", row2)
                 earningg_entry = {
                         "salary_component": fund_setting.company_fund_component,
-                        "amount": total_fund_amount,
-                        "year_to_date": total_fund_amount
+                        "amount": company_fund_value,
+                        "year_to_date": company_fund_value
                     }
 
                 # Add the additional properties if they exist (i.e., are not None or empty)

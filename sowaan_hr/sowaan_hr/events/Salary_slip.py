@@ -72,9 +72,48 @@ def fund_management_and_negative_salary(self, method):
                         if row.salary_component != fund_setting.fund_component
                     ]
                 
-                row1 = {"salary_component": fund_setting.fund_component , "amount" : own_fund_value, "year_to_date" : own_fund_value }
-                self.append("deductions", row1)
+                # row1 = {"salary_component": fund_setting.fund_component , "amount" : own_fund_value, "year_to_date" : own_fund_value }
+                # self.append("deductions", row1)
+                own_component = frappe.get_doc("Salary Component",fund_setting.fund_component)
+                own_statistical_component = own_component.depends_on_payment_days
+                own_is_taxable = own_component.is_tax_applicable
+                own_is_felexible_benifit = own_component.is_flexible_benefit
+                own_d_include_in_total = own_component.do_not_include_in_total
+                own_d_full_tax = own_component.deduct_full_tax_on_selected_payroll_date
+                own_ex_from_income_tax = own_component.exempted_from_income_tax
+                own_stastical_component = own_component.statistical_component
+                # Construct the dictionary for the deduction
+                deduction_entry = {
+                    "salary_component": fund_setting.fund_component,
+                    "amount": own_fund_value,
+                    "year_to_date": own_fund_value
+                }
+
+                # Add the additional properties if they exist (i.e., are not None or empty)
+                if own_statistical_component is not None:
+                    deduction_entry["depends_on_payment_days"] = own_statistical_component
+
+                if own_is_taxable is not None:
+                    deduction_entry["is_tax_applicable"] = own_is_taxable
+
+                if own_is_felexible_benifit is not None:
+                    deduction_entry["is_flexible_benefit"] = own_is_felexible_benifit
+
+                if own_d_include_in_total is not None:
+                    deduction_entry["do_not_include_in_total"] = own_d_include_in_total
+
+                if own_d_full_tax is not None:
+                    deduction_entry["deduct_full_tax_on_selected_payroll_date"] = own_d_full_tax
                 
+                if own_ex_from_income_tax is not None:
+                    deduction_entry["exempted_from_income_tax"] = own_ex_from_income_tax
+
+                if own_stastical_component is not None:
+                        deduction_entry["statistical_component"] = own_stastical_component
+                        
+
+                # Append the deduction entry to the list
+                self.append("deductions", deduction_entry)
                 # found_own_entry = False
                 for row in contribution_doc.fund_contribution_entry:
                     if row.contribution_type == "Own" and row.salary_slip == self.name:
@@ -90,9 +129,45 @@ def fund_management_and_negative_salary(self, method):
                         row for row in self.earnings
                         if row.salary_component != fund_setting.company_fund_component
                     ]
-                row2 = {"salary_component": fund_setting.company_fund_component , "amount" : company_fund_value, "year_to_date" : company_fund_value }
-                self.append("earnings", row2)
+                company_component = frappe.get_doc("Salary Component",fund_setting.company_fund_component)
+                company_statistical_component = own_component.depends_on_payment_days
+                company_is_taxable = own_component.is_tax_applicable
+                company_is_felexible_benifit = own_component.is_flexible_benefit
+                company_d_include_in_total = own_component.do_not_include_in_total
+                company_d_full_tax = own_component.deduct_full_tax_on_selected_payroll_date
+                company_ex_from_income_tax = own_component.exempted_from_income_tax
+                company_stastical_component = own_component.statistical_component
+                # row2 = {"salary_component": fund_setting.company_fund_component , "amount" : company_fund_value, "year_to_date" : company_fund_value }
+                # self.append("earnings", row2)
+                earningg_entry = {
+                        "salary_component": fund_setting.company_fund_component,
+                        "amount": total_fund_amount,
+                        "year_to_date": total_fund_amount
+                    }
+
+                # Add the additional properties if they exist (i.e., are not None or empty)
+                if company_statistical_component is not None:
+                    earningg_entry["depends_on_payment_days"] = company_statistical_component
+
+                if company_is_taxable is not None:
+                    earningg_entry["is_tax_applicable"] = company_is_taxable
+
+                if company_is_felexible_benifit is not None:
+                    earningg_entry["is_flexible_benefit"] = company_is_felexible_benifit
+
+                if company_d_include_in_total is not None:
+                    earningg_entry["do_not_include_in_total"] = company_d_include_in_total
+
+                if company_d_full_tax is not None:
+                    earningg_entry["deduct_full_tax_on_selected_payroll_date"] = company_d_full_tax
                 
+                if company_ex_from_income_tax is not None:
+                    earningg_entry["exempted_from_income_tax"] = company_ex_from_income_tax
+
+                if company_stastical_component is not None:
+                        earningg_entry["statistical_component"] = company_stastical_component
+                self.append("earnings", earningg_entry)
+
                 # found_company_entry = False
                 for row in contribution_doc.fund_contribution_entry:
                     if row.contribution_type == "Company" and row.salary_slip == self.name:
@@ -145,14 +220,49 @@ def fund_management_and_negative_salary(self, method):
                     row for row in self.deductions
                     if row.salary_component not in [fund_setting.fund_component]
                 ]
+                own_component = frappe.get_doc("Salary Component",fund_setting.fund_component)
+                own_statistical_component = own_component.depends_on_payment_days
+                own_is_taxable = own_component.is_tax_applicable
+                own_is_felexible_benifit = own_component.is_flexible_benefit
+                own_d_include_in_total = own_component.do_not_include_in_total
+                own_d_full_tax = own_component.deduct_full_tax_on_selected_payroll_date
+                own_ex_from_income_tax = own_component.exempted_from_income_tax
+                own_stastical_component = own_component.statistical_component
 
                 if total_fund_amount11 > 0:
-                    self.append("deductions", {
+                    # Construct the dictionary for the deduction
+                    deduction_entry = {
                         "salary_component": fund_setting.fund_component,
                         "amount": total_fund_amount11,
                         "year_to_date": total_fund_amount11
-                    })
-                   
+                    }
+
+                    # Add the additional properties if they exist (i.e., are not None or empty)
+                    if own_statistical_component is not None:
+                        deduction_entry["depends_on_payment_days"] = own_statistical_component
+
+                    if own_is_taxable is not None:
+                        deduction_entry["is_tax_applicable"] = own_is_taxable
+
+                    if own_is_felexible_benifit is not None:
+                        deduction_entry["is_flexible_benefit"] = own_is_felexible_benifit
+
+                    if own_d_include_in_total is not None:
+                        deduction_entry["do_not_include_in_total"] = own_d_include_in_total
+
+                    if own_d_full_tax is not None:
+                        deduction_entry["deduct_full_tax_on_selected_payroll_date"] = own_d_full_tax
+                    
+                    if own_ex_from_income_tax is not None:
+                        deduction_entry["exempted_from_income_tax"] = own_ex_from_income_tax
+
+                    if own_stastical_component is not None:
+                         deduction_entry["statistical_component"] = own_stastical_component
+                         
+
+                    # Append the deduction entry to the list
+                    self.append("deductions", deduction_entry)
+                                
 
                     # found_own_entry = False
                     for row in contribution_doc.fund_contribution_entry:
@@ -192,12 +302,58 @@ def fund_management_and_negative_salary(self, method):
                     if row.salary_component not in [fund_setting.company_fund_component]
                 ]
 
+                company_component = frappe.get_doc("Salary Component",fund_setting.company_fund_component)
+                company_statistical_component = own_component.depends_on_payment_days
+                company_is_taxable = own_component.is_tax_applicable
+                company_is_felexible_benifit = own_component.is_flexible_benefit
+                company_d_include_in_total = own_component.do_not_include_in_total
+                company_d_full_tax = own_component.deduct_full_tax_on_selected_payroll_date
+                company_ex_from_income_tax = own_component.exempted_from_income_tax
+                company_stastical_component = own_component.statistical_component
+
+
                 if total_fund_amount > 0:
-                    self.append("earnings", {
+                    # self.append("earnings", {
+                    #     "salary_component": fund_setting.company_fund_component,
+                    #     "amount": total_fund_amount,
+                    #     "year_to_date": total_fund_amount
+                    # })
+
+                    # Construct the dictionary for the deduction
+                    earningg_entry = {
                         "salary_component": fund_setting.company_fund_component,
                         "amount": total_fund_amount,
                         "year_to_date": total_fund_amount
-                    })
+                    }
+
+                    # Add the additional properties if they exist (i.e., are not None or empty)
+                    if company_statistical_component is not None:
+                        earningg_entry["depends_on_payment_days"] = company_statistical_component
+
+                    if company_is_taxable is not None:
+                        earningg_entry["is_tax_applicable"] = company_is_taxable
+
+                    if company_is_felexible_benifit is not None:
+                        earningg_entry["is_flexible_benefit"] = company_is_felexible_benifit
+
+                    if company_d_include_in_total is not None:
+                        earningg_entry["do_not_include_in_total"] = company_d_include_in_total
+
+                    if company_d_full_tax is not None:
+                        earningg_entry["deduct_full_tax_on_selected_payroll_date"] = company_d_full_tax
+                    
+                    if company_ex_from_income_tax is not None:
+                        earningg_entry["exempted_from_income_tax"] = company_ex_from_income_tax
+
+                    if company_stastical_component is not None:
+                         earningg_entry["statistical_component"] = company_stastical_component
+                         
+
+                    # Append the deduction entry to the list
+                    self.append("earnings", earningg_entry)
+
+
+
                   
                     # found_company_entry = False
                     for row in contribution_doc.fund_contribution_entry:
@@ -304,11 +460,49 @@ def fund_management_and_negative_salary(self, method):
                 if row.salary_component not in [fund_setting.fund_component]
             ]   
             if total_fund_amount1 > 0:
-                self.append("deductions", {
+                
+                own_component = frappe.get_doc("Salary Component",fund_setting.fund_component)
+                own_statistical_component = own_component.depends_on_payment_days
+                own_is_taxable = own_component.is_tax_applicable
+                own_is_felexible_benifit = own_component.is_flexible_benefit
+                own_d_include_in_total = own_component.do_not_include_in_total
+                own_d_full_tax = own_component.deduct_full_tax_on_selected_payroll_date
+                own_ex_from_income_tax = own_component.exempted_from_income_tax
+                own_stastical_component = own_component.statistical_component
+
+            
+                # Construct the dictionary for the deduction
+                deduction_entry = {
                     "salary_component": fund_setting.fund_component,
                     "amount": total_fund_amount1,
                     "year_to_date": total_fund_amount1
-                })
+                }
+
+                # Add the additional properties if they exist (i.e., are not None or empty)
+                if own_statistical_component is not None:
+                    deduction_entry["depends_on_payment_days"] = own_statistical_component
+
+                if own_is_taxable is not None:
+                    deduction_entry["is_tax_applicable"] = own_is_taxable
+
+                if own_is_felexible_benifit is not None:
+                    deduction_entry["is_flexible_benefit"] = own_is_felexible_benifit
+
+                if own_d_include_in_total is not None:
+                    deduction_entry["do_not_include_in_total"] = own_d_include_in_total
+
+                if own_d_full_tax is not None:
+                    deduction_entry["deduct_full_tax_on_selected_payroll_date"] = own_d_full_tax
+                
+                if own_ex_from_income_tax is not None:
+                    deduction_entry["exempted_from_income_tax"] = own_ex_from_income_tax
+
+                if own_stastical_component is not None:
+                        deduction_entry["statistical_component"] = own_stastical_component
+                        
+
+                # Append the deduction entry to the list
+                self.append("deductions", deduction_entry)
 
                 # Update Fund Contribution Entry
                 for row in contribution_doc.fund_contribution_entry:
@@ -349,14 +543,49 @@ def fund_management_and_negative_salary(self, method):
                     row for row in self.earnings
                     if row.salary_component not in [fund_setting.company_fund_component]
                 ]
+                company_component = frappe.get_doc("Salary Component",fund_setting.company_fund_component)
+                company_statistical_component = own_component.depends_on_payment_days
+                company_is_taxable = own_component.is_tax_applicable
+                company_is_felexible_benifit = own_component.is_flexible_benefit
+                company_d_include_in_total = own_component.do_not_include_in_total
+                company_d_full_tax = own_component.deduct_full_tax_on_selected_payroll_date
+                company_ex_from_income_tax = own_component.exempted_from_income_tax
+                company_stastical_component = own_component.statistical_component
 
-                # Adding new earnings entry
+
                 if total_fund_amount2 > 0:
-                    self.append("earnings", {
+                    # Construct the dictionary for the deduction
+                    earningg_entry = {
                         "salary_component": fund_setting.company_fund_component,
                         "amount": total_fund_amount2,
                         "year_to_date": total_fund_amount2
-                    })
+                    }
+
+                    # Add the additional properties if they exist (i.e., are not None or empty)
+                    if company_statistical_component is not None:
+                        earningg_entry["depends_on_payment_days"] = company_statistical_component
+
+                    if company_is_taxable is not None:
+                        earningg_entry["is_tax_applicable"] = company_is_taxable
+
+                    if company_is_felexible_benifit is not None:
+                        earningg_entry["is_flexible_benefit"] = company_is_felexible_benifit
+
+                    if company_d_include_in_total is not None:
+                        earningg_entry["do_not_include_in_total"] = company_d_include_in_total
+
+                    if company_d_full_tax is not None:
+                        earningg_entry["deduct_full_tax_on_selected_payroll_date"] = company_d_full_tax
+                    
+                    if company_ex_from_income_tax is not None:
+                        earningg_entry["exempted_from_income_tax"] = company_ex_from_income_tax
+
+                    if company_stastical_component is not None:
+                         earningg_entry["statistical_component"] = company_stastical_component
+                         
+
+                    # Append the deduction entry to the list
+                    self.append("earnings", earningg_entry)
 
                     # Updating Fund Contribution Entry
                     for row in contribution_doc.fund_contribution_entry:

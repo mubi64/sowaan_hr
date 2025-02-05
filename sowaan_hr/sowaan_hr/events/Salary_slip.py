@@ -130,13 +130,13 @@ def fund_management_and_negative_salary(self, method):
                         if row.salary_component != fund_setting.company_fund_component
                     ]
                 company_component = frappe.get_doc("Salary Component",fund_setting.company_fund_component)
-                company_statistical_component = own_component.depends_on_payment_days
-                company_is_taxable = own_component.is_tax_applicable
-                company_is_felexible_benifit = own_component.is_flexible_benefit
-                company_d_include_in_total = own_component.do_not_include_in_total
-                company_d_full_tax = own_component.deduct_full_tax_on_selected_payroll_date
-                company_ex_from_income_tax = own_component.exempted_from_income_tax
-                company_stastical_component = own_component.statistical_component
+                company_statistical_component = company_component.depends_on_payment_days
+                company_is_taxable = company_component.is_tax_applicable
+                company_is_felexible_benifit = company_component.is_flexible_benefit
+                company_d_include_in_total = company_component.do_not_include_in_total
+                company_d_full_tax = company_component.deduct_full_tax_on_selected_payroll_date
+                company_ex_from_income_tax = company_component.exempted_from_income_tax
+                company_stastical_component = company_component.statistical_component
                 # row2 = {"salary_component": fund_setting.company_fund_component , "amount" : company_fund_value, "year_to_date" : company_fund_value }
                 # self.append("earnings", row2)
                 earningg_entry = {

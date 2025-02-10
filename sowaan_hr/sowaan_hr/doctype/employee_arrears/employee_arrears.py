@@ -29,6 +29,7 @@ class EmployeeArrears(Document):
 			'from_date': self.from_date,  
 			'to_date': self.to_date,
 			'is_recurring': 1,
+			'overwrite_salary_structure_amount': 0,
 			'company':comp_name,
 			'currency':curr
 		})

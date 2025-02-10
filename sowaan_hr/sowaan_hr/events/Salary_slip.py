@@ -1,7 +1,7 @@
 import frappe
 from hrms.payroll.doctype.salary_slip.salary_slip import (SalarySlip, calculate_tax_by_tax_slab)
 from sowaan_hr.sowaan_hr.api.api import create_salary_adjustment_for_negative_salary
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 def fund_management_and_negative_salary(self, method):
@@ -72,9 +72,48 @@ def fund_management_and_negative_salary(self, method):
                         if row.salary_component != fund_setting.fund_component
                     ]
                 
-                row1 = {"salary_component": fund_setting.fund_component , "amount" : own_fund_value, "year_to_date" : own_fund_value }
-                self.append("deductions", row1)
+                # row1 = {"salary_component": fund_setting.fund_component , "amount" : own_fund_value, "year_to_date" : own_fund_value }
+                # self.append("deductions", row1)
+                own_component = frappe.get_doc("Salary Component",fund_setting.fund_component)
+                own_statistical_component = own_component.depends_on_payment_days
+                own_is_taxable = own_component.is_tax_applicable
+                own_is_felexible_benifit = own_component.is_flexible_benefit
+                own_d_include_in_total = own_component.do_not_include_in_total
+                own_d_full_tax = own_component.deduct_full_tax_on_selected_payroll_date
+                own_ex_from_income_tax = own_component.exempted_from_income_tax
+                own_stastical_component = own_component.statistical_component
+                # Construct the dictionary for the deduction
+                deduction_entry = {
+                    "salary_component": fund_setting.fund_component,
+                    "amount": own_fund_value,
+                    "year_to_date": own_fund_value
+                }
+
+                # Add the additional properties if they exist (i.e., are not None or empty)
+                if own_statistical_component is not None:
+                    deduction_entry["depends_on_payment_days"] = own_statistical_component
+
+                if own_is_taxable is not None:
+                    deduction_entry["is_tax_applicable"] = own_is_taxable
+
+                if own_is_felexible_benifit is not None:
+                    deduction_entry["is_flexible_benefit"] = own_is_felexible_benifit
+
+                if own_d_include_in_total is not None:
+                    deduction_entry["do_not_include_in_total"] = own_d_include_in_total
+
+                if own_d_full_tax is not None:
+                    deduction_entry["deduct_full_tax_on_selected_payroll_date"] = own_d_full_tax
                 
+                if own_ex_from_income_tax is not None:
+                    deduction_entry["exempted_from_income_tax"] = own_ex_from_income_tax
+
+                if own_stastical_component is not None:
+                        deduction_entry["statistical_component"] = own_stastical_component
+                        
+
+                # Append the deduction entry to the list
+                self.append("deductions", deduction_entry)
                 # found_own_entry = False
                 for row in contribution_doc.fund_contribution_entry:
                     if row.contribution_type == "Own" and row.salary_slip == self.name:
@@ -90,9 +129,46 @@ def fund_management_and_negative_salary(self, method):
                         row for row in self.earnings
                         if row.salary_component != fund_setting.company_fund_component
                     ]
-                row2 = {"salary_component": fund_setting.company_fund_component , "amount" : company_fund_value, "year_to_date" : company_fund_value }
-                self.append("earnings", row2)
+                company_component = frappe.get_doc("Salary Component",fund_setting.company_fund_component)
+                company_statistical_component = company_component.depends_on_payment_days
+                company_is_taxable = company_component.is_tax_applicable
+                company_is_felexible_benifit = company_component.is_flexible_benefit
+                company_d_include_in_total = company_component.do_not_include_in_total
+                company_d_full_tax = company_component.deduct_full_tax_on_selected_payroll_date
+                company_ex_from_income_tax = company_component.exempted_from_income_tax
+                company_stastical_component = company_component.statistical_component
+                # row2 = {"salary_component": fund_setting.company_fund_component , "amount" : company_fund_value, "year_to_date" : company_fund_value }
+                # self.append("earnings", row2)
+                earningg_entry = {
+                        "salary_component": fund_setting.company_fund_component,
+                        "amount": company_fund_value,
+                        "year_to_date": company_fund_value
+                    }
+
+                # Add the additional properties if they exist (i.e., are not None or empty)
+                if company_statistical_component is not None:
+                    earningg_entry["depends_on_payment_days"] = company_statistical_component
+
+                if company_is_taxable is not None:
+                    earningg_entry["is_tax_applicable"] = company_is_taxable
+
+                if company_is_felexible_benifit is not None:
+                    earningg_entry["is_flexible_benefit"] = company_is_felexible_benifit
+
+                if company_d_include_in_total is not None:
+                    earningg_entry["do_not_include_in_total"] = company_d_include_in_total
+
+                if company_d_full_tax is not None:
+                    earningg_entry["deduct_full_tax_on_selected_payroll_date"] = company_d_full_tax
                 
+                if company_ex_from_income_tax is not None:
+                    earningg_entry["exempted_from_income_tax"] = company_ex_from_income_tax
+
+                if company_stastical_component is not None:
+                        earningg_entry["statistical_component"] = company_stastical_component
+                self.append("earnings", earningg_entry)
+             
+
                 # found_company_entry = False
                 for row in contribution_doc.fund_contribution_entry:
                     if row.contribution_type == "Company" and row.salary_slip == self.name:
@@ -133,22 +209,61 @@ def fund_management_and_negative_salary(self, method):
                         # earnings_amount = earnings_dict[component.component]
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                         total_fund_amount11 = total_fund_amount11 + calculated_amount
-                if start_days:
-                    total_fund_amount11 = (total_fund_amount11 / w_days) * start_days
+                        
+                # if start_days:
+                #     total_fund_amount11 = (total_fund_amount11 / w_days) * start_days
+            
+                if total_fund_amount11 and fund_setting.own_value:
+                            total_fund_amount11 = total_fund_amount11 * (fund_setting.own_value / 100)
                 
 
                 self.deductions = [
                     row for row in self.deductions
                     if row.salary_component not in [fund_setting.fund_component]
                 ]
+                own_component = frappe.get_doc("Salary Component",fund_setting.fund_component)
+                own_statistical_component = own_component.depends_on_payment_days
+                own_is_taxable = own_component.is_tax_applicable
+                own_is_felexible_benifit = own_component.is_flexible_benefit
+                own_d_include_in_total = own_component.do_not_include_in_total
+                own_d_full_tax = own_component.deduct_full_tax_on_selected_payroll_date
+                own_ex_from_income_tax = own_component.exempted_from_income_tax
+                own_stastical_component = own_component.statistical_component
 
                 if total_fund_amount11 > 0:
-                    self.append("deductions", {
+                    # Construct the dictionary for the deduction
+                    deduction_entry = {
                         "salary_component": fund_setting.fund_component,
                         "amount": total_fund_amount11,
                         "year_to_date": total_fund_amount11
-                    })
-                   
+                    }
+
+                    # Add the additional properties if they exist (i.e., are not None or empty)
+                    if own_statistical_component is not None:
+                        deduction_entry["depends_on_payment_days"] = own_statistical_component
+
+                    if own_is_taxable is not None:
+                        deduction_entry["is_tax_applicable"] = own_is_taxable
+
+                    if own_is_felexible_benifit is not None:
+                        deduction_entry["is_flexible_benefit"] = own_is_felexible_benifit
+
+                    if own_d_include_in_total is not None:
+                        deduction_entry["do_not_include_in_total"] = own_d_include_in_total
+
+                    if own_d_full_tax is not None:
+                        deduction_entry["deduct_full_tax_on_selected_payroll_date"] = own_d_full_tax
+                    
+                    if own_ex_from_income_tax is not None:
+                        deduction_entry["exempted_from_income_tax"] = own_ex_from_income_tax
+
+                    if own_stastical_component is not None:
+                         deduction_entry["statistical_component"] = own_stastical_component
+                         
+
+                    # Append the deduction entry to the list
+                    self.append("deductions", deduction_entry)
+                                
 
                     # found_own_entry = False
                     for row in contribution_doc.fund_contribution_entry:
@@ -176,8 +291,11 @@ def fund_management_and_negative_salary(self, method):
                         # earnings_amount = earnings_dict[component.component]
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                         total_fund_amount = total_fund_amount + calculated_amount
-                if start_days:
-                    total_fund_amount = (total_fund_amount / w_days) * start_days
+                # if start_days:
+                #     total_fund_amount = (total_fund_amount / w_days) * start_days
+                if total_fund_amount and fund_setting.company_value:
+                            total_fund_amount = total_fund_amount * (fund_setting.company_value / 100)
+                
                 
 
                 self.earnings = [
@@ -185,12 +303,58 @@ def fund_management_and_negative_salary(self, method):
                     if row.salary_component not in [fund_setting.company_fund_component]
                 ]
 
+                company_component = frappe.get_doc("Salary Component",fund_setting.company_fund_component)
+                company_statistical_component = company_component.depends_on_payment_days
+                company_is_taxable = company_component.is_tax_applicable
+                company_is_felexible_benifit = company_component.is_flexible_benefit
+                company_d_include_in_total = company_component.do_not_include_in_total
+                company_d_full_tax = company_component.deduct_full_tax_on_selected_payroll_date
+                company_ex_from_income_tax = company_component.exempted_from_income_tax
+                company_stastical_component = company_component.statistical_component
+
+
                 if total_fund_amount > 0:
-                    self.append("earnings", {
+                    # self.append("earnings", {
+                    #     "salary_component": fund_setting.company_fund_component,
+                    #     "amount": total_fund_amount,
+                    #     "year_to_date": total_fund_amount
+                    # })
+
+                    # Construct the dictionary for the deduction
+                    earningg_entry = {
                         "salary_component": fund_setting.company_fund_component,
                         "amount": total_fund_amount,
                         "year_to_date": total_fund_amount
-                    })
+                    }
+
+                    # Add the additional properties if they exist (i.e., are not None or empty)
+                    if company_statistical_component is not None:
+                        earningg_entry["depends_on_payment_days"] = company_statistical_component
+
+                    if company_is_taxable is not None:
+                        earningg_entry["is_tax_applicable"] = company_is_taxable
+
+                    if company_is_felexible_benifit is not None:
+                        earningg_entry["is_flexible_benefit"] = company_is_felexible_benifit
+
+                    if company_d_include_in_total is not None:
+                        earningg_entry["do_not_include_in_total"] = company_d_include_in_total
+
+                    if company_d_full_tax is not None:
+                        earningg_entry["deduct_full_tax_on_selected_payroll_date"] = company_d_full_tax
+                    
+                    if company_ex_from_income_tax is not None:
+                        earningg_entry["exempted_from_income_tax"] = company_ex_from_income_tax
+
+                    if company_stastical_component is not None:
+                         earningg_entry["statistical_component"] = company_stastical_component
+                         
+
+                    # Append the deduction entry to the list
+                    self.append("earnings", earningg_entry)
+
+
+
                   
                     # found_company_entry = False
                     for row in contribution_doc.fund_contribution_entry:
@@ -275,6 +439,7 @@ def fund_management_and_negative_salary(self, method):
                             
                             calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                             total_fund_amount1 += (calculated_amount / w_days) * days_before_increment
+                            
 
                 # Part 2: Calculation after increment date
                 days_after_increment = frappe.utils.date_diff(self.end_date, increment_date)+1 if increment_date else w_days
@@ -286,6 +451,9 @@ def fund_management_and_negative_salary(self, method):
                         
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                         total_fund_amount1 += (calculated_amount / w_days) * days_after_increment
+                        
+            if total_fund_amount1 and fund_setting.own_value:
+                                total_fund_amount1 = total_fund_amount1 * (fund_setting.own_value / 100)
 
             # Deduction logic remains the same
             self.deductions = [
@@ -293,21 +461,55 @@ def fund_management_and_negative_salary(self, method):
                 if row.salary_component not in [fund_setting.fund_component]
             ]   
             if total_fund_amount1 > 0:
-                self.append("deductions", {
+                
+                own_component = frappe.get_doc("Salary Component",fund_setting.fund_component)
+                own_statistical_component = own_component.depends_on_payment_days
+                own_is_taxable = own_component.is_tax_applicable
+                own_is_felexible_benifit = own_component.is_flexible_benefit
+                own_d_include_in_total = own_component.do_not_include_in_total
+                own_d_full_tax = own_component.deduct_full_tax_on_selected_payroll_date
+                own_ex_from_income_tax = own_component.exempted_from_income_tax
+                own_stastical_component = own_component.statistical_component
+
+            
+                # Construct the dictionary for the deduction
+                deduction_entry = {
                     "salary_component": fund_setting.fund_component,
                     "amount": total_fund_amount1,
                     "year_to_date": total_fund_amount1
-                })
+                }
+
+                # Add the additional properties if they exist (i.e., are not None or empty)
+                if own_statistical_component is not None:
+                    deduction_entry["depends_on_payment_days"] = own_statistical_component
+
+                if own_is_taxable is not None:
+                    deduction_entry["is_tax_applicable"] = own_is_taxable
+
+                if own_is_felexible_benifit is not None:
+                    deduction_entry["is_flexible_benefit"] = own_is_felexible_benifit
+
+                if own_d_include_in_total is not None:
+                    deduction_entry["do_not_include_in_total"] = own_d_include_in_total
+
+                if own_d_full_tax is not None:
+                    deduction_entry["deduct_full_tax_on_selected_payroll_date"] = own_d_full_tax
+                
+                if own_ex_from_income_tax is not None:
+                    deduction_entry["exempted_from_income_tax"] = own_ex_from_income_tax
+
+                if own_stastical_component is not None:
+                        deduction_entry["statistical_component"] = own_stastical_component
+                        
+
+                # Append the deduction entry to the list
+                self.append("deductions", deduction_entry)
 
                 # Update Fund Contribution Entry
                 for row in contribution_doc.fund_contribution_entry:
                     if row.contribution_type == "Own" and row.salary_slip == self.name:
                         frappe.db.set_value("Fund Contribution Entry", row.name, "amount", total_fund_amount1)
                         break
-
-
-
-
 
 
 
@@ -323,7 +525,7 @@ def fund_management_and_negative_salary(self, method):
                             earnings_amount = frappe.safe_eval(formula, {}, {"custom_base": previous_base_value})
                             calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                             total_fund_amount2 += (calculated_amount / w_days) * days_before_increment
-
+                            
                 # Part 2: Calculation after increment date
                 days_after_increment = frappe.utils.date_diff(self.end_date, increment_date) + 1 if increment_date else w_days
                 for component in fund_setting.company_dependent_components:
@@ -332,26 +534,66 @@ def fund_management_and_negative_salary(self, method):
                         earnings_amount = frappe.safe_eval(formula, {}, {"custom_base": latest_base_value})
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                         total_fund_amount2 += (calculated_amount / w_days) * days_after_increment
+                        
+                if total_fund_amount2 and fund_setting.company_value:
+                            total_fund_amount2 = total_fund_amount2 * (fund_setting.company_value / 100)
+
 
                 # Removing previous earnings entry
                 self.earnings = [
                     row for row in self.earnings
                     if row.salary_component not in [fund_setting.company_fund_component]
                 ]
+                company_component = frappe.get_doc("Salary Component",fund_setting.company_fund_component)
+                company_statistical_component = company_component.depends_on_payment_days
+                company_is_taxable = company_component.is_tax_applicable
+                company_is_felexible_benifit = company_component.is_flexible_benefit
+                company_d_include_in_total = company_component.do_not_include_in_total
+                company_d_full_tax = company_component.deduct_full_tax_on_selected_payroll_date
+                company_ex_from_income_tax = company_component.exempted_from_income_tax
+                company_stastical_component = company_component.statistical_component
 
-                # Adding new earnings entry
+
                 if total_fund_amount2 > 0:
-                    self.append("earnings", {
+                    # Construct the dictionary for the deduction
+                    earningg_entry = {
                         "salary_component": fund_setting.company_fund_component,
                         "amount": total_fund_amount2,
                         "year_to_date": total_fund_amount2
-                    })
+                    }
+
+                    # Add the additional properties if they exist (i.e., are not None or empty)
+                    if company_statistical_component is not None:
+                        earningg_entry["depends_on_payment_days"] = company_statistical_component
+
+                    if company_is_taxable is not None:
+                        earningg_entry["is_tax_applicable"] = company_is_taxable
+
+                    if company_is_felexible_benifit is not None:
+                        earningg_entry["is_flexible_benefit"] = company_is_felexible_benifit
+
+                    if company_d_include_in_total is not None:
+                        earningg_entry["do_not_include_in_total"] = company_d_include_in_total
+
+                    if company_d_full_tax is not None:
+                        earningg_entry["deduct_full_tax_on_selected_payroll_date"] = company_d_full_tax
+                    
+                    if company_ex_from_income_tax is not None:
+                        earningg_entry["exempted_from_income_tax"] = company_ex_from_income_tax
+
+                    if company_stastical_component is not None:
+                         earningg_entry["statistical_component"] = company_stastical_component
+                         
+
+                    # Append the deduction entry to the list
+                    self.append("earnings", earningg_entry)
 
                     # Updating Fund Contribution Entry
                     for row in contribution_doc.fund_contribution_entry:
                         if row.contribution_type == "Company" and row.salary_slip == self.name:
                             frappe.db.set_value("Fund Contribution Entry", row.name, "amount", total_fund_amount2)
                             break
+
    
     self.custom_check_adjustment = 0
     self.calculate_net_pay()
@@ -359,6 +601,7 @@ def fund_management_and_negative_salary(self, method):
     self.compute_month_to_date()
     self.compute_component_wise_year_to_date()
     set_fix_days(self)
+
 
 
 
@@ -433,13 +676,261 @@ def salary_slip_after_submit(self,method):
 
 
 
+
+
+
+########################## Umair's Work ##########################
+
 def set_fix_days(self):
-    calculation_criteria = frappe.db.get_single_value('Sowaan HR Settings', 'calculation_criteria')
+    
+    parent_to_use = get_deduction_parent(self.employee, self.salary_structure)
+    # frappe.throw(str(parent_to_use))
+    if not parent_to_use:
+        return
+
+    calculation_criteria = frappe.db.get_value('Sowaan HR Setting', parent_to_use, 'calculation_criteria')
     if calculation_criteria == "Fix Days":
-        self.total_working_days = int(frappe.db.get_single_value('Sowaan HR Settings', 'days'))
+        self.total_working_days = int(frappe.db.get_value('Sowaan HR Setting', parent_to_use, 'days'))
+    handle_late_scenario(self, parent_to_use)
         
+@frappe.whitelist()
+def get_deduction_parent(employee, salary_structure):
+    ded_emp_list = frappe.get_list(
+    "Deduction Employees",
+    filters={
+        "parenttype": "Sowaan HR Setting",  
+    },
+    fields=["employee", "parent"],
+    ignore_permissions=True
+    )
+    
+    ded_ss_list = frappe.get_list(
+    "Deduction Salary Structures",
+    filters={
+        "parenttype": "Sowaan HR Setting",
+    },
+    fields=["salary_structure", "parent"],
+    ignore_permissions=True
+    )
+    
+
+    emp_dict = {emp["employee"]: emp["parent"] for emp in ded_emp_list if isinstance(emp, dict)}
+    ss_dict = {ss["salary_structure"]: ss["parent"] for ss in ded_ss_list if isinstance(ss, dict)}
+    if employee not in emp_dict and salary_structure not in ss_dict:
+        return None
+    
+    return emp_dict.get(employee) or ss_dict.get(salary_structure)
 
         
+
+def handle_late_scenario(self, parent_to_use):
+    def update_or_create_deduction(component, amount):
+        deductions_dict = {d.salary_component: d for d in self.deductions}
+
+        if component in deductions_dict:
+            existing_row = deductions_dict[component]
+            existing_row.amount = amount
+
+            if amount == 0:
+                self.deductions.remove(existing_row)
+        elif amount > 0:
+            row = self.append('deductions', {})
+            row.salary_component = component
+            row.amount = amount
+
+
+    hr_settings = frappe.get_doc('Sowaan HR Setting', parent_to_use)
+    if not hr_settings.is_late_deduction_applicable and not hr_settings.is_early_deduction_applicable and not hr_settings.is_half_day_deduction_applicable:
+        return
+    assign_shift = frappe.db.get_value('Shift Assignment', 
+    {'employee': self.employee, 'start_date': ['<=', self.start_date]}, 
+    'shift_type',
+    order_by='start_date desc')
+    if not assign_shift:
+        assign_shift = frappe.db.get_value('Employee', self.employee, 'default_shift')
+        if not assign_shift:
+            return
+        
+    
+
+
+    shift = frappe.db.get_value('Shift Type', assign_shift, ['start_time', 'end_time'], as_dict=True)
+    shift_start_time = shift.start_time
+    shift_end_time = shift.end_time
+
+    
+    sd = self.start_date
+    ed = self.end_date
+
+    
+
+    month_days = self.total_working_days
+
+    time_diff = shift_end_time - shift_start_time
+    hours = time_diff.total_seconds() // 3600
+    ded_salary = 0
+    ded_based_on = hr_settings.deduction_based_on
+    if not ded_based_on:
+        return
+    
+    if ded_based_on.lower() == 'basic':
+        for earning in self.earnings:
+            if earning.salary_component.lower() == 'basic':
+                ded_salary = earning.amount
+                break
+    elif ded_based_on.lower() == 'base':
+        salary_structure_assignment_list = frappe.get_all(
+						"Salary Structure Assignment",
+						filters=[
+							["employee", "=", self.employee],
+							["from_date", "<=", sd],
+							["docstatus", "=", 1]
+						],
+						fields=['name', 'from_date', 'base'],
+						order_by="from_date desc"
+					)
+        if not salary_structure_assignment_list:
+            return
+        # Latest salary assignment
+        ded_salary = salary_structure_assignment_list[0].base
+        
+    minute_salary = ded_salary / month_days / hours / 60
+    half_day_salary = ded_salary / month_days / 2
+
+    att = frappe.db.get_list('Attendance', filters={
+        'employee': self.employee,
+        'status': ['in', ['Present', 'Half Day']],
+        'attendance_date': ['between', [sd, ed]],
+        'docstatus': 1
+        },
+        fields=['in_time', 'out_time', 'status', 'late_entry', 'early_exit'],
+        order_by='attendance_date asc')
+    
+
+    late_count = 0
+    early_departure_count = 0
+    half_day_count = 0
+    total_late_minutes = 0
+    total_early_minutes = 0
+    deduction_half_day_count = 0
+    
+    # grace_period_late = timedelta(minutes=hr_settings.late_deduction_grace_period)
+    # grace_period_early = timedelta(minutes=hr_settings.early_deduction_grace_period)
+    if hr_settings.half_day_exemptions:
+        half_day_exemptions = hr_settings.half_day_exemptions
+    else:
+        half_day_exemptions = 0
+    if hr_settings.early_exit_exemptions:
+        early_exit_exemptions = hr_settings.early_exit_exemptions
+    else:
+        early_exit_exemptions = 0
+    if hr_settings.late_entry_exemptions:
+        late_entry_exemptions = hr_settings.late_entry_exemptions
+    else:
+        late_entry_exemptions = 0
+
+    for a in att:
+
+        if not a['in_time'] or not a['out_time']:
+            continue
+        in_time = a['in_time'].time()
+        out_time = a['out_time'].time()
+        in_time = timedelta(hours=in_time.hour, minutes=in_time.minute, seconds=in_time.second)
+        out_time = timedelta(hours=out_time.hour, minutes=out_time.minute, seconds=out_time.second)
+
+
+        # if hr_settings.is_half_day_deduction_applicable:
+        #     if a['status'] == 'Half Day':
+        #         half_day_count += 1
+                
+        #         if half_day_count > hr_settings.half_day_exemptions:
+        #             deduction_half_day_count  += 1
+        #             continue
+        #         else:
+        #             continue
+
+        # if hr_settings.is_early_deduction_applicable:
+        #     if shift_end_time - grace_period_early <= out_time < shift_end_time and a['status'] == 'Present' and a.early_exit:
+        #         early_departure_count += 1
+                
+        #         if early_departure_count > hr_settings.early_exit_exemptions:
+        #             # frappe.msgprint(f"time {shift_end_time - out_time}")
+        #             # frappe.msgprint(f"outtime { out_time}")
+        #             # frappe.msgprint(f"endtime {shift_end_time }")
+        #             early_minutes = (shift_end_time - out_time).seconds // 60
+        #             # frappe.msgprint(f"mint{early_minutes} count {shift_end_time} {out_time} {shift_end_time - out_time}")
+        #             # frappe.msgprint(f"early {early_minutes}")
+        #             total_early_minutes += early_minutes
+        #             # frappe.msgprint(f"total {total_early_minutes}")
+        #             continue
+        #         else:
+        #             continue
+
+        # if hr_settings.is_late_deduction_applicable:
+        #     if shift_start_time + grace_period_late < in_time and a['status'] == 'Present' and a.late_entry:
+        #         late_count += 1
+        #         if late_count > hr_settings.late_entry_exemptions:
+        #             late_minutes = (in_time - shift_start_time).seconds // 60
+        #             total_late_minutes += late_minutes
+        #             continue
+        #         else:
+        #             continue
+
+
+
+
+        if hr_settings.is_half_day_deduction_applicable:
+            if a['status'] == 'Half Day':
+                half_day_count += 1
+                
+                if half_day_count > half_day_exemptions:
+                    deduction_half_day_count  += 1
+                    # frappe.throw('hello half day')
+                    continue
+                else:
+                    continue
+
+        if hr_settings.is_early_deduction_applicable:
+            if  a['status'] == 'Present' and a.early_exit:
+                early_departure_count += 1
+                
+                if early_departure_count > early_exit_exemptions:
+                    early_minutes = (shift_end_time - out_time).seconds // 60
+                    total_early_minutes += early_minutes
+                    # frappe.throw('hello early exit')
+                    continue
+                else:
+                    continue
+
+        if hr_settings.is_late_deduction_applicable:
+            if  a['status'] == 'Present' and a.late_entry:
+                late_count += 1
+                if late_count > late_entry_exemptions:
+                    late_minutes = (in_time - shift_start_time).seconds // 60
+                    total_late_minutes += late_minutes
+                    # frappe.throw('hello late entry')
+                    continue
+                else:
+                    continue
+
+        
+
+    self.custom_late_entry_minutes = total_late_minutes
+    self.custom_early_exit_minutes = total_early_minutes
+    self.custom_total_half_days = half_day_count
+    
+    update_or_create_deduction(hr_settings.late_salary_component, total_late_minutes * minute_salary)
+    update_or_create_deduction(hr_settings.early_salary_component, total_early_minutes * minute_salary)
+    update_or_create_deduction(hr_settings.half_day_salary_component, deduction_half_day_count * half_day_salary)
+
+
+
+    self.calculate_net_pay()
+    self.compute_year_to_date()
+    self.compute_month_to_date()
+    self.compute_component_wise_year_to_date()
+
+
 
 
 

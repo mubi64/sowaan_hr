@@ -6,7 +6,9 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "loan_product"
+  "loan_product",
+  "allowed__of_own_contribution",
+  "allowed__of_company_contribution"
  ],
  "fields": [
   {
@@ -15,13 +17,28 @@
    "in_list_view": 1,
    "label": "Loan Product",
    "options": "Loan Product",
+   "reqd": 1,
    "unique": 1
+  },
+  {
+   "fieldname": "allowed__of_own_contribution",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Allowed % of Own Contribution",
+   "reqd": 1
+  },
+  {
+   "fieldname": "allowed__of_company_contribution",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Allowed % of Company Contribution",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-01-27 11:16:05.950191",
+ "modified": "2025-02-03 16:43:19.614899",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Fund Setting Loan Product",

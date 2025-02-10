@@ -74,7 +74,7 @@ fixtures = [
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-doctype_js = {"Salary Slip" : "sowaan_hr/api/salary_slip.js" , "Employee Checkin":"sowaan_hr/client_scripts/employee_checkin_form.js"}
+doctype_js = {"Salary Slip" : "overrides/salary_slip.js" , "Employee Checkin":"sowaan_hr/client_scripts/employee_checkin_form.js"}
 
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}

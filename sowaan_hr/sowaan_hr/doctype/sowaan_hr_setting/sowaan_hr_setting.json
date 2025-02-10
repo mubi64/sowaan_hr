@@ -1,0 +1,201 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:HR-SETTING-{###}",
+ "creation": "2025-02-04 18:35:55.611089",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "attendance_settings_tab",
+  "payroll_settings_section",
+  "calculation_criteria",
+  "days",
+  "deduction_settings_section",
+  "based_on",
+  "deduction_based_on",
+  "salary_structures",
+  "employees",
+  "late_section_section",
+  "is_late_deduction_applicable",
+  "late_salary_component",
+  "late_entry_exemptions",
+  "early_section_section",
+  "is_early_deduction_applicable",
+  "early_salary_component",
+  "early_exit_exemptions",
+  "half_day_section_section",
+  "is_half_day_deduction_applicable",
+  "half_day_salary_component",
+  "half_day_exemptions"
+ ],
+ "fields": [
+  {
+   "fieldname": "attendance_settings_tab",
+   "fieldtype": "Tab Break",
+   "label": "Attendance Settings"
+  },
+  {
+   "fieldname": "payroll_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Payroll Settings"
+  },
+  {
+   "default": "Number of Days in a month",
+   "fieldname": "calculation_criteria",
+   "fieldtype": "Select",
+   "label": "Calculation Criteria ",
+   "options": "Number of Days in a month\nFix Days"
+  },
+  {
+   "depends_on": "eval: doc.calculation_criteria == 'Fix Days';",
+   "fieldname": "days",
+   "fieldtype": "Select",
+   "label": "Days",
+   "mandatory_depends_on": "eval: doc.calculation_criteria == 'Fix Days';",
+   "options": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31"
+  },
+  {
+   "fieldname": "deduction_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Deduction Settings"
+  },
+  {
+   "depends_on": "eval: doc.based_on == 'Salary Structures';",
+   "fieldname": "salary_structures",
+   "fieldtype": "Table",
+   "label": "Salary Structures",
+   "mandatory_depends_on": "eval: doc.based_on == 'Salary Structures';",
+   "options": "Deduction Salary Structures"
+  },
+  {
+   "fieldname": "late_section_section",
+   "fieldtype": "Section Break",
+   "label": "Late Settings"
+  },
+  {
+   "default": "0",
+   "description": "Late deduction will apply only if the attendance status is present and \"Late Entry\" checked.",
+   "fieldname": "is_late_deduction_applicable",
+   "fieldtype": "Check",
+   "label": "Is Late Deduction Applicable?"
+  },
+  {
+   "depends_on": "eval: doc.is_late_deduction_applicable == true;",
+   "fieldname": "late_salary_component",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Late Salary Component",
+   "mandatory_depends_on": "eval: doc.is_late_deduction_applicable == true;",
+   "options": "Salary Component"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval: doc.is_late_deduction_applicable == true;",
+   "fieldname": "late_entry_exemptions",
+   "fieldtype": "Int",
+   "label": "Monthly Late Entry Exemptions"
+  },
+  {
+   "fieldname": "early_section_section",
+   "fieldtype": "Section Break",
+   "label": "Early Settings"
+  },
+  {
+   "default": "0",
+   "description": "Early deduction will apply only if the attendance status is present and \"Early Exit\" checked.",
+   "fieldname": "is_early_deduction_applicable",
+   "fieldtype": "Check",
+   "label": "Is Early Deduction Applicable?"
+  },
+  {
+   "depends_on": "eval: doc.is_early_deduction_applicable == true;",
+   "fieldname": "early_salary_component",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Early Salary Component",
+   "mandatory_depends_on": "eval: doc.is_early_deduction_applicable == true;",
+   "options": "Salary Component"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval: doc.is_early_deduction_applicable == true;",
+   "fieldname": "early_exit_exemptions",
+   "fieldtype": "Int",
+   "label": "Monthly Early Exit Exemptions"
+  },
+  {
+   "fieldname": "half_day_section_section",
+   "fieldtype": "Section Break",
+   "label": "Half Day Settings"
+  },
+  {
+   "default": "0",
+   "description": "Half-day deduction will apply only if the attendance status is marked as half-day.",
+   "fieldname": "is_half_day_deduction_applicable",
+   "fieldtype": "Check",
+   "label": "Is Half Day Deduction Applicable?"
+  },
+  {
+   "depends_on": "eval: doc.is_half_day_deduction_applicable == true;",
+   "fieldname": "half_day_salary_component",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Half Day Salary Component",
+   "mandatory_depends_on": "eval: doc.is_half_day_deduction_applicable == true;",
+   "options": "Salary Component"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval: doc.is_half_day_deduction_applicable == true;",
+   "fieldname": "half_day_exemptions",
+   "fieldtype": "Int",
+   "label": "Monthly Half Day Exemptions"
+  },
+  {
+   "fieldname": "based_on",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Based on",
+   "options": "Employees\nSalary Structures",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval: doc.based_on == 'Employees';",
+   "fieldname": "employees",
+   "fieldtype": "Table",
+   "label": "Employees",
+   "mandatory_depends_on": "eval: doc.based_on == 'Employees';",
+   "options": "Deduction Employees"
+  },
+  {
+   "fieldname": "deduction_based_on",
+   "fieldtype": "Select",
+   "label": "Deduction Based on",
+   "options": "Base\nBasic",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-02-10 10:09:10.113961",
+ "modified_by": "Administrator",
+ "module": "Sowaan Hr",
+ "name": "Sowaan HR Setting",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

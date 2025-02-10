@@ -1,7 +1,7 @@
 import frappe
 from hrms.payroll.doctype.salary_slip.salary_slip import (SalarySlip, calculate_tax_by_tax_slab)
 from sowaan_hr.sowaan_hr.api.api import create_salary_adjustment_for_negative_salary
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 def fund_management_and_negative_salary(self, method):
@@ -676,13 +676,261 @@ def salary_slip_after_submit(self,method):
 
 
 
+
+
+
+########################## Umair's Work ##########################
+
 def set_fix_days(self):
-    calculation_criteria = frappe.db.get_single_value('Sowaan HR Settings', 'calculation_criteria')
+    
+    parent_to_use = get_deduction_parent(self.employee, self.salary_structure)
+    # frappe.throw(str(parent_to_use))
+    if not parent_to_use:
+        return
+
+    calculation_criteria = frappe.db.get_value('Sowaan HR Setting', parent_to_use, 'calculation_criteria')
     if calculation_criteria == "Fix Days":
-        self.total_working_days = int(frappe.db.get_single_value('Sowaan HR Settings', 'days'))
+        self.total_working_days = int(frappe.db.get_value('Sowaan HR Setting', parent_to_use, 'days'))
+    handle_late_scenario(self, parent_to_use)
         
+@frappe.whitelist()
+def get_deduction_parent(employee, salary_structure):
+    ded_emp_list = frappe.get_list(
+    "Deduction Employees",
+    filters={
+        "parenttype": "Sowaan HR Setting",  
+    },
+    fields=["employee", "parent"],
+    ignore_permissions=True
+    )
+    
+    ded_ss_list = frappe.get_list(
+    "Deduction Salary Structures",
+    filters={
+        "parenttype": "Sowaan HR Setting",
+    },
+    fields=["salary_structure", "parent"],
+    ignore_permissions=True
+    )
+    
+
+    emp_dict = {emp["employee"]: emp["parent"] for emp in ded_emp_list if isinstance(emp, dict)}
+    ss_dict = {ss["salary_structure"]: ss["parent"] for ss in ded_ss_list if isinstance(ss, dict)}
+    if employee not in emp_dict and salary_structure not in ss_dict:
+        return None
+    
+    return emp_dict.get(employee) or ss_dict.get(salary_structure)
 
         
+
+def handle_late_scenario(self, parent_to_use):
+    def update_or_create_deduction(component, amount):
+        deductions_dict = {d.salary_component: d for d in self.deductions}
+
+        if component in deductions_dict:
+            existing_row = deductions_dict[component]
+            existing_row.amount = amount
+
+            if amount == 0:
+                self.deductions.remove(existing_row)
+        elif amount > 0:
+            row = self.append('deductions', {})
+            row.salary_component = component
+            row.amount = amount
+
+
+    hr_settings = frappe.get_doc('Sowaan HR Setting', parent_to_use)
+    if not hr_settings.is_late_deduction_applicable and not hr_settings.is_early_deduction_applicable and not hr_settings.is_half_day_deduction_applicable:
+        return
+    assign_shift = frappe.db.get_value('Shift Assignment', 
+    {'employee': self.employee, 'start_date': ['<=', self.start_date]}, 
+    'shift_type',
+    order_by='start_date desc')
+    if not assign_shift:
+        assign_shift = frappe.db.get_value('Employee', self.employee, 'default_shift')
+        if not assign_shift:
+            return
+        
+    
+
+
+    shift = frappe.db.get_value('Shift Type', assign_shift, ['start_time', 'end_time'], as_dict=True)
+    shift_start_time = shift.start_time
+    shift_end_time = shift.end_time
+
+    
+    sd = self.start_date
+    ed = self.end_date
+
+    
+
+    month_days = self.total_working_days
+
+    time_diff = shift_end_time - shift_start_time
+    hours = time_diff.total_seconds() // 3600
+    ded_salary = 0
+    ded_based_on = hr_settings.deduction_based_on
+    if not ded_based_on:
+        return
+    
+    if ded_based_on.lower() == 'basic':
+        for earning in self.earnings:
+            if earning.salary_component.lower() == 'basic':
+                ded_salary = earning.amount
+                break
+    elif ded_based_on.lower() == 'base':
+        salary_structure_assignment_list = frappe.get_all(
+						"Salary Structure Assignment",
+						filters=[
+							["employee", "=", self.employee],
+							["from_date", "<=", sd],
+							["docstatus", "=", 1]
+						],
+						fields=['name', 'from_date', 'base'],
+						order_by="from_date desc"
+					)
+        if not salary_structure_assignment_list:
+            return
+        # Latest salary assignment
+        ded_salary = salary_structure_assignment_list[0].base
+        
+    minute_salary = ded_salary / month_days / hours / 60
+    half_day_salary = ded_salary / month_days / 2
+
+    att = frappe.db.get_list('Attendance', filters={
+        'employee': self.employee,
+        'status': ['in', ['Present', 'Half Day']],
+        'attendance_date': ['between', [sd, ed]],
+        'docstatus': 1
+        },
+        fields=['in_time', 'out_time', 'status', 'late_entry', 'early_exit'],
+        order_by='attendance_date asc')
+    
+
+    late_count = 0
+    early_departure_count = 0
+    half_day_count = 0
+    total_late_minutes = 0
+    total_early_minutes = 0
+    deduction_half_day_count = 0
+    
+    # grace_period_late = timedelta(minutes=hr_settings.late_deduction_grace_period)
+    # grace_period_early = timedelta(minutes=hr_settings.early_deduction_grace_period)
+    if hr_settings.half_day_exemptions:
+        half_day_exemptions = hr_settings.half_day_exemptions
+    else:
+        half_day_exemptions = 0
+    if hr_settings.early_exit_exemptions:
+        early_exit_exemptions = hr_settings.early_exit_exemptions
+    else:
+        early_exit_exemptions = 0
+    if hr_settings.late_entry_exemptions:
+        late_entry_exemptions = hr_settings.late_entry_exemptions
+    else:
+        late_entry_exemptions = 0
+
+    for a in att:
+
+        if not a['in_time'] or not a['out_time']:
+            continue
+        in_time = a['in_time'].time()
+        out_time = a['out_time'].time()
+        in_time = timedelta(hours=in_time.hour, minutes=in_time.minute, seconds=in_time.second)
+        out_time = timedelta(hours=out_time.hour, minutes=out_time.minute, seconds=out_time.second)
+
+
+        # if hr_settings.is_half_day_deduction_applicable:
+        #     if a['status'] == 'Half Day':
+        #         half_day_count += 1
+                
+        #         if half_day_count > hr_settings.half_day_exemptions:
+        #             deduction_half_day_count  += 1
+        #             continue
+        #         else:
+        #             continue
+
+        # if hr_settings.is_early_deduction_applicable:
+        #     if shift_end_time - grace_period_early <= out_time < shift_end_time and a['status'] == 'Present' and a.early_exit:
+        #         early_departure_count += 1
+                
+        #         if early_departure_count > hr_settings.early_exit_exemptions:
+        #             # frappe.msgprint(f"time {shift_end_time - out_time}")
+        #             # frappe.msgprint(f"outtime { out_time}")
+        #             # frappe.msgprint(f"endtime {shift_end_time }")
+        #             early_minutes = (shift_end_time - out_time).seconds // 60
+        #             # frappe.msgprint(f"mint{early_minutes} count {shift_end_time} {out_time} {shift_end_time - out_time}")
+        #             # frappe.msgprint(f"early {early_minutes}")
+        #             total_early_minutes += early_minutes
+        #             # frappe.msgprint(f"total {total_early_minutes}")
+        #             continue
+        #         else:
+        #             continue
+
+        # if hr_settings.is_late_deduction_applicable:
+        #     if shift_start_time + grace_period_late < in_time and a['status'] == 'Present' and a.late_entry:
+        #         late_count += 1
+        #         if late_count > hr_settings.late_entry_exemptions:
+        #             late_minutes = (in_time - shift_start_time).seconds // 60
+        #             total_late_minutes += late_minutes
+        #             continue
+        #         else:
+        #             continue
+
+
+
+
+        if hr_settings.is_half_day_deduction_applicable:
+            if a['status'] == 'Half Day':
+                half_day_count += 1
+                
+                if half_day_count > half_day_exemptions:
+                    deduction_half_day_count  += 1
+                    # frappe.throw('hello half day')
+                    continue
+                else:
+                    continue
+
+        if hr_settings.is_early_deduction_applicable:
+            if  a['status'] == 'Present' and a.early_exit:
+                early_departure_count += 1
+                
+                if early_departure_count > early_exit_exemptions:
+                    early_minutes = (shift_end_time - out_time).seconds // 60
+                    total_early_minutes += early_minutes
+                    # frappe.throw('hello early exit')
+                    continue
+                else:
+                    continue
+
+        if hr_settings.is_late_deduction_applicable:
+            if  a['status'] == 'Present' and a.late_entry:
+                late_count += 1
+                if late_count > late_entry_exemptions:
+                    late_minutes = (in_time - shift_start_time).seconds // 60
+                    total_late_minutes += late_minutes
+                    # frappe.throw('hello late entry')
+                    continue
+                else:
+                    continue
+
+        
+
+    self.custom_late_entry_minutes = total_late_minutes
+    self.custom_early_exit_minutes = total_early_minutes
+    self.custom_total_half_days = half_day_count
+    
+    update_or_create_deduction(hr_settings.late_salary_component, total_late_minutes * minute_salary)
+    update_or_create_deduction(hr_settings.early_salary_component, total_early_minutes * minute_salary)
+    update_or_create_deduction(hr_settings.half_day_salary_component, deduction_half_day_count * half_day_salary)
+
+
+
+    self.calculate_net_pay()
+    self.compute_year_to_date()
+    self.compute_month_to_date()
+    self.compute_component_wise_year_to_date()
+
+
 
 
 

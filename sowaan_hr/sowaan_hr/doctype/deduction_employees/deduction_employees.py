@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class SowaanHRSettings(Document):
+class DeductionEmployees(Document):
 	pass

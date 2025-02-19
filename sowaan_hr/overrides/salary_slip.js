@@ -11,6 +11,9 @@ frappe.ui.form.on('Salary Slip', {
 });
 
 function get_hr_settings(frm) {
+    if (!frm.doc.employee || !frm.doc.salary_structure) {
+        return;
+    }
     frappe.call({
         method: "sowaan_hr.sowaan_hr.events.Salary_slip.get_deduction_parent",
         args: {

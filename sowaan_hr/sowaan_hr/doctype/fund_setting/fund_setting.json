@@ -124,8 +124,8 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Calculation Method",
-   "options": "\nFixed Days\nWorking Days",
-   "reqd": 1
+   "mandatory_depends_on": "eval: doc.calculation_type != \"Fixed\" && doc.calculation_type != \"\";",
+   "options": "\nFixed Days\nWorking Days"
   },
   {
    "depends_on": "eval: doc.calculation_method == \"Fixed Days\";",
@@ -144,7 +144,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-02-03 16:42:36.905302",
+ "modified": "2025-02-20 16:03:04.663987",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Fund Setting",

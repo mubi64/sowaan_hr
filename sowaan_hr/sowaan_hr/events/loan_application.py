@@ -8,6 +8,7 @@ def loan_withdrawal(self, method):
         total_company_fund = 0
         applied_company = 0
         fund_contribution = frappe.get_list("Fund Contribution", filters={"employee":self.applicant,"docstatus":1} )
+        fund_contribution_doc = None
 
         active = 0
         if fund_contribution:

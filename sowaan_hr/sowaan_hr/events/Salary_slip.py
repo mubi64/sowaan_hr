@@ -697,6 +697,8 @@ def set_fix_days(self):
 # Call in salary slip js file
 @frappe.whitelist()
 def get_deduction_parent(employee, salary_structure):
+    if not frappe.db.exists("DocType", "Deduction Employees") or not frappe.db.exists("DocType", "Deduction Salary Structures"):
+        return None
     ded_emp_list = frappe.get_list(
     "Deduction Employees",
     filters={

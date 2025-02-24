@@ -17,7 +17,7 @@ frappe.query_reports['Smart Leave Balance Summary'] = {
 			fieldtype: 'Link',
 			options: 'Company',
 			reqd: 0,
-			default: frappe.defaults.get_user_default('Company')
+			// default: frappe.defaults.get_user_default('Company')
 		},
 		{
 			fieldname:'employee',

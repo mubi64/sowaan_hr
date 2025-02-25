@@ -4,4 +4,4 @@ Modern HR features
 
 #### License
 
-MIT
+mit

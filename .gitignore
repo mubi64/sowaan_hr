@@ -3,4 +3,5 @@
 *.egg-info
 *.swp
 tags
-sowaan_hr/docs/current
+node_modules
+__pycache__

@@ -1,5 +1,3 @@
-from . import __version__ as app_version
-
 app_name = "sowaan_hr"
 app_title = "Sowaan Hr"
 app_publisher = "Sowaan"
@@ -7,7 +5,23 @@ app_description = "Modern HR features"
 app_icon = "octicon octicon-file-directory"
 app_color = "grey"
 app_email = "info@sowaan.com"
-app_license = "MIT"
+app_license = "mit"
+
+# Apps
+# ------------------
+
+# required_apps = []
+
+# Each item in the list will be shown as an app in the apps page
+# add_to_apps_screen = [
+# 	{
+# 		"name": "sowaan_hr",
+# 		"logo": "/assets/sowaan_hr/logo.png",
+# 		"title": "Sowaan Hr",
+# 		"route": "/sowaan_hr",
+# 		"has_permission": "sowaan_hr.api.permission.has_app_permission"
+# 	}
+# ]
 
 fixtures = [
 	{
@@ -52,6 +66,7 @@ fixtures = [
 	# }
 ]
 
+
 # Includes in <head>
 # ------------------
 
@@ -75,10 +90,14 @@ fixtures = [
 
 # include js in doctype views
 doctype_js = {"Salary Slip" : "overrides/salary_slip.js" , "Employee Checkin":"sowaan_hr/client_scripts/employee_checkin_form.js"}
-
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
+
+# Svg Icons
+# ------------------
+# include app icons in desk
+# app_include_icons = "sowaan_hr/public/icons.svg"
 
 # Home Pages
 # ----------
@@ -88,7 +107,7 @@ doctype_js = {"Salary Slip" : "overrides/salary_slip.js" , "Employee Checkin":"s
 
 # website user home page (by Role)
 # role_home_page = {
-#	"Role": "home_page"
+# 	"Role": "home_page"
 # }
 
 # Generators
@@ -96,6 +115,15 @@ doctype_js = {"Salary Slip" : "overrides/salary_slip.js" , "Employee Checkin":"s
 
 # automatically create page for each record of this doctype
 # website_generators = ["Web Page"]
+
+# Jinja
+# ----------
+
+# add methods and filters to jinja environment
+# jinja = {
+# 	"methods": "sowaan_hr.utils.jinja_methods",
+# 	"filters": "sowaan_hr.utils.jinja_filters"
+# }
 
 # Installation
 # ------------
@@ -108,6 +136,22 @@ doctype_js = {"Salary Slip" : "overrides/salary_slip.js" , "Employee Checkin":"s
 
 # before_uninstall = "sowaan_hr.uninstall.before_uninstall"
 # after_uninstall = "sowaan_hr.uninstall.after_uninstall"
+
+# Integration Setup
+# ------------------
+# To set up dependencies/integrations with other apps
+# Name of the app being installed is passed as an argument
+
+# before_app_install = "sowaan_hr.utils.before_app_install"
+# after_app_install = "sowaan_hr.utils.after_app_install"
+
+# Integration Cleanup
+# -------------------
+# To clean up dependencies/integrations with other apps
+# Name of the app being uninstalled is passed as an argument
+
+# before_app_uninstall = "sowaan_hr.utils.before_app_uninstall"
+# after_app_uninstall = "sowaan_hr.utils.after_app_uninstall"
 
 # Desk Notifications
 # ------------------
@@ -147,7 +191,7 @@ override_doctype_class = {
 # 		"on_update": "method",
 # 		"on_cancel": "method",
 # 		"on_trash": "method"
-#	}
+# 	}
 # }
 
 doc_events = {
@@ -171,6 +215,7 @@ doc_events = {
 	}
 }
 
+
 # Scheduled Tasks
 # ---------------
 
@@ -186,10 +231,10 @@ doc_events = {
 # 	],
 # 	"weekly": [
 # 		"sowaan_hr.tasks.weekly"
-# 	]
-#    "monthly": [
-#    "sowaan_hr.tasks.monthly"
-#    ]
+# 	],
+# 	"monthly": [
+# 		"sowaan_hr.tasks.monthly"
+# 	],
 # }
 
 # Testing
@@ -215,30 +260,44 @@ advance_payment_doctypes = ["KSA Gratuity"]
 #
 # auto_cancel_exempted_doctypes = ["Auto Repeat"]
 
+# Ignore links to specified DocTypes when deleting documents
+# -----------------------------------------------------------
+
+# ignore_links_on_delete = ["Communication", "ToDo"]
+
+# Request Events
+# ----------------
+# before_request = ["sowaan_hr.utils.before_request"]
+# after_request = ["sowaan_hr.utils.after_request"]
+
+# Job Events
+# ----------
+# before_job = ["sowaan_hr.utils.before_job"]
+# after_job = ["sowaan_hr.utils.after_job"]
 
 # User Data Protection
 # --------------------
 
-user_data_fields = [
-	{
-		"doctype": "{doctype_1}",
-		"filter_by": "{filter_by}",
-		"redact_fields": ["{field_1}", "{field_2}"],
-		"partial": 1,
-	},
-	{
-		"doctype": "{doctype_2}",
-		"filter_by": "{filter_by}",
-		"partial": 1,
-	},
-	{
-		"doctype": "{doctype_3}",
-		"strict": False,
-	},
-	{
-		"doctype": "{doctype_4}"
-	}
-]
+# user_data_fields = [
+# 	{
+# 		"doctype": "{doctype_1}",
+# 		"filter_by": "{filter_by}",
+# 		"redact_fields": ["{field_1}", "{field_2}"],
+# 		"partial": 1,
+# 	},
+# 	{
+# 		"doctype": "{doctype_2}",
+# 		"filter_by": "{filter_by}",
+# 		"partial": 1,
+# 	},
+# 	{
+# 		"doctype": "{doctype_3}",
+# 		"strict": False,
+# 	},
+# 	{
+# 		"doctype": "{doctype_4}"
+# 	}
+# ]
 
 # Authentication and authorization
 # --------------------------------
@@ -247,10 +306,10 @@ user_data_fields = [
 # 	"sowaan_hr.auth.validate"
 # ]
 
-# Translation
-# --------------------------------
+# Automatically update python controller files with type annotations for this app.
+# export_python_type_annotations = True
 
-# Make link fields search translated document names for these DocTypes
-# Recommended only for DocTypes which have limited documents with untranslated names
-# For example: Role, Gender, etc.
-# translated_search_doctypes = []
+# default_log_clearing_doctypes = {
+# 	"Logging DocType Name": 30  # days to retain logs
+# }
+

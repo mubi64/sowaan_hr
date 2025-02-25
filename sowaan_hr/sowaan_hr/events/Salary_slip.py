@@ -699,23 +699,21 @@ def set_fix_days(self):
 def get_deduction_parent(employee, salary_structure):
     if not frappe.db.exists("DocType", "Deduction Employees") or not frappe.db.exists("DocType", "Deduction Salary Structures"):
         return None
-    ded_emp_list = frappe.get_list(
-    "Deduction Employees",
-    filters={
-        "parenttype": "Sowaan HR Setting",  
-    },
-    fields=["employee", "parent"],
-    ignore_permissions=True
+    ded_emp_list = frappe.get_all(
+        "Deduction Employees",
+        filters={"parenttype": "Sowaan HR Setting"},
+        fields=["employee", "parent"],
+        ignore_permissions=True
     )
     
-    ded_ss_list = frappe.get_list(
-    "Deduction Salary Structures",
-    filters={
-        "parenttype": "Sowaan HR Setting",
-    },
-    fields=["salary_structure", "parent"],
-    ignore_permissions=True
+    ded_ss_list = frappe.get_all(
+        "Deduction Salary Structures",
+        filters={"parenttype": "Sowaan HR Setting"},
+        fields=["salary_structure", "parent"],
+        ignore_permissions=True
     )
+
+    
     if not ded_emp_list and not ded_ss_list:
         return None
 

@@ -57,10 +57,10 @@ def create_leave(employee, from_date, to_date, leave_type, description, leave_ap
             if (half_day_date == None):
                 raise Exception("Mandatory fields required in Leave Application")
 
-        # from hrms.hr.doctype.leave_application.leave_application import get_leave_approver
-        # if employee and not leave_approver:
-        #     leave_approver = get_leave_approver(employee)
-        #     print(leave_approver, "LEave approver checking \n\n\n\n")
+        from hrms.hr.doctype.leave_application.leave_application import get_leave_approver
+        if employee and not leave_approver:
+            leave_approver = get_leave_approver(employee)
+            print(leave_approver, "Leave approver checking \n\n\n\n")
 
         leave = frappe.get_doc({
             "doctype": "Leave Application",
@@ -71,7 +71,10 @@ def create_leave(employee, from_date, to_date, leave_type, description, leave_ap
             "description": description,
             "half_day": half_day,
             "half_day_date": half_day_date,
-        }).insert()
+        })
+        if leave_approver:
+            leave.leave_approver = leave_approver
+        leave.insert()
         frappe.db.commit()
 
         return leave

@@ -874,9 +874,21 @@ def cancel_related_docs(self, method):
             fund_contribution_doc.save()
         
 
+def before_save_salaryslip(doc,method):
 
-
-
-
+    if frappe.db.get_value('Employee', doc.employee, 'custom_allow_overtime'): 
+        recalculate = True
+        ot_hours_list = frappe.get_all("Employee Overtime",filters={
+                        "employee": ["=", doc.employee],
+                        "overtime_date": ["Between", [doc.start_date,doc.end_date]],
+                        "docstatus": ["=", 1]
+                        },fields=['approved_overtime_hours'])
+                        
+        ot_sum = 0
+        if len(ot_hours_list) > 0 : 
+            for item in ot_hours_list:        
+                ot_sum = item.approved_overtime_hours + ot_sum
+            doc.custom_ot_hours = ot_sum
+            
 
 

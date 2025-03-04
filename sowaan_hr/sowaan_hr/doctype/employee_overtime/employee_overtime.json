@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "OT-{employee}-{MM}-{YYYY}-{#####}",
+ "autoname": "format:OT-{employee}-{MM}-{YYYY}-{#####}",
  "creation": "2025-02-27 16:40:10.397746",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -84,11 +84,11 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-02-27 16:54:32.901666",
+ "modified": "2025-03-04 12:00:34.206568",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Employee Overtime",
- "naming_rule": "Expression (old style)",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {

@@ -876,19 +876,116 @@ def cancel_related_docs(self, method):
 
 def before_save_salaryslip(doc,method):
 
+
+######################## Safi Work #########################
     if frappe.db.get_value('Employee', doc.employee, 'custom_allow_overtime'): 
         recalculate = True
         ot_hours_list = frappe.get_all("Employee Overtime",filters={
                         "employee": ["=", doc.employee],
                         "overtime_date": ["Between", [doc.start_date,doc.end_date]],
                         "docstatus": ["=", 1]
-                        },fields=['approved_overtime_hours'])
-                        
+                        },fields=['approved_overtime_hours'])                        
         ot_sum = 0
         if len(ot_hours_list) > 0 : 
             for item in ot_hours_list:        
                 ot_sum = item.approved_overtime_hours + ot_sum
             doc.custom_ot_hours = ot_sum
-            
+######################## Safi Work #########################
+
+
+
+
+
+####################### Sufyan Work ########################
+
+        shift_req_hrs = 0
+        shift_name = None
+        holiday_list_name = None
+        holiday_dates = []
+        holiday_overtime_hrs = 0
+        shift_ass_list = frappe.db.get_list('Shift Assignment' , 
+                            filters={
+                                'employee' : doc.employee ,
+                                'status' : 'Active' ,
+                                'start_date' : ['<' , doc.end_date] ,
+                            },
+                            fields = ['name','shift_type'] ,
+                            order_by = 'start_date desc'
+                          )
+        if shift_ass_list :
+            shift_name = shift_ass_list[0].shift_type
+            shift_req_hrs = frappe.db.get_value('Shift Type', shift_name, 'required_hours')
+            holiday_list_name = frappe.db.get_value('Shift Type', shift_name, 'holiday_list')
+        
+        else :
+            shift_name = frappe.db.get_value('Employee' , doc.employee , 'default_shift')
+            if shift_name :
+                shift_req_hrs = frappe.db.get_value('Shift Type', shift_name, 'required_hours')
+                holiday_list_name = frappe.db.get_value('Shift Type', shift_name, 'holiday_list')
+
+
+        if holiday_list_name :
+            holiday_list_doc = frappe.get_doc('Holiday List', holiday_list_name)
+            holiday_dates = [holiday.holiday_date for holiday in holiday_list_doc.holidays]
+
+        else :
+            holiday_list_name = frappe.db.get_value('Employee' , doc.employee , 'holiday_list')
+            holiday_list_doc = frappe.get_doc('Holiday List', holiday_list_name)
+            holiday_dates = [holiday.holiday_date for holiday in holiday_list_doc.holidays]
+
+
+
+
+        emp_ovrtime_list = frappe.db.get_list('Employee Overtime' , 
+                                filters={
+                                    'employee' : doc.employee ,
+                                    "overtime_date": ["Between", [doc.start_date,doc.end_date]],
+                                    'overtime_date': ['in', holiday_dates]
+                                }, fields = ['approved_overtime_hours'])
+
+        if emp_ovrtime_list :
+            for row in emp_ovrtime_list :
+                holiday_overtime_hrs = holiday_overtime_hrs + row.approved_overtime_hours
+
+
+        doc.custom_overtime_hours_on_working_day = doc.custom_ot_hours - holiday_overtime_hrs
+        doc.custom_overtime_hours_on_holiday = holiday_overtime_hrs
+
+
+        base = frappe.get_list('Salary Structure Assignment',
+                filters = {
+                    'employee' : doc.employee ,
+                    'salary_structure' : doc.salary_structure ,
+                    'from_date' : ['<' , doc.end_date]  ,
+                    'docstatus' : 1 ,
+                },
+                fields=['base'],
+                order_by='from_date desc',
+            )
+
+        if base :
+       
+            one_zero = 1
+            if shift_req_hrs == 0 :
+                shift_req_hrs = 1
+                one_zero = 0
+
+            working_days_for_overtime = 30
+
+            overtime_based_on = frappe.db.get_single_value('SowaanHR Payroll Settings','overtime_based_on')
+            if overtime_based_on == 'Working Days' :
+                working_days_for_overtime = doc.total_working_days
+
+            else :
+                working_days_for_overtime = frappe.db.get_single_value('SowaanHR Payroll Settings','fixed_days')
+
+
+
+            overtime_rate_on_working_days = frappe.db.get_single_value('SowaanHR Payroll Settings','overtime_hours_rate_on_working_day')
+            overtime_rate_on_holidays = frappe.db.get_single_value('SowaanHR Payroll Settings','overtime_hours_rate_on_holiday')
+            base_amount = (   (  (base[0].base) / working_days_for_overtime   )  /  shift_req_hrs  ) * one_zero
+            doc.custom_overtime_per_hour_rate_for_working_day = (base_amount * overtime_rate_on_working_days) * doc.custom_overtime_hours_on_working_day
+            doc.custom_overtime_per_hour_rate_for_holiday = (base_amount * overtime_rate_on_holidays) * doc.custom_overtime_hours_on_holiday
+####################### Sufyan Work ########################
 
 

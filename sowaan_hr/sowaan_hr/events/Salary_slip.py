@@ -989,3 +989,49 @@ def before_save_salaryslip(doc,method):
 ####################### Sufyan Work ########################
 
 
+def own_fund_tax(self,method):
+    doc = self
+    fund_contribution = frappe.get_list(
+            "Fund Contribution",
+            filters={
+                "employee": self.employee,
+                "docstatus": 1
+            },
+            fields=["*"],
+
+
+        )
+    if fund_contribution:
+        tax_component = None
+        contribution_doc = frappe.get_doc("Fund Contribution", fund_contribution[0])
+        fund_setting_name = contribution_doc.fund_setting
+        fund_setting = frappe.get_doc("Fund Setting", fund_setting_name)
+        if fund_setting.is_taxable == 1:
+            tax_component = fund_setting.tax_component
+            Contribution = None  # Using None to indicate if no match is found
+            total = None
+            for component in doc.deductions:
+                
+                if component.salary_component == tax_component:
+                
+                    Contribution = component.amount
+                    Contribution = Contribution * 12
+                    total = Contribution
+                    if total > 150000:
+                        Contribution = Contribution - 150000
+                        break  
+
+                
+            if Contribution is not None and total > 150000:
+                Contribution = Contribution / 12
+                earning_entry = {
+                    "salary_component": tax_component,
+                    "amount": Contribution,
+                    "year_to_date": Contribution
+                }
+            self.append("earnings", earning_entry)
+
+            doc.calculate_net_pay()
+            doc.compute_year_to_date()
+            doc.compute_month_to_date()
+            doc.compute_component_wise_year_to_date()

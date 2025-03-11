@@ -36,7 +36,7 @@ fixtures = [
 					"custom_check_adjustment", "custom_is_half_day_fix", "custom_half_day_start_time", "custom_half_day_end_time",
                     "custom_total_half_days", "custom_early_exit_minutes", "custom_late_entry_minutes", "custom_allow_overtime" , "custom_required_hours",
                     "custom_ot_hours", "custom_overtime", "custom_overtime_hours_on_working_day", "custom_overtime_hours_on_holiday", "custom_column_break_hyfhy",
-					"custom_overtime_per_hour_rate_for_working_day", "custom_overtime_per_hour_rate_for_holiday"
+					"custom_overtime_per_hour_rate_for_working_day", "custom_overtime_per_hour_rate_for_holiday", "custom_smart_posting_date"
 				)
 			]
 		]
@@ -91,7 +91,11 @@ fixtures = [
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-doctype_js = {"Salary Slip" : "overrides/salary_slip.js" , "Employee Checkin":"sowaan_hr/client_scripts/employee_checkin_form.js"}
+doctype_js = {
+    "Salary Slip" : "overrides/salary_slip.js" , 
+    "Employee Checkin":"sowaan_hr/client_scripts/employee_checkin_form.js",
+    "Payroll Entry" : "public/js/payroll_entry.js",
+}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -180,7 +184,7 @@ doctype_js = {"Salary Slip" : "overrides/salary_slip.js" , "Employee Checkin":"s
 override_doctype_class = {
 	"Payment Entry": "sowaan_hr.overrides.employee_payment_entry.EmployeePaymentEntry",
     "Salary Slip": "sowaan_hr.overrides.employee_salary_slip.EmployeeSalarySlip",
- 	# "Payroll Entry": "sowaan_hr.overrides.override_payment_entry.OverridePayrollEntry",
+ 	"Payroll Entry": "sowaan_hr.overrides.override_payroll_entry.OverridePayrollEntry",
     "Additional Salary": "sowaan_hr.overrides.employee_additional_salary.EmployeeAdditionalSalary"
 }
 

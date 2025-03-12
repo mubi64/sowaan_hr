@@ -606,7 +606,6 @@ def fund_management_and_negative_salary(self, method):
 
 
 def salary_slip_after_submit(self,method):
-    
     fund_contribution = frappe.get_list(
             "Fund Contribution",
             filters={
@@ -673,6 +672,29 @@ def salary_slip_after_submit(self,method):
                 "document_name":self.name
             })
             contribution_doc.save()
+
+    # after submit netpay update on payroll entry if payroll entry exist
+    if self.payroll_entry:
+        frappe.db.sql(
+            """
+            UPDATE `tabPayroll Employee Detail`
+            SET custom_payable = %s
+            WHERE parent = %s and employee = %s
+            """,
+            (self.net_pay, self.payroll_entry, self.employee),
+        )
+
+def on_cancel(self, method):
+    if self.payroll_entry:
+        frappe.db.sql(
+            """
+            UPDATE `tabPayroll Employee Detail`
+            SET custom_payable = %s
+            WHERE parent = %s and employee = %s
+            """,
+            (0, self.payroll_entry, self.employee),
+        )
+
 
 
 

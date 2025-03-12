@@ -209,7 +209,8 @@ doc_events = {
 
         # "before_save": "sowaan_hr.sowaan_hr.events.Salary_slip.set_fix_days",
         "before_submit": "sowaan_hr.sowaan_hr.events.Salary_slip.salary_slip_after_submit",
-        "before_cancel": "sowaan_hr.sowaan_hr.events.Salary_slip.cancel_related_docs"
+        "before_cancel": "sowaan_hr.sowaan_hr.events.Salary_slip.cancel_related_docs",
+        "on_cancel": "sowaan_hr.sowaan_hr.events.Salary_slip.on_cancel",
 	},
     "Loan Application":{
 		"before_save": "sowaan_hr.sowaan_hr.events.loan_application.loan_withdrawal"
@@ -222,6 +223,10 @@ doc_events = {
 	},
     "Shift Type":{
 		"validate": "sowaan_hr.sowaan_hr.events.shift_type.half_day_msg"
+	},
+    "Journal Entry": {
+        "before_submit": "sowaan_hr.sowaan_hr.events.journal_entry.after_submit",
+        "on_cancel": "sowaan_hr.sowaan_hr.events.journal_entry.on_cancel",
 	}
 }
 

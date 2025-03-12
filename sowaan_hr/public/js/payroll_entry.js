@@ -6,6 +6,18 @@ var in_progress = false;
 frappe.provide("erpnext.accounts.dimensions");
 
 frappe.ui.form.on("Payroll Entry", {
+  create_salary_slips: function (frm) {
+		frm.call({
+			doc: frm.doc,
+			method: "run_doc_method",
+			args: {
+				method: "create_salary_slips",
+				dt: "Payroll Entry",
+				dn: frm.doc.name,
+			},
+		});
+	},
+
   add_bank_entry_button: function (frm) {
     frm.call("has_bank_entries").then((r) => {
       if (!r.message.has_bank_entries) {
@@ -90,6 +102,7 @@ frappe.ui.form.on("Payroll Entry", {
     });
   },
 });
+
 
 let released_salary = function (frm, employees, for_withheld_salaries = 0) {
   const doc = frm.doc;

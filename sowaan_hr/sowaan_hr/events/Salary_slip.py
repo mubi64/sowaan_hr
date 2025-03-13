@@ -844,13 +844,14 @@ def handle_late_scenario(self, parent_to_use):
         out_time = timedelta(hours=a['out_time'].hour, minutes=a['out_time'].minute, seconds=a['out_time'].second)
 
         
-        ## Late Work ##
+        
+        ## Half Day Work ##
         if hr_settings.is_half_day_deduction_applicable and a['status'] == 'Half Day':
             half_day_count += 1
             if half_day_count > half_day_flag_count:
                 if not exemptions_used['half_day'] and (half_day_count - half_day_flag_count) <= exemptions['half_day']:
                     exemptions_used['half_day'] = True
-                elif (half_day_count - half_day_flag_count - exemptions['half_day']) % (half_day_flag_count) == 0:
+                elif half_day_flag_count > 0 and (half_day_count - half_day_flag_count - exemptions['half_day']) % (half_day_flag_count) == 0:
                     deduction_half_day_count += 1
                     
                 
@@ -860,17 +861,17 @@ def handle_late_scenario(self, parent_to_use):
             if early_departure_count > early_flag_count:
                 if not exemptions_used['early_exit'] and (early_departure_count - early_flag_count) <= exemptions['early_exit']:
                     exemptions_used['early_exit'] = True
-                elif (early_departure_count - early_flag_count - exemptions['early_exit']) % (early_flag_count) == 0:
+                elif early_flag_count > 0 and (early_departure_count - early_flag_count - exemptions['early_exit']) % (early_flag_count) == 0:
                     total_early_minutes += (shift_end_time - out_time).seconds // 60
                     total_early_departure_count += 1
 
-        ## Half Day Work ##
+        ## Late Work ##
         if hr_settings.is_late_deduction_applicable and a['status'] == 'Present' and a['late_entry']:
             late_count += 1
             if late_count > late_flag_count:
                 if not exemptions_used['late_entry'] and (late_count - late_flag_count) <= exemptions['late_entry']:
                     exemptions_used['late_entry'] = True
-                elif (late_count - late_flag_count - exemptions['late_entry']) % (late_flag_count) == 0:
+                elif late_flag_count > 0 and (late_count - late_flag_count - exemptions['late_entry']) % (late_flag_count) == 0:
                     total_late_minutes += (in_time - shift_start_time).seconds // 60
                     total_late_count += 1
 
@@ -885,7 +886,6 @@ def handle_late_scenario(self, parent_to_use):
         #     if late_count > exemptions['late_entry']:
         #         total_late_minutes += (in_time - shift_start_time).seconds // 60
         #         total_late_count += 1
-
 
 
 

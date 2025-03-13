@@ -2,7 +2,7 @@ import frappe
 from hrms.payroll.doctype.salary_slip.salary_slip import (SalarySlip, calculate_tax_by_tax_slab)
 from sowaan_hr.sowaan_hr.api.api import create_salary_adjustment_for_negative_salary
 from datetime import datetime, timedelta
-
+from frappe.utils import cint
 
 def fund_management_and_negative_salary(self, method):
     if self.custom_adjust_negative_salary == 1 and self.custom_check_adjustment == 1 and self.net_pay < 0 :
@@ -600,7 +600,10 @@ def fund_management_and_negative_salary(self, method):
     self.compute_year_to_date()
     self.compute_month_to_date()
     self.compute_component_wise_year_to_date()
+
+    #################### Call Further before_save functions ########################
     set_fix_days(self)
+    before_save_salaryslip(self)
 
 
 
@@ -784,7 +787,7 @@ def handle_late_scenario(self, parent_to_use):
 
     deduction_base = hr_settings.deduction_based_on.lower() if hr_settings.deduction_based_on else None
     if deduction_base == 'basic':
-        ded_salary = next((e.amount for e in self.earnings if e.salary_component.lower() == 'basic'), 0)
+        ded_salary = next((e.amount for e in self.earnings if 'basic' in e.salary_component.lower()), 0)
     elif deduction_base == 'base':
         salary_structure = frappe.get_all("Salary Structure Assignment",
             filters=[["employee", "=", self.employee], ["from_date", "<=", self.start_date], ["docstatus", "=", 1]],
@@ -810,15 +813,28 @@ def handle_late_scenario(self, parent_to_use):
     if not attendance:
         return
 
+
+    late_flag_count = cint(hr_settings.get('late_flag_count', 0))
+    early_flag_count = cint(hr_settings.get('early_flag_count', 0))
+    half_day_flag_count = cint(hr_settings.get('half_day_flag_count', 0))
+
+
+
     exemptions = {
-        'half_day': hr_settings.get('half_day_exemptions', 0),
-        'early_exit': hr_settings.get('early_exit_exemptions', 0),
-        'late_entry': hr_settings.get('late_entry_exemptions', 0)
+        'half_day': cint(hr_settings.get('half_day_exemptions', 0)),
+        'early_exit': cint(hr_settings.get('early_exit_exemptions', 0)),
+        'late_entry': cint(hr_settings.get('late_entry_exemptions', 0))
+    }
+
+    exemptions_used = {
+        'half_day': False,
+        'early_exit': False,
+        'late_entry': False
     }
 
     late_count = early_departure_count = half_day_count = 0
-    total_late_minutes = total_early_minutes = deduction_half_day_count = 0
-    total_late_count = total_early_departure_count = total_half_day_count = 0
+    total_late_minutes = total_early_minutes = 0
+    total_late_count = total_early_departure_count = deduction_half_day_count = 0
 
     for a in attendance:
         if not a['in_time'] or not a['out_time']:
@@ -827,26 +843,57 @@ def handle_late_scenario(self, parent_to_use):
         in_time = timedelta(hours=a['in_time'].hour, minutes=a['in_time'].minute, seconds=a['in_time'].second)
         out_time = timedelta(hours=a['out_time'].hour, minutes=a['out_time'].minute, seconds=a['out_time'].second)
 
+        
+        ## Late Work ##
         if hr_settings.is_half_day_deduction_applicable and a['status'] == 'Half Day':
             half_day_count += 1
-            if half_day_count > exemptions['half_day']:
-                deduction_half_day_count += 1
-
+            if half_day_count > half_day_flag_count:
+                if not exemptions_used['half_day'] and (half_day_count - half_day_flag_count) <= exemptions['half_day']:
+                    exemptions_used['half_day'] = True
+                elif (half_day_count - half_day_flag_count - exemptions['half_day']) % (half_day_flag_count) == 0:
+                    deduction_half_day_count += 1
+                    
+                
+        ## Early Work ##
         if hr_settings.is_early_deduction_applicable and a['status'] == 'Present' and a['early_exit']:
             early_departure_count += 1
-            if early_departure_count > exemptions['early_exit']:
-                total_early_minutes += (shift_end_time - out_time).seconds // 60
-                total_early_departure_count += 1
+            if early_departure_count > early_flag_count:
+                if not exemptions_used['early_exit'] and (early_departure_count - early_flag_count) <= exemptions['early_exit']:
+                    exemptions_used['early_exit'] = True
+                elif (early_departure_count - early_flag_count - exemptions['early_exit']) % (early_flag_count) == 0:
+                    total_early_minutes += (shift_end_time - out_time).seconds // 60
+                    total_early_departure_count += 1
 
+        ## Half Day Work ##
         if hr_settings.is_late_deduction_applicable and a['status'] == 'Present' and a['late_entry']:
             late_count += 1
-            if late_count > exemptions['late_entry']:
-                total_late_minutes += (in_time - shift_start_time).seconds // 60
-                total_late_count += 1
+            if late_count > late_flag_count:
+                if not exemptions_used['late_entry'] and (late_count - late_flag_count) <= exemptions['late_entry']:
+                    exemptions_used['late_entry'] = True
+                elif (late_count - late_flag_count - exemptions['late_entry']) % (late_flag_count) == 0:
+                    total_late_minutes += (in_time - shift_start_time).seconds // 60
+                    total_late_count += 1
+
+        # if hr_settings.is_early_deduction_applicable and a['status'] == 'Present' and a['early_exit']:
+        #     early_departure_count += 1
+        #     if early_departure_count > exemptions['early_exit']:
+        #         total_early_minutes += (shift_end_time - out_time).seconds // 60
+        #         total_early_departure_count += 1
+
+        # if hr_settings.is_late_deduction_applicable and a['status'] == 'Present' and a['late_entry']:
+        #     late_count += 1
+        #     if late_count > exemptions['late_entry']:
+        #         total_late_minutes += (in_time - shift_start_time).seconds // 60
+        #         total_late_count += 1
+
+
+
+
+
 
     self.custom_late_entry_minutes = total_late_minutes
     self.custom_early_exit_minutes = total_early_minutes
-    self.custom_total_half_days = half_day_count
+    self.custom_total_half_days = deduction_half_day_count
 
     if hr_settings.calculation_method == 'Minutes':
         update_or_create_deduction(hr_settings.late_salary_component, total_late_minutes * minute_salary)
@@ -864,9 +911,9 @@ def handle_late_scenario(self, parent_to_use):
             update_or_create_deduction(hr_settings.early_salary_component, total_early_departure_count * minute_salary)
 
         if hr_settings.half_day_deduction_factor and hr_settings.half_day_deduction_factor != 0:
-            update_or_create_deduction(hr_settings.half_day_salary_component, total_half_day_count * hr_settings.half_day_deduction_factor * (ded_salary / total_working_days))
+            update_or_create_deduction(hr_settings.half_day_salary_component, deduction_half_day_count * hr_settings.half_day_deduction_factor * (ded_salary / total_working_days))
         else:
-            update_or_create_deduction(hr_settings.half_day_salary_component, total_half_day_count * half_day_salary)
+            update_or_create_deduction(hr_settings.half_day_salary_component, deduction_half_day_count * half_day_salary)
 
     self.calculate_net_pay()
     self.compute_year_to_date()
@@ -896,7 +943,7 @@ def cancel_related_docs(self, method):
             fund_contribution_doc.save()
         
 
-def before_save_salaryslip(doc,method):
+def before_save_salaryslip(doc):
 
 
 ######################## Safi Work #########################

@@ -171,13 +171,11 @@ class OverridePayrollEntry(PayrollEntry):
                 if for_withheld_salaries:
                     link_bank_entry_in_salary_withholdings(salary_details, bank_entry.name)
         else:
-            for emp in self.employees:
-                if emp.is_salary_withheld == 0:
-                    salary_slip_total = emp.custom_payable - emp.custom_pay
-                    if salary_slip_total > 0:
-                        remark = "salaries"
-                        bank_entry = self.set_accounting_entries_for_bank_entry_partial(salary_slip_total, remark)
-                        print(emp.employee, "Hello")
+            salary_slip_total = sum(flt(emp.custom_payable) - flt(emp.custom_pay) for emp in self.employees if emp.is_salary_withheld == 0)
+
+            if salary_slip_total > 0:
+                remark = "salaries"
+                bank_entry = self.set_accounting_entries_for_bank_entry_partial(salary_slip_total, remark)
         return bank_entry
        
 

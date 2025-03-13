@@ -81,6 +81,9 @@ class OverridePayrollEntry(PayrollEntry):
             "has_bank_entries_for_withheld_salaries": not any(
                 employee.is_salary_withheld for employee in self.employees
             ),
+            "has_bank_entries_and_withheld_salaries": bool(bank_entries) and not any(
+                employee.is_salary_withheld for employee in self.employees
+            )
         }
     
     @frappe.whitelist()

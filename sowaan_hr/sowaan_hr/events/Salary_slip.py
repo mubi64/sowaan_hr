@@ -116,7 +116,7 @@ def fund_management_and_negative_salary(self, method):
                 self.append("deductions", deduction_entry)
                 # found_own_entry = False
                 for row in contribution_doc.fund_contribution_entry:
-                    if row.contribution_type == "Own" and row.salary_slip == self.name:
+                    if row.contribution_type == "Own" and row.document_name == self.name:
                         # row.amount = fund_setting.own_value  # Update the amount
                         frappe.db.set_value("Fund Contribution Entry", row.name, "amount", own_fund_value)
                         # found_own_entry = True
@@ -171,7 +171,7 @@ def fund_management_and_negative_salary(self, method):
 
                 # found_company_entry = False
                 for row in contribution_doc.fund_contribution_entry:
-                    if row.contribution_type == "Company" and row.salary_slip == self.name:
+                    if row.contribution_type == "Company" and row.document_name == self.name:
                         # row.amount = fund_setting.company_value
                         frappe.db.set_value("Fund Contribution Entry", row.name, "amount", company_fund_value)
                         # found_company_entry = True
@@ -267,7 +267,7 @@ def fund_management_and_negative_salary(self, method):
 
                     # found_own_entry = False
                     for row in contribution_doc.fund_contribution_entry:
-                        if row.contribution_type == "Own" and row.salary_slip == self.name:
+                        if row.contribution_type == "Own" and row.document_name == self.name:
                             # row.amount = total_fund_amount11
                             frappe.db.set_value("Fund Contribution Entry", row.name, "amount", total_fund_amount11)
                             # found_own_entry = True
@@ -291,6 +291,7 @@ def fund_management_and_negative_salary(self, method):
                         # earnings_amount = earnings_dict[component.component]
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                         total_fund_amount = total_fund_amount + calculated_amount
+
                 # if start_days:
                 #     total_fund_amount = (total_fund_amount / w_days) * start_days
                 if total_fund_amount and fund_setting.company_value:
@@ -358,7 +359,7 @@ def fund_management_and_negative_salary(self, method):
                   
                     # found_company_entry = False
                     for row in contribution_doc.fund_contribution_entry:
-                        if row.contribution_type == "Company" and row.salary_slip == self.name:
+                        if row.contribution_type == "Company" and row.document_name == self.name:
                             # row.amount = total_fund_amount
                             frappe.db.set_value("Fund Contribution Entry", row.name, "amount", total_fund_amount)
                             # found_company_entry = True
@@ -507,7 +508,7 @@ def fund_management_and_negative_salary(self, method):
 
                 # Update Fund Contribution Entry
                 for row in contribution_doc.fund_contribution_entry:
-                    if row.contribution_type == "Own" and row.salary_slip == self.name:
+                    if row.contribution_type == "Own" and row.document_name == self.name:
                         frappe.db.set_value("Fund Contribution Entry", row.name, "amount", total_fund_amount1)
                         break
 
@@ -590,7 +591,7 @@ def fund_management_and_negative_salary(self, method):
 
                     # Updating Fund Contribution Entry
                     for row in contribution_doc.fund_contribution_entry:
-                        if row.contribution_type == "Company" and row.salary_slip == self.name:
+                        if row.contribution_type == "Company" and row.document_name == self.name:
                             frappe.db.set_value("Fund Contribution Entry", row.name, "amount", total_fund_amount2)
                             break
 

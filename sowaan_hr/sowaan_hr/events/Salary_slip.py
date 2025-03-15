@@ -827,11 +827,11 @@ def handle_late_scenario(self, parent_to_use):
         'late_entry': cint(hr_settings.get('late_entry_exemptions', 0))
     }
 
-    exemptions_used = {
-        'half_day': False,
-        'early_exit': False,
-        'late_entry': False
-    }
+    # exemptions_used = {
+    #     'half_day': False,
+    #     'early_exit': False,
+    #     'late_entry': False
+    # }
 
     late_count = early_departure_count = half_day_count = 0
     total_late_minutes = total_early_minutes = 0
@@ -849,32 +849,51 @@ def handle_late_scenario(self, parent_to_use):
         ## Half Day Work ##
         if hr_settings.is_half_day_deduction_applicable and a['status'] == 'Half Day':
             half_day_count += 1
-            if half_day_count > half_day_flag_count:
-                if not exemptions_used['half_day'] and (half_day_count - half_day_flag_count) <= exemptions['half_day']:
-                    exemptions_used['half_day'] = True
-                elif half_day_flag_count > 0 and (half_day_count - half_day_flag_count - exemptions['half_day']) % (half_day_flag_count) == 0:
+
+            if half_day_count <= half_day_flag_count:
+                pass
+            elif half_day_count <= half_day_flag_count + exemptions["half_day"]:
+                pass
+            else:
+                excess_half_days = half_day_count - (half_day_flag_count + exemptions["half_day"]) + 1
+                if half_day_flag_count == 0:
                     deduction_half_day_count += 1
-                    
-                
+                elif excess_half_days > 0 and excess_half_days % half_day_flag_count == 0:
+                    deduction_half_day_count += 1
+            
         ## Early Work ##
         if hr_settings.is_early_deduction_applicable and a['status'] == 'Present' and a['early_exit']:
             early_departure_count += 1
-            if early_departure_count > early_flag_count:
-                if not exemptions_used['early_exit'] and (early_departure_count - early_flag_count) <= exemptions['early_exit']:
-                    exemptions_used['early_exit'] = True
-                elif early_flag_count > 0 and (early_departure_count - early_flag_count - exemptions['early_exit']) % (early_flag_count) == 0:
+            if early_departure_count <= early_flag_count:
+                pass
+            elif early_departure_count <= early_flag_count + exemptions["early_exit"]: 
+                pass
+            else:
+                excess_early_days = early_departure_count - (early_flag_count + exemptions["early_exit"]) + 1
+                if early_flag_count == 0:
                     total_early_minutes += (shift_end_time - out_time).seconds // 60
                     total_early_departure_count += 1
-
+                elif excess_early_days > 0 and excess_early_days % early_flag_count == 0:
+                    total_early_minutes += (shift_end_time - out_time).seconds // 60
+                    total_early_departure_count += 1
         ## Late Work ##
         if hr_settings.is_late_deduction_applicable and a['status'] == 'Present' and a['late_entry']:
             late_count += 1
-            if late_count > late_flag_count:
-                if not exemptions_used['late_entry'] and (late_count - late_flag_count) <= exemptions['late_entry']:
-                    exemptions_used['late_entry'] = True
-                elif late_flag_count > 0 and (late_count - late_flag_count - exemptions['late_entry']) % (late_flag_count) == 0:
+            if late_count <= late_flag_count:
+                pass
+            elif late_count <= late_flag_count + exemptions["late_entry"]:  
+                pass
+            else:
+                excess_late_days = late_count - (late_flag_count + exemptions["late_entry"]) + 1
+                if late_flag_count == 0:
                     total_late_minutes += (in_time - shift_start_time).seconds // 60
                     total_late_count += 1
+                elif excess_late_days > 0 and excess_late_days % late_flag_count == 0:
+                    total_late_minutes += (in_time - shift_start_time).seconds // 60
+                    total_late_count += 1
+
+
+
 
         # if hr_settings.is_early_deduction_applicable and a['status'] == 'Present' and a['early_exit']:
         #     early_departure_count += 1

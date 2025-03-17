@@ -6,7 +6,7 @@ from frappe.utils import cint
 
 def fund_management_and_negative_salary(self, method):
     if self.custom_adjust_negative_salary == 1 and self.custom_check_adjustment == 1 and self.net_pay < 0 :
-            create_salary_adjustment_for_negative_salary(self.name)
+        create_salary_adjustment_for_negative_salary(self.name)
         
     elif self.net_pay < 0 :
         self.custom_adjust_negative_salary = 0

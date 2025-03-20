@@ -75,7 +75,7 @@ class OverridePayrollEntry(PayrollEntry):
 
         if bool(bank_entries):
             bank_entries = not any(employee.custom_payable > employee.custom_pay for employee in self.employees if employee.is_salary_withheld == 0)
-        print(bank_entries, "checking bacnk Entry ******")
+        
         return {
             "has_bank_entries": bool(bank_entries),
             "has_bank_entries_for_withheld_salaries": not any(
@@ -350,7 +350,7 @@ class OverridePayrollEntry(PayrollEntry):
         if self.employee_based_payroll_payable_entries:
             for employee, employee_details in self.employee_based_payroll_payable_entries.items():
                 for emp in self.employees:
-                    if emp.custom_payable > emp.custom_pay and employee == emp.employee:
+                    if emp.custom_payable > 0 and emp.custom_payable > emp.custom_pay and employee == emp.employee:
                         je_payment_amount = (
                             (employee_details.get("earnings", 0) or 0)
                             - (employee_details.get("deductions", 0) or 0)

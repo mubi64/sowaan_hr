@@ -175,7 +175,7 @@ class OverridePayrollEntry(PayrollEntry):
                     link_bank_entry_in_salary_withholdings(salary_details, bank_entry.name)
         else:
             salary_slip_total = sum(flt(emp.custom_payable) - flt(emp.custom_pay) for emp in self.employees if emp.is_salary_withheld == 0)
-
+            # print(salary_slip_total, "Checking herere \n\n\n\n\n\n")
             if salary_slip_total > 0:
                 remark = "salaries"
                 bank_entry = self.set_accounting_entries_for_bank_entry_partial(salary_slip_total, remark)
@@ -350,16 +350,18 @@ class OverridePayrollEntry(PayrollEntry):
         if self.employee_based_payroll_payable_entries:
             for employee, employee_details in self.employee_based_payroll_payable_entries.items():
                 for emp in self.employees:
-                    if emp.custom_payable > 0 and emp.custom_payable > emp.custom_pay and employee == emp.employee:
+                    if flt(emp.custom_payable) > 0 and flt(emp.custom_payable) > flt(emp.custom_pay) and employee == emp.employee:
                         je_payment_amount = (
                             (employee_details.get("earnings", 0) or 0)
                             - (employee_details.get("deductions", 0) or 0)
-                            - (employee_details.get("total_loan_repayment", 0) or 0) - emp.custom_pay
+                            - (employee_details.get("total_loan_repayment", 0) or 0) - flt(emp.custom_pay)
                         )
-
                         exchange_rate, amount = self.get_amount_and_exchange_rate_for_journal_entry(
                             self.payment_account, je_payment_amount, company_currency, currencies
                         )
+
+                        if amount <= 0:
+                            continue
 
                         cost_centers = self.get_payroll_cost_centers_for_employee(
                             employee, employee_details.get("salary_structure")

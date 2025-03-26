@@ -322,6 +322,49 @@ class OverridePayrollEntry(PayrollEntry):
             query = query.where(SalarySlip.status != "Withheld")
         return query.run(as_dict=True)
 
+    @frappe.whitelist()
+    def submit_salary_slips(self):
+        self.check_permission("write")
+        salary_slips = self.get_sal_slip_list(ss_status=0)
+
+        if len(salary_slips) > 30 or frappe.flags.enqueue_payroll_entry:
+            self.db_set("status", "Queued")
+            frappe.enqueue(
+                submit_salary_slips_for_employees,
+                timeout=3000,
+                payroll_entry=self,
+                salary_slips=salary_slips,
+                publish_progress=False,
+            )
+            frappe.msgprint(
+                _("Salary Slip submission is queued. It may take a few minutes"),
+                alert=True,
+                indicator="blue",
+            )
+        else:
+            submit_salary_slips_for_employees(self, salary_slips, publish_progress=False)
+
+    def get_sal_slip_list(self, ss_status, as_dict=False):
+        """
+        Returns list of salary slips based on selected criteria
+        """
+
+        ss = frappe.qb.DocType("Salary Slip")
+        ss_list = (
+            frappe.qb.from_(ss)
+            .select(ss.name, ss.salary_structure)
+            .where(
+                (ss.docstatus == ss_status)
+                & (ss.start_date >= self.start_date)
+                & (ss.end_date <= self.end_date)
+                & (ss.payroll_entry == self.name)
+                & ((ss.journal_entry.isnull()) | (ss.journal_entry == ""))
+                & (Coalesce(ss.salary_slip_based_on_timesheet, 0) == self.salary_slip_based_on_timesheet)
+            )
+        ).run(as_dict=as_dict)
+
+        return ss_list
+
     def set_accounting_entries_for_bank_entry_partial(self, je_payment_amount, user_remark):
         payroll_payable_account = self.payroll_payable_account
         precision = frappe.get_precision("Journal Entry Account", "debit_in_account_currency")
@@ -349,6 +392,7 @@ class OverridePayrollEntry(PayrollEntry):
 
         if self.employee_based_payroll_payable_entries:
             for employee, employee_details in self.employee_based_payroll_payable_entries.items():
+                print(employee, "Checking EMployess \n\n\n")
                 for emp in self.employees:
                     if flt(emp.custom_payable) > 0 and flt(emp.custom_payable) > flt(emp.custom_pay) and employee == emp.employee:
                         je_payment_amount = (
@@ -359,7 +403,6 @@ class OverridePayrollEntry(PayrollEntry):
                         exchange_rate, amount = self.get_amount_and_exchange_rate_for_journal_entry(
                             self.payment_account, je_payment_amount, company_currency, currencies
                         )
-
                         if amount <= 0:
                             continue
 
@@ -684,3 +727,52 @@ def create_salary_slips_for_employees(employees, args, publish_progress=True):
     finally:
         frappe.db.commit()  # nosemgrep
         frappe.publish_realtime("completed_salary_slip_creation", user=frappe.session.user)
+
+def submit_salary_slips_for_employees(payroll_entry, salary_slips, publish_progress=True):
+    try:
+        submitted = []
+        unsubmitted = []
+        frappe.flags.via_payroll_entry = True
+        count = 0
+
+        for entry in salary_slips:
+            salary_slip = frappe.get_doc("Salary Slip", entry[0])
+            if salary_slip.net_pay < 0:
+                unsubmitted.append(entry[0])
+            else:
+                try:
+                    frappe.db.sql(
+                        """
+                        UPDATE `tabPayroll Employee Detail`
+                        SET custom_payable = %s
+                        WHERE parent = %s and employee = %s
+                        """,
+                        (salary_slip.net_pay, payroll_entry.name, salary_slip.employee),
+                    )
+                    salary_slip.submit()
+                    submitted.append(salary_slip)
+                except frappe.ValidationError:
+                    unsubmitted.append(entry[0])
+
+            count += 1
+            if publish_progress:
+                frappe.publish_progress(
+                    count * 100 / len(salary_slips), title=_("Submitting Salary Slips...")
+                )
+
+        if submitted:
+            payroll_entry.make_accrual_jv_entry(submitted)
+            payroll_entry.email_salary_slip(submitted)
+            payroll_entry.db_set({"salary_slips_submitted": 1, "status": "Submitted", "error_message": ""})
+
+        show_payroll_submission_status(submitted, unsubmitted, payroll_entry)
+
+    except Exception as e:
+        frappe.db.rollback()
+        log_payroll_failure("submission", payroll_entry, e)
+
+    finally:
+        frappe.db.commit()  # nosemgrep
+        frappe.publish_realtime("completed_salary_slip_submission", user=frappe.session.user)
+
+    frappe.flags.via_payroll_entry = False

@@ -7,7 +7,7 @@ from erpnext.accounts.doctype.accounting_dimension.accounting_dimension import (
 	get_accounting_dimensions,
 )
 from hrms.payroll.doctype.salary_slip.salary_slip_loan_utils import if_lending_app_installed
-from hrms.payroll.doctype.payroll_entry.payroll_entry import PayrollEntry, get_existing_salary_slips, log_payroll_failure
+from hrms.payroll.doctype.payroll_entry.payroll_entry import PayrollEntry, get_existing_salary_slips, log_payroll_failure, show_payroll_submission_status
 from hrms.payroll.doctype.salary_withholding.salary_withholding import link_bank_entry_in_salary_withholdings
 from frappe.query_builder.functions import Coalesce, Count
 

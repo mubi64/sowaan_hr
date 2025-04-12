@@ -2,7 +2,7 @@ import frappe
 from hrms.payroll.doctype.salary_slip.salary_slip import (SalarySlip, calculate_tax_by_tax_slab)
 from sowaan_hr.sowaan_hr.api.api import create_salary_adjustment_for_negative_salary
 from datetime import datetime, timedelta
-from frappe.utils import cint
+from frappe.utils import cint, flt
 
 def fund_management_and_negative_salary(self, method):
     if self.custom_adjust_negative_salary == 1 and self.custom_check_adjustment == 1 and self.net_pay < 0 :
@@ -753,24 +753,82 @@ def get_deduction_parent(employee, salary_structure):
         
 
 def handle_late_scenario(self, parent_to_use):
-    def update_or_create_deduction(component, amount):
-        """Update or create a deduction entry in the deductions list."""
-        deductions_dict = {d.salary_component: d for d in self.deductions}
+    def create_additional_salary(component_name, amount):
+        """Fetch component, ensure company is in accounts, then create Additional Salary."""
+        existing = frappe.db.exists(
+            "Additional Salary",
+            {
+                "employee": self.employee,
+                "salary_component": component_name,
+                "from_date": self.start_date,
+                "to_date": self.end_date,
+                "company": self.company,
+                "docstatus": 1  
+            }
+        )
+        if existing:
+            existing_amount = frappe.db.get_value(
+                "Additional Salary",
+                existing,
+                "amount"
+            )
+            if flt(existing_amount) == flt(amount):
+                return
 
-        if component in deductions_dict:
-            existing_row = deductions_dict[component]
-            existing_row.amount = amount
-            if amount == 0:
-                self.deductions.remove(existing_row)
-        elif amount > 0:
-            row = self.append('deductions', {'salary_component': component, 'amount': amount})
+            frappe.get_doc("Additional Salary", existing).cancel()
+
+
+
+        component = frappe.get_doc("Salary Component", component_name)
+        if not any(acc.company == self.company for acc in component.accounts):
+            default_account = frappe.get_cached_value(
+                "Company",
+                self.company,
+                "default_payroll_payable_account"
+            )
+            component.append("accounts", {
+                "company": self.company,
+                "account": default_account
+            })
+            component.save()
+
+
+        additional_salary = frappe.get_doc({
+            "doctype": "Additional Salary",
+            "employee": self.employee,
+            "salary_component": component.name,
+            "is_recurring": 1,
+            "from_date": self.start_date,
+            "to_date": self.end_date,
+            "currency": self.currency,
+            "amount": amount,
+            "company": self.company,
+            "overwrite_salary_structure_amount": 1
+        })
+        additional_salary.insert(ignore_permissions=True)
+        additional_salary.submit()
+            
+        # deductions_dict = {d.salary_component: d for d in self.deductions}
+        # # frappe.msgprint(str(deductions_dict))
+
+        # if component in deductions_dict:
+        #     existing_row = deductions_dict[component]
+        #     existing_row.amount = amount
+        #     if amount == 0:
+        #         self.deductions.remove(existing_row)
+        # elif amount > 0:
+        #     # frappe.msgprint(str(component))
+        #     # frappe.msgprint(str(amount))
+        #     self.append('deductions', {'salary_component': component, 'amount': amount})
+        # frappe.msgprint(str({d.salary_component: d for d in self.deductions}))
+
 
     hr_settings = frappe.get_doc('Sowaan HR Setting', parent_to_use)
     if not any([hr_settings.is_late_deduction_applicable,
                 hr_settings.is_early_deduction_applicable,
                 hr_settings.is_half_day_deduction_applicable]):
         return
-    # frappe.throw('hello')
+    # frappe.throw('funchello')
     assign_shift = frappe.db.get_value('Shift Assignment',
         {'employee': self.employee, 'start_date': ['<=', self.start_date]},
         'shift_type', order_by='start_date desc') or frappe.db.get_value('Employee', self.employee, 'default_shift')
@@ -827,11 +885,6 @@ def handle_late_scenario(self, parent_to_use):
         'late_entry': cint(hr_settings.get('late_entry_exemptions', 0))
     }
 
-    # exemptions_used = {
-    #     'half_day': False,
-    #     'early_exit': False,
-    #     'late_entry': False
-    # }
 
     late_count = early_departure_count = half_day_count = 0
     total_late_minutes = total_early_minutes = 0
@@ -910,35 +963,40 @@ def handle_late_scenario(self, parent_to_use):
 
 
 
-
     self.custom_late_entry_minutes = total_late_minutes
     self.custom_early_exit_minutes = total_early_minutes
     self.custom_total_half_days = deduction_half_day_count
 
     if hr_settings.calculation_method == 'Minutes':
-        update_or_create_deduction(hr_settings.late_salary_component, total_late_minutes * minute_salary)
-        update_or_create_deduction(hr_settings.early_salary_component, total_early_minutes * minute_salary)
-        update_or_create_deduction(hr_settings.half_day_salary_component, deduction_half_day_count * half_day_salary)
+        if hr_settings.is_late_deduction_applicable:
+            create_additional_salary(hr_settings.late_salary_component, total_late_minutes * minute_salary)
+        if hr_settings.is_early_deduction_applicable:
+            create_additional_salary(hr_settings.early_salary_component, total_early_minutes * minute_salary)
+        if hr_settings.is_half_day_deduction_applicable:
+            create_additional_salary(hr_settings.half_day_salary_component, deduction_half_day_count * half_day_salary)
     elif hr_settings.calculation_method == 'Counts':
-        if hr_settings.late_deduction_factor and hr_settings.late_deduction_factor != 0:
-            update_or_create_deduction(hr_settings.late_salary_component, total_late_count * hr_settings.late_deduction_factor * (ded_salary / total_working_days))
-        else:
-            update_or_create_deduction(hr_settings.late_salary_component, total_late_count * minute_salary)
-
-        if hr_settings.early_deduction_factor and hr_settings.early_deduction_factor != 0:
-            update_or_create_deduction(hr_settings.early_salary_component, total_early_departure_count * hr_settings.early_deduction_factor * (ded_salary / total_working_days))
-        else:
-            update_or_create_deduction(hr_settings.early_salary_component, total_early_departure_count * minute_salary)
-
-        if hr_settings.half_day_deduction_factor and hr_settings.half_day_deduction_factor != 0:
-            update_or_create_deduction(hr_settings.half_day_salary_component, deduction_half_day_count * hr_settings.half_day_deduction_factor * (ded_salary / total_working_days))
-        else:
-            update_or_create_deduction(hr_settings.half_day_salary_component, deduction_half_day_count * half_day_salary)
+        if hr_settings.is_late_deduction_applicable:
+            if hr_settings.late_deduction_factor and hr_settings.late_deduction_factor != 0:
+                create_additional_salary(hr_settings.late_salary_component, total_late_count * hr_settings.late_deduction_factor * (ded_salary / total_working_days))
+            else:
+                create_additional_salary(hr_settings.late_salary_component, total_late_count * minute_salary)
+        if hr_settings.is_early_deduction_applicable:
+            if hr_settings.early_deduction_factor and hr_settings.early_deduction_factor != 0:
+                create_additional_salary(hr_settings.early_salary_component, total_early_departure_count * hr_settings.early_deduction_factor * (ded_salary / total_working_days))
+            else:
+                create_additional_salary(hr_settings.early_salary_component, total_early_departure_count * minute_salary)
+        if hr_settings.is_half_day_deduction_applicable:
+            if hr_settings.half_day_deduction_factor and hr_settings.half_day_deduction_factor != 0:
+                create_additional_salary(hr_settings.half_day_salary_component, deduction_half_day_count * hr_settings.half_day_deduction_factor * (ded_salary / total_working_days))
+            else:
+                create_additional_salary(hr_settings.half_day_salary_component, deduction_half_day_count * half_day_salary)
 
     self.calculate_net_pay()
     self.compute_year_to_date()
     self.compute_month_to_date()
     self.compute_component_wise_year_to_date()
+
+
 
 
 

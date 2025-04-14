@@ -755,6 +755,8 @@ def get_deduction_parent(employee, salary_structure):
 def handle_late_scenario(self, parent_to_use):
     def create_additional_salary(component_name, amount):
         """Fetch component, ensure company is in accounts, then create Additional Salary."""
+        if amount == 0:
+            return
         existing = frappe.db.exists(
             "Additional Salary",
             {
@@ -775,7 +777,12 @@ def handle_late_scenario(self, parent_to_use):
             if flt(existing_amount) == flt(amount):
                 return
 
-            frappe.get_doc("Additional Salary", existing).cancel()
+            as_doc = frappe.get_doc("Additional Salary", existing)
+            as_doc.ignore_permissions = True
+            as_doc.cancel()
+            existing_row = next((d for d in self.deductions if d.salary_component == component_name), None)
+            if existing_row:
+                self.deductions.remove(existing_row)
 
 
 
@@ -889,7 +896,7 @@ def handle_late_scenario(self, parent_to_use):
     late_count = early_departure_count = half_day_count = 0
     total_late_minutes = total_early_minutes = 0
     total_late_count = total_early_departure_count = deduction_half_day_count = 0
-
+    
     for a in attendance:
         if not a['in_time'] or not a['out_time']:
             continue
@@ -903,69 +910,79 @@ def handle_late_scenario(self, parent_to_use):
         if hr_settings.is_half_day_deduction_applicable and a['status'] == 'Half Day':
             half_day_count += 1
 
-            if half_day_count <= half_day_flag_count:
-                pass
-            elif half_day_count <= half_day_flag_count + exemptions["half_day"]:
+            if half_day_count < half_day_flag_count + exemptions["half_day"]:
                 pass
             else:
-                excess_half_days = half_day_count - (half_day_flag_count + exemptions["half_day"]) + 1
+                excess_half_days = half_day_count - half_day_flag_count
                 if half_day_flag_count == 0:
                     deduction_half_day_count += 1
-                elif excess_half_days > 0 and excess_half_days % half_day_flag_count == 0:
+                elif excess_half_days % half_day_flag_count == 0:
                     deduction_half_day_count += 1
             
         ## Early Work ##
         if hr_settings.is_early_deduction_applicable and a['status'] == 'Present' and a['early_exit']:
             early_departure_count += 1
-            if early_departure_count <= early_flag_count:
-                pass
-            elif early_departure_count <= early_flag_count + exemptions["early_exit"]: 
+            if early_departure_count < early_flag_count + exemptions["early_exit"]: 
                 pass
             else:
-                excess_early_days = early_departure_count - (early_flag_count + exemptions["early_exit"]) + 1
+                excess_early_days = early_departure_count - early_flag_count
                 if early_flag_count == 0:
                     total_early_minutes += (shift_end_time - out_time).seconds // 60
                     total_early_departure_count += 1
-                elif excess_early_days > 0 and excess_early_days % early_flag_count == 0:
+                elif excess_early_days % early_flag_count == 0:
                     total_early_minutes += (shift_end_time - out_time).seconds // 60
                     total_early_departure_count += 1
+                    
         ## Late Work ##
         if hr_settings.is_late_deduction_applicable and a['status'] == 'Present' and a['late_entry']:
             late_count += 1
-            if late_count <= late_flag_count:
-                pass
-            elif late_count <= late_flag_count + exemptions["late_entry"]:  
+            if late_count < late_flag_count + exemptions["late_entry"]:
                 pass
             else:
-                excess_late_days = late_count - (late_flag_count + exemptions["late_entry"]) + 1
+                excess_late_days = late_count - late_flag_count
+                ## if condition neccessary (flag_count == 0) ##
                 if late_flag_count == 0:
                     total_late_minutes += (in_time - shift_start_time).seconds // 60
-                    total_late_count += 1
-                elif excess_late_days > 0 and excess_late_days % late_flag_count == 0:
+                    total_late_count += 1 
+                elif excess_late_days % late_flag_count == 0:
                     total_late_minutes += (in_time - shift_start_time).seconds // 60
                     total_late_count += 1
 
 
 
 
-        # if hr_settings.is_early_deduction_applicable and a['status'] == 'Present' and a['early_exit']:
-        #     early_departure_count += 1
-        #     if early_departure_count > exemptions['early_exit']:
-        #         total_early_minutes += (shift_end_time - out_time).seconds // 60
-        #         total_early_departure_count += 1
 
         # if hr_settings.is_late_deduction_applicable and a['status'] == 'Present' and a['late_entry']:
         #     late_count += 1
-        #     if late_count > exemptions['late_entry']:
-        #         total_late_minutes += (in_time - shift_start_time).seconds // 60
-        #         total_late_count += 1
+        #     if late_count < late_flag_count:
+        #         pass
+        #     elif late_count < late_flag_count + exemptions["late_entry"]:
+        #         pass
+        #     else:
+        #         excess_late_days = late_count - (late_flag_count + exemptions["late_entry"])
+        #         if late_flag_count == 0:
+        #             total_late_minutes += (in_time - shift_start_time).seconds // 60
+        #             total_late_count += 1
+        #         elif excess_late_days > 0 and excess_late_days % late_flag_count == 0:
+        #             total_late_minutes += (in_time - shift_start_time).seconds // 60
+        #             total_late_count += 1
 
 
 
 
+        
+
+
+    # frappe.throw(str(total_late_count))
+    # frappe.throw(str(late_count))
+    self.custom_late_entry_counts = late_count
+    self.custom_early_exit_counts = early_departure_count
+    self.custom_deductible_late_entry_counts = total_late_count
+    self.custom_deductible_early_exit_counts = total_early_departure_count
+    self.custom_deductible_half_days = deduction_half_day_count
     self.custom_late_entry_minutes = total_late_minutes
     self.custom_early_exit_minutes = total_early_minutes
-    self.custom_total_half_days = deduction_half_day_count
+    self.custom_total_half_days = half_day_count
 
     if hr_settings.calculation_method == 'Minutes':
         if hr_settings.is_late_deduction_applicable:
@@ -1109,7 +1126,7 @@ def before_save_salaryslip(doc):
                 fields=['base'],
                 order_by='from_date desc',
             )
-
+        # frappe.throw('helo')
         if base :
        
             one_zero = 1
@@ -1130,9 +1147,15 @@ def before_save_salaryslip(doc):
 
             overtime_rate_on_working_days = frappe.db.get_single_value('SowaanHR Payroll Settings','overtime_hours_rate_on_working_day')
             overtime_rate_on_holidays = frappe.db.get_single_value('SowaanHR Payroll Settings','overtime_hours_rate_on_holiday')
-            base_amount = (   (  (base[0].base) / working_days_for_overtime   )  /  shift_req_hrs  ) * one_zero
+
+            if working_days_for_overtime and shift_req_hrs:
+                base_amount = (((base[0].base) / working_days_for_overtime) / shift_req_hrs) * one_zero
+            else:
+                base_amount = 0
+
             doc.custom_overtime_per_hour_rate_for_working_day = (base_amount * overtime_rate_on_working_days) * doc.custom_overtime_hours_on_working_day
             doc.custom_overtime_per_hour_rate_for_holiday = (base_amount * overtime_rate_on_holidays) * doc.custom_overtime_hours_on_holiday
+        # frappe.throw('helo')
 ####################### Sufyan Work ########################
 
 

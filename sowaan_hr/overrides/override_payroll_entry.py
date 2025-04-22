@@ -378,6 +378,7 @@ class OverridePayrollEntry(PayrollEntry):
         exchange_rate, amount = self.get_amount_and_exchange_rate_for_journal_entry(
             self.payment_account, je_payment_amount, company_currency, currencies
         )
+        # print(flt(amount, precision), "Checking amount \n\n\n")
         accounts.append(
             self.update_accounting_dimensions(
                 {
@@ -393,9 +394,8 @@ class OverridePayrollEntry(PayrollEntry):
 
         if self.employee_based_payroll_payable_entries:
             for employee, employee_details in self.employee_based_payroll_payable_entries.items():
-                print(employee, "Checking EMployess \n\n\n")
                 for emp in self.employees:
-                    if flt(emp.custom_payable) > 0 and flt(emp.custom_payable) > flt(emp.custom_pay) and employee == emp.employee:
+                    if flt(emp.custom_payable) > 0 and round(flt(emp.custom_payable), 3) > round(flt(emp.custom_pay), 3) and employee == emp.employee:
                         je_payment_amount = (
                             (employee_details.get("earnings", 0) or 0)
                             - (employee_details.get("deductions", 0) or 0)
@@ -413,6 +413,7 @@ class OverridePayrollEntry(PayrollEntry):
 
                         for cost_center, percentage in cost_centers.items():
                             amount_against_cost_center = flt(amount) * percentage / 100
+                            # print(flt(amount_against_cost_center, precision), emp.employee, "Checking amount against cost center \n\n\n")
                             accounts.append(
                                 self.update_accounting_dimensions(
                                     {
@@ -663,7 +664,6 @@ class OverridePayrollEntry(PayrollEntry):
             journal_entry.title = payroll_payable_account
 
         journal_entry.save(ignore_permissions=True)
-
         try:
             if submit_journal_entry:
                 journal_entry.submit()

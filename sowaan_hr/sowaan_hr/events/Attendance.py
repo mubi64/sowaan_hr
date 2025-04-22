@@ -1,5 +1,6 @@
 import frappe
 from datetime import timedelta
+from frappe.utils import get_datetime
 
 def late_approval(self, method):
     # frappe.msgprint("Late Approval")
@@ -27,9 +28,9 @@ def handle_half_day(self, method):
                 end_time = is_half_day.end_time
             if start_time and end_time:
                 if self.in_time and self.out_time:
-                    checkin_time = self.in_time.time()
-                    checkout_time = self.out_time.time()
-                    # frappe.msgprint(str(is_half_day.custom_is_half_day_fix))
+                    # frappe.throw(str(get_datetime(self.in_time).time()))
+                    checkin_time = get_datetime(self.in_time).time()
+                    checkout_time = get_datetime(self.out_time).time()
                     if checkin_time and checkout_time:
                         checkin_time_td = timedelta(hours=checkin_time.hour, minutes=checkin_time.minute, seconds=checkin_time.second)
                         checkout_time_td = timedelta(hours=checkout_time.hour, minutes=checkout_time.minute, seconds=checkout_time.second)

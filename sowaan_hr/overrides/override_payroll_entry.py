@@ -12,6 +12,7 @@ from hrms.payroll.doctype.salary_withholding.salary_withholding import link_bank
 from frappe.query_builder.functions import Coalesce, Count
 
 class OverridePayrollEntry(PayrollEntry):
+    # frappe.throw('support')
 
     @frappe.whitelist()
     def create_salary_slips(self):
@@ -687,6 +688,7 @@ class OverridePayrollEntry(PayrollEntry):
             .set(SalarySlip.journal_entry, jv_name)
             .where(SalarySlip.name.isin([salary_slip.name for salary_slip in submitted_salary_slips]))
         ).run()
+    
 
 
 def create_salary_slips_for_employees(employees, args, publish_progress=True):

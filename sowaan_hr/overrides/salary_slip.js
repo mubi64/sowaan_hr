@@ -28,6 +28,9 @@ function get_hr_settings(frm) {
                 set_field_visibility(frm, 'custom_late_entry_counts', 0);
                 set_field_visibility(frm, 'custom_early_exit_counts', 0);
                 set_field_visibility(frm, 'custom_total_half_days', 0);
+                set_field_visibility(frm, 'custom_deductible_late_entry_counts', 0);
+                set_field_visibility(frm, 'custom_deductible_early_exit_counts', 0);
+                set_field_visibility(frm, 'custom_deductible_half_days', 0);
                 return;
             }
             frappe.db.get_value('Sowaan HR Setting', {'name': parent_to_use}, 

@@ -17,8 +17,9 @@ def late_approval(self, method):
 
 def handle_half_day(self, method):
     if self.shift:
-        is_half_day = frappe.db.get_value('Shift Type', self.shift, ['custom_is_half_day_fix', 'custom_half_day_start_time', 'custom_half_day_end_time', 'start_time', 'end_time'], as_dict=True)
-        
+        is_half_day = frappe.db.get_value('Shift Type', self.shift, ['custom_is_half_day_fix', 'custom_half_day_start_time', 'custom_half_day_end_time', 'start_time', 'end_time', 'required_hours'], as_dict=True)
+        if is_half_day.required_hours:
+            self.custom_required_hours = is_half_day.required_hours
         if is_half_day.custom_is_half_day_fix:
             start_time = is_half_day.custom_half_day_start_time
             end_time = is_half_day.custom_half_day_end_time
@@ -41,7 +42,7 @@ def after_insert_attendance(doc, method):
     if frappe.db.get_value('Employee', doc.employee, 'custom_allow_overtime'):
         if doc.custom_required_hours and doc.working_hours:
             ot_hours = (doc.working_hours - doc.custom_required_hours)
-            if ot_hours >= 1:
+            if ot_hours > 0:
                 overtime = frappe.new_doc('Employee Overtime')
                 overtime.employee = doc.employee
                 overtime.overtime_date = doc.attendance_date

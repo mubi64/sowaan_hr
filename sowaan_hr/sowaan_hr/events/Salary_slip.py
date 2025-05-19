@@ -1169,8 +1169,8 @@ def own_fund_tax(self,method):
             },
             fields=["*"],
 
-
         )
+
     if fund_contribution:
         tax_component = None
         contribution_doc = frappe.get_doc("Fund Contribution", fund_contribution[0])

@@ -38,7 +38,6 @@ fixtures = [
                     "custom_ot_hours", "custom_overtime", "custom_overtime_hours_on_working_day", "custom_overtime_hours_on_holiday", "custom_column_break_hyfhy",
 					"custom_overtime_per_hour_rate_for_working_day", "custom_overtime_per_hour_rate_for_holiday", "custom_smart_posting_date", "custom_payable", 
                     "custom_deductible_half_days", "custom_deductible_early_exit_counts", "custom_deductible_late_entry_counts", "custom_late_entry_counts"
-                    
 				)
 			]
 		]

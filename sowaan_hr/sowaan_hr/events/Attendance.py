@@ -41,14 +41,40 @@ def handle_half_day(self, method):
 def after_insert_attendance(doc, method):
     if frappe.db.get_value('Employee', doc.employee, 'custom_allow_overtime'):
         if doc.custom_required_hours and doc.working_hours:
-            ot_hours = (doc.working_hours - doc.custom_required_hours)
+            ot_hours = doc.working_hours - doc.custom_required_hours
             if ot_hours > 0:
-                overtime = frappe.new_doc('Employee Overtime')
-                overtime.employee = doc.employee
-                overtime.overtime_date = doc.attendance_date
-                overtime.overtime_hours = ot_hours
-                overtime.approved_overtime_hours = ot_hours
-                overtime.insert()
-        
+                existing_ot = frappe.db.get_value('Employee Overtime',
+                    {
+                        'employee': doc.employee,
+                        'overtime_date': doc.attendance_date
+                    },
+                    ['name', 'docstatus'], as_dict=True
+                )
+
+                if existing_ot:
+                    if existing_ot.docstatus == 1:
+                        ot_doc = frappe.get_doc('Employee Overtime', existing_ot.name)
+                        ot_doc.cancel()
+                        
+                        create_overtime(doc, ot_hours)
+
+                    elif existing_ot.docstatus == 0:
+                        ot_doc = frappe.get_doc('Employee Overtime', existing_ot.name)
+                        ot_doc.from_attendance = doc.name
+                        ot_doc.overtime_hours = ot_hours
+                        ot_doc.approved_overtime_hours = ot_hours
+                        ot_doc.save()
+                else:
+                    create_overtime(doc, ot_hours)
+
+
+def create_overtime(doc, ot_hours):
+    overtime = frappe.new_doc('Employee Overtime')
+    overtime.from_attendance = doc.name
+    overtime.employee = doc.employee
+    overtime.overtime_date = doc.attendance_date
+    overtime.overtime_hours = ot_hours
+    overtime.approved_overtime_hours = ot_hours
+    overtime.insert()
                         
                 

@@ -13,6 +13,7 @@
   "department",
   "designation",
   "column_break_wqrv",
+  "from_attendance",
   "overtime_date",
   "overtime_hours",
   "approved_overtime_hours"
@@ -85,12 +86,19 @@
    "in_list_view": 1,
    "label": "Approved Overtime Hours",
    "reqd": 1
+  },
+  {
+   "fieldname": "from_attendance",
+   "fieldtype": "Link",
+   "label": "From Attendance",
+   "options": "Attendance",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-03-04 12:13:01.663478",
+ "modified": "2025-05-20 09:15:27.078345",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Employee Overtime",

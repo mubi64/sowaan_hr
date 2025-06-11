@@ -1112,7 +1112,7 @@ def before_save_salaryslip(doc):
                 holiday_overtime_hrs = holiday_overtime_hrs + row.approved_overtime_hours
 
 
-        doc.custom_overtime_hours_on_working_day = doc.custom_ot_hours - holiday_overtime_hrs
+        doc.custom_overtime_hours_on_working_day = flt(doc.custom_ot_hours) - flt(holiday_overtime_hrs)
         doc.custom_overtime_hours_on_holiday = holiday_overtime_hrs
 
 

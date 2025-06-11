@@ -19,7 +19,6 @@ class OverridePayrollEntry(PayrollEntry):
         """
         Creates salary slip for selected employees if already not created
         """
-        print("from override 20 ************")
         self.check_permission("write")
         employees = [emp.employee for emp in self.employees]
 

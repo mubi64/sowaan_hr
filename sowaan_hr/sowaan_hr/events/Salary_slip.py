@@ -18,8 +18,6 @@ def fund_management_and_negative_salary(self, method):
                 "docstatus": 1
             },
             fields=["*"],
-
-
         )
     if fund_contribution:
         days = 0
@@ -31,33 +29,13 @@ def fund_management_and_negative_salary(self, method):
             w_days = fund_setting.days
         elif fund_setting.calculation_method == "Working Days":
             w_days = self.total_working_days
-        start_date = frappe.utils.getdate(self.start_date)
-        end_date = frappe.utils.getdate(self.end_date)
 
         fc_start_date = contribution_doc.start_date
         fc_start_date = frappe.utils.getdate(fc_start_date)
         
-
-        # if fund_setting.on_confirmation == 1:
-        #     confirmation_date = frappe.get_value("Employee", self.employee, "final_confirmation_date")
-        #     confirmation_date = frappe.utils.getdate(confirmation_date)
-        #     if start_date <= confirmation_date <= end_date:
-        #         days = frappe.utils.date_diff(self.end_date, confirmation_date)+1
-        #         if confirmation_date.month == 2:
-        #             if days == 29 or days == 28:
-        #                 days = 30
-        #         elif days == 31:
-        #             days = 30
         if fc_start_date:
             start_days = frappe.utils.date_diff(self.end_date, fc_start_date)+1
-            
-                
-
-
-
-
-
-
+  
         if fund_setting.calculation_type == "Fixed":
             if start_days and fund_setting.own_value and fund_setting.company_value:
                     own_fund_value = (fund_setting.own_value / w_days) * start_days
@@ -72,8 +50,6 @@ def fund_management_and_negative_salary(self, method):
                         if row.salary_component != fund_setting.fund_component
                     ]
                 
-                # row1 = {"salary_component": fund_setting.fund_component , "amount" : own_fund_value, "year_to_date" : own_fund_value }
-                # self.append("deductions", row1)
                 own_component = frappe.get_doc("Salary Component",fund_setting.fund_component)
                 own_statistical_component = own_component.depends_on_payment_days
                 own_is_taxable = own_component.is_tax_applicable
@@ -176,13 +152,6 @@ def fund_management_and_negative_salary(self, method):
                         frappe.db.set_value("Fund Contribution Entry", row.name, "amount", company_fund_value)
                         # found_company_entry = True
                         break
-               
-
-
-
-
-
-        
         elif fund_setting.calculation_type == "% of Payment":
             
             earnings_dict = {earning.salary_component: earning.amount for earning in self.earnings}
@@ -193,8 +162,6 @@ def fund_management_and_negative_salary(self, method):
                 if employee_arrears:
                     employee_arrears_doc = frappe.get_doc("Employee Arrears", employee_arrears[0])
                     earnings_dict_arrears = {earning.salary_component: earning.amount for earning in employee_arrears_doc.e_a_earnings}
-
-
 
                 for component in fund_setting.dependent_components:
                     if component.component in earnings_dict:
@@ -210,12 +177,8 @@ def fund_management_and_negative_salary(self, method):
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                         total_fund_amount11 = total_fund_amount11 + calculated_amount
                         
-                # if start_days:
-                #     total_fund_amount11 = (total_fund_amount11 / w_days) * start_days
-            
                 if total_fund_amount11 and fund_setting.own_value:
                             total_fund_amount11 = total_fund_amount11 * (fund_setting.own_value / 100)
-                
 
                 self.deductions = [
                     row for row in self.deductions
@@ -264,7 +227,6 @@ def fund_management_and_negative_salary(self, method):
                     # Append the deduction entry to the list
                     self.append("deductions", deduction_entry)
                                 
-
                     # found_own_entry = False
                     for row in contribution_doc.fund_contribution_entry:
                         if row.contribution_type == "Own" and row.document_name == self.name:
@@ -272,10 +234,6 @@ def fund_management_and_negative_salary(self, method):
                             frappe.db.set_value("Fund Contribution Entry", row.name, "amount", total_fund_amount11)
                             # found_own_entry = True
                             break
-
-
-
-
             if fund_setting.company_dependent_components:
                 total_fund_amount = 0
 
@@ -292,13 +250,9 @@ def fund_management_and_negative_salary(self, method):
                         calculated_amount = round((earnings_amount * component.percent) / 100, 2)
                         total_fund_amount = total_fund_amount + calculated_amount
 
-                # if start_days:
-                #     total_fund_amount = (total_fund_amount / w_days) * start_days
                 if total_fund_amount and fund_setting.company_value:
                             total_fund_amount = total_fund_amount * (fund_setting.company_value / 100)
                 
-                
-
                 self.earnings = [
                     row for row in self.earnings
                     if row.salary_component not in [fund_setting.company_fund_component]
@@ -313,14 +267,7 @@ def fund_management_and_negative_salary(self, method):
                 company_ex_from_income_tax = company_component.exempted_from_income_tax
                 company_stastical_component = company_component.statistical_component
 
-
                 if total_fund_amount > 0:
-                    # self.append("earnings", {
-                    #     "salary_component": fund_setting.company_fund_component,
-                    #     "amount": total_fund_amount,
-                    #     "year_to_date": total_fund_amount
-                    # })
-
                     # Construct the dictionary for the deduction
                     earningg_entry = {
                         "salary_component": fund_setting.company_fund_component,
@@ -354,9 +301,6 @@ def fund_management_and_negative_salary(self, method):
                     # Append the deduction entry to the list
                     self.append("earnings", earningg_entry)
 
-
-
-                  
                     # found_company_entry = False
                     for row in contribution_doc.fund_contribution_entry:
                         if row.contribution_type == "Company" and row.document_name == self.name:
@@ -370,10 +314,6 @@ def fund_management_and_negative_salary(self, method):
                     row for row in self.earnings
                     if row.salary_component not in [fund_setting.company_fund_component]
                 ]
-
-
-
-
         
         elif fund_setting.calculation_type == "% of Rate":
 
@@ -512,8 +452,6 @@ def fund_management_and_negative_salary(self, method):
                         frappe.db.set_value("Fund Contribution Entry", row.name, "amount", total_fund_amount1)
                         break
 
-
-
             total_fund_amount2 = 0
 
             if fund_setting.company_dependent_components:
@@ -616,31 +554,34 @@ def salary_slip_after_submit(self,method):
                 "employee": self.employee,
                 "docstatus": 1
             },
-            fields=["*"],
-            
+            fields=["name", "fund_setting"]
         )
     if fund_contribution:
         own_fund_value = 0
         company_fund_value = 0
-        contribution_doc = frappe.get_doc("Fund Contribution", fund_contribution[0])
-        fund_setting_name = contribution_doc.fund_setting
+
+        contribution_doc = frappe.get_doc("Fund Contribution", fund_contribution[0].get("name"))
+        fund_setting_name = fund_contribution[0].get("fund_setting")
+
+        if not fund_setting_name:
+            return
+        
         fund_setting = frappe.get_doc("Fund Setting", fund_setting_name)
-        own_component_name = fund_setting.fund_component
-        company_component_name = fund_setting.company_fund_component
+        own_component_name = fund_setting.fund_component or ""
+        company_component_name = fund_setting.company_fund_component or ""
 
-        for row in self.deductions:
+        for row in self.get("deductions", []):
             if row.salary_component == own_component_name:
-                own_fund_value = row.amount
+                own_fund_value = row.amount or 0
                 break
-        for row in self.earnings:
+        for row in self.get("earnings", []):
             if row.salary_component == company_component_name:
-                company_fund_value = row.amount
+                company_fund_value = row.amount or 0
                 break
-
-
 
         found_own_entry = False
-        for row in contribution_doc.fund_contribution_entry:
+
+        for row in contribution_doc.get("fund_contribution_entry", []):
             if row.contribution_type == "Own" and row.reference_doctype == "Salary Slip" and row.document_name == self.name:
                 # row.amount = fund_setting.own_value  # Update the amount
                 frappe.db.set_value("Fund Contribution Entry", row.name, "amount", own_fund_value)
@@ -649,7 +590,6 @@ def salary_slip_after_submit(self,method):
 
 
         if not found_own_entry:
-
             contribution_doc.append("fund_contribution_entry", {
                 "contribution_type": "Own",
                 "amount": own_fund_value,
@@ -659,10 +599,8 @@ def salary_slip_after_submit(self,method):
             })
             contribution_doc.save()
 
-
-
         found_company_entry = False
-        for row in contribution_doc.fund_contribution_entry:
+        for row in contribution_doc.get("fund_contribution_entry", []):
             if row.contribution_type == "Company" and row.reference_doctype == "Salary Slip" and row.document_name == self.name:
                 frappe.db.set_value("Fund Contribution Entry", row.name, "amount", company_fund_value)
                 found_company_entry = True
@@ -685,7 +623,7 @@ def salary_slip_after_submit(self,method):
             SET custom_payable = %s
             WHERE parent = %s and employee = %s
             """,
-            (self.net_pay, self.payroll_entry, self.employee),
+            (self.net_pay or 0, self.payroll_entry, self.employee),
         )
 
 def on_cancel(self, method):
@@ -698,12 +636,6 @@ def on_cancel(self, method):
             """,
             (0, self.payroll_entry, self.employee),
         )
-
-
-
-
-
-
 
 ########################## Umair's Work ##########################
 
@@ -913,7 +845,7 @@ def handle_late_scenario(self, parent_to_use):
             if half_day_count < half_day_flag_count + exemptions["half_day"]:
                 pass
             else:
-                excess_half_days = half_day_count - half_day_flag_count
+                excess_half_days = flt(half_day_count) - flt(half_day_flag_count)
                 if half_day_flag_count == 0:
                     deduction_half_day_count += 1
                 elif excess_half_days % half_day_flag_count == 0:
@@ -1052,7 +984,7 @@ def before_save_salaryslip(doc):
         ot_sum = 0
         if len(ot_hours_list) > 0 : 
             for item in ot_hours_list:        
-                ot_sum = item.approved_overtime_hours + ot_sum
+                ot_sum = flt(item.approved_overtime_hours) + flt(ot_sum)
             doc.custom_ot_hours = ot_sum
 ######################## Safi Work #########################
 
@@ -1109,7 +1041,7 @@ def before_save_salaryslip(doc):
 
         if emp_ovrtime_list :
             for row in emp_ovrtime_list :
-                holiday_overtime_hrs = holiday_overtime_hrs + row.approved_overtime_hours
+                holiday_overtime_hrs = flt(holiday_overtime_hrs) + flt(row.approved_overtime_hours)
 
 
         doc.custom_overtime_hours_on_working_day = flt(doc.custom_ot_hours) - flt(holiday_overtime_hrs)
@@ -1149,12 +1081,12 @@ def before_save_salaryslip(doc):
             overtime_rate_on_holidays = frappe.db.get_single_value('SowaanHR Payroll Settings','overtime_hours_rate_on_holiday')
 
             if working_days_for_overtime and shift_req_hrs:
-                base_amount = (((base[0].base) / working_days_for_overtime) / shift_req_hrs) * one_zero
+                base_amount = ((flt(base[0].base) / flt(working_days_for_overtime)) / flt(shift_req_hrs)) * flt(one_zero)
             else:
                 base_amount = 0
 
-            doc.custom_overtime_per_hour_rate_for_working_day = (base_amount * overtime_rate_on_working_days) * doc.custom_overtime_hours_on_working_day
-            doc.custom_overtime_per_hour_rate_for_holiday = (base_amount * overtime_rate_on_holidays) * doc.custom_overtime_hours_on_holiday
+            doc.custom_overtime_per_hour_rate_for_working_day = (flt(base_amount) * flt(overtime_rate_on_working_days)) * flt(doc.custom_overtime_hours_on_working_day)
+            doc.custom_overtime_per_hour_rate_for_holiday = (flt(base_amount) * flt(overtime_rate_on_holidays)) * flt(doc.custom_overtime_hours_on_holiday)
         # frappe.throw('helo')
 ####################### Sufyan Work ########################
 

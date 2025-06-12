@@ -24,15 +24,15 @@ class EmployeeSalarySlip(SalarySlip):
 
     def get_tax_paid_in_period(self, start_date, end_date, tax_component):
 		# find total_tax_paid, tax paid for benefit, additional_salary
-        total_tax_paid = self.get_salary_slip_details(
+        total_tax_paid = flt(self.get_salary_slip_details(
             start_date,
             end_date,
             parentfield="deductions",
             salary_component=tax_component,
             variable_based_on_taxable_salary=1,
-        )
+        ))
 
-        tax_deducted_till_date = self.get_opening_for("tax_deducted_till_date", start_date, end_date)
+        tax_deducted_till_date = flt(self.get_opening_for("tax_deducted_till_date", start_date, end_date))
 
         # Minus the amount from annual tax that is already paid to tax authorities
         total_extra_tax = 0
@@ -75,37 +75,37 @@ class EmployeeSalarySlip(SalarySlip):
             })[0][0])
 
             
-        return total_tax_paid + tax_deducted_till_date + total_extra_tax + extra_current_tax_amount
+        return flt(total_tax_paid) + flt(tax_deducted_till_date) + flt(total_extra_tax) + flt(extra_current_tax_amount)
     
     def calculate_variable_tax(self, tax_component):
         # print("Total  Piad Tax \n\n\n\n")
-        self.previous_total_paid_taxes = self.get_tax_paid_in_period(
+        self.previous_total_paid_taxes = flt(self.get_tax_paid_in_period(
             self.payroll_period.start_date, self.start_date, tax_component
-        )
+        ))
 
 
         # Structured tax amount
         eval_locals, default_data = self.get_data_for_eval()
-        self.total_structured_tax_amount = calculate_tax_by_tax_slab(
+        self.total_structured_tax_amount = flt(calculate_tax_by_tax_slab(
             self.total_taxable_earnings_without_full_tax_addl_components,
             self.tax_slab,
             self.whitelisted_globals,
             eval_locals,
-        )
+        ))
 
         self.current_structured_tax_amount = (
-            self.total_structured_tax_amount - self.previous_total_paid_taxes
-        ) / self.remaining_sub_periods
+            flt(self.total_structured_tax_amount) - flt(self.previous_total_paid_taxes)
+        ) / flt(self.remaining_sub_periods)
 
         # Total taxable earnings with additional earnings with full tax
         self.full_tax_on_additional_earnings = 0.0
         if self.current_additional_earnings_with_full_tax:
-            self.total_tax_amount = calculate_tax_by_tax_slab(
-                self.total_taxable_earnings, self.tax_slab, self.whitelisted_globals, eval_locals
-            )
+            self.total_tax_amount = flt(calculate_tax_by_tax_slab(
+                flt(self.total_taxable_earnings), self.tax_slab, self.whitelisted_globals, eval_locals
+            ))
             self.full_tax_on_additional_earnings = self.total_tax_amount - self.total_structured_tax_amount
 
-        current_tax_amount = self.current_structured_tax_amount + self.full_tax_on_additional_earnings
+        current_tax_amount = flt(self.current_structured_tax_amount + self.full_tax_on_additional_earnings)
         if flt(current_tax_amount) < 0:
             current_tax_amount = 0
 
@@ -140,22 +140,20 @@ class EmployeeSalarySlip(SalarySlip):
                 "to_date": self.end_date
             })[0][0])
 
-        return current_tax_amount - extra_current_tax_amount
+        return flt(current_tax_amount - extra_current_tax_amount)
 
     def get_taxable_earnings_for_prev_period(self, start_date, end_date, allow_tax_exemption=False):
-	    
-
         exempted_amount = 0
-        taxable_earnings = self.get_salary_slip_details(
+        taxable_earnings = flt(self.get_salary_slip_details(
             start_date, end_date, parentfield="earnings", is_tax_applicable=1
-        )
+        ))
 
         if allow_tax_exemption:
-            exempted_amount = self.get_salary_slip_details(
+            exempted_amount = flt(self.get_salary_slip_details(
                 start_date, end_date, parentfield="deductions", exempted_from_income_tax=1
-            )
+            ))
 
-        opening_taxable_earning = self.get_opening_for("taxable_earnings_till_date", start_date, end_date)
+        opening_taxable_earning = flt(self.get_opening_for("taxable_earnings_till_date", start_date, end_date))
 
         # Plus the amount earned before in the same payroll period
         prev_taxable_amount = 0
@@ -177,7 +175,7 @@ class EmployeeSalarySlip(SalarySlip):
             })[0][0])
 
 
-        return (taxable_earnings + opening_taxable_earning + prev_taxable_amount) - exempted_amount, exempted_amount
+        return flt(taxable_earnings + opening_taxable_earning + prev_taxable_amount) - exempted_amount, exempted_amount
 
     # def before_save(self) :
         

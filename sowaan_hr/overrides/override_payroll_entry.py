@@ -478,7 +478,6 @@ class OverridePayrollEntry(PayrollEntry):
                 accounting_dimensions,
             )
         )
-
         if self.employee_based_payroll_payable_entries:
             for employee, employee_details in self.employee_based_payroll_payable_entries.items():
                 je_payment_amount = (
@@ -486,11 +485,14 @@ class OverridePayrollEntry(PayrollEntry):
                     - (employee_details.get("deductions", 0) or 0)
                     - (employee_details.get("total_loan_repayment", 0) or 0)
                 )
+                
 
                 exchange_rate, amount = self.get_amount_and_exchange_rate_for_journal_entry(
                     self.payment_account, je_payment_amount, company_currency, currencies
                 )
-
+                
+                if amount <= 0:
+                    continue
                 cost_centers = self.get_payroll_cost_centers_for_employee(
                     employee, employee_details.get("salary_structure")
                 )

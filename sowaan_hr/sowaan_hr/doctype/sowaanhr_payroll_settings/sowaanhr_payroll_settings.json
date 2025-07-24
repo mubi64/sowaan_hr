@@ -5,6 +5,8 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "hr_settings_section",
+  "allow_auto_checkin",
   "section_break_tleq",
   "earning",
   "deduction",
@@ -69,12 +71,23 @@
    "fieldtype": "Float",
    "label": "Fixed Days",
    "mandatory_depends_on": "eval: doc.overtime_based_on == 'Fixed Days' ;"
+  },
+  {
+   "fieldname": "hr_settings_section",
+   "fieldtype": "Section Break",
+   "label": "HR Settings"
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_auto_checkin",
+   "fieldtype": "Check",
+   "label": "Allow Auto Checkin"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-03-04 16:03:00.120930",
+ "modified": "2025-06-13 16:03:25.303160",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "SowaanHR Payroll Settings",

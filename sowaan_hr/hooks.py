@@ -211,13 +211,13 @@ doc_events = {
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
+scheduler_events = {
 # 	"all": [
 # 		"sowaan_hr.tasks.all"
 # 	],
-# 	"daily": [
-# 		"sowaan_hr.tasks.daily"
-# 	],
+	"daily": [
+		"sowaan_hr.sowaan_hr.api.api.send_password_expiry_alerts",
+	],
 # 	"hourly": [
 # 		"sowaan_hr.tasks.hourly"
 # 	],
@@ -227,7 +227,7 @@ doc_events = {
 # 	"monthly": [
 # 		"sowaan_hr.tasks.monthly"
 # 	],
-# }
+}
 
 # Testing
 # -------

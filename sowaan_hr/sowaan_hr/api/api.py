@@ -5,7 +5,7 @@ from frappe.utils import cstr
 
 import json
 from frappe.model.mapper import get_mapped_doc
-from frappe.utils import add_days, getdate
+from frappe.utils import nowdate, getdate, date_diff
 from datetime import datetime
 # from hrms.payroll.doctype.salary_slip.salary_slip import (calculate_net_pay, compute_year_to_date, compute_month_to_date, compute_component_wise_year_to_date)
 
@@ -214,8 +214,23 @@ def create_salary_adjustment_for_negative_salary(doc_name) :
         )).insert()
 
 
+@frappe.whitelist()
+def send_password_expiry_alerts():
+    # Get users with password expiry enabled
+    users = frappe.get_all("User", filters={"enabled": 1, "user_type": "System User"}, fields=["name", "last_password_reset_date"])
     
-        
+    expiry_days = frappe.db.get_single_value("System Settings", "force_user_to_reset_password")
+    if expiry_days > 0:
+        for user in users:
+            if not user.last_password_reset_date:
+                continue
+            days_since_reset = date_diff(getdate(nowdate()), user.last_password_reset_date)
+            days_left = expiry_days - days_since_reset
+
+            if days_left in [7, 3]:  # send alerts at 7 and 3 days before expiry
+                subject = f"Your ERPNext password will expire in {days_left} day(s)"
+                message = f"Dear {user.name},\n\nYour ERPNext password will expire in {days_left} day(s). Please change it from your account settings to avoid login issues.\n\nThanks."
+                frappe.sendmail(recipients=[user.name], subject=subject, message=message)       
           
 
 

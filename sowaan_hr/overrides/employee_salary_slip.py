@@ -86,12 +86,14 @@ class EmployeeSalarySlip(SalarySlip):
 
         # Structured tax amount
         eval_locals, default_data = self.get_data_for_eval()
-        self.total_structured_tax_amount = flt(calculate_tax_by_tax_slab(
+        self.total_structured_tax_amount, __ = calculate_tax_by_tax_slab(
             self.total_taxable_earnings_without_full_tax_addl_components,
             self.tax_slab,
             self.whitelisted_globals,
             eval_locals,
-        ))
+        )
+
+        # print("self.total_structured_tax_amount", self.total_structured_tax_amount)
 
         self.current_structured_tax_amount = (
             flt(self.total_structured_tax_amount) - flt(self.previous_total_paid_taxes)
@@ -100,9 +102,9 @@ class EmployeeSalarySlip(SalarySlip):
         # Total taxable earnings with additional earnings with full tax
         self.full_tax_on_additional_earnings = 0.0
         if self.current_additional_earnings_with_full_tax:
-            self.total_tax_amount = flt(calculate_tax_by_tax_slab(
+            self.total_tax_amount, __ = calculate_tax_by_tax_slab(
                 flt(self.total_taxable_earnings), self.tax_slab, self.whitelisted_globals, eval_locals
-            ))
+            )
             self.full_tax_on_additional_earnings = self.total_tax_amount - self.total_structured_tax_amount
 
         current_tax_amount = flt(self.current_structured_tax_amount + self.full_tax_on_additional_earnings)

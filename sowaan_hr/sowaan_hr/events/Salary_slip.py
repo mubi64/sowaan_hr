@@ -3,6 +3,7 @@ from hrms.payroll.doctype.salary_slip.salary_slip import (SalarySlip, calculate_
 from sowaan_hr.sowaan_hr.api.api import create_salary_adjustment_for_negative_salary
 from datetime import datetime, timedelta
 from frappe.utils import cint, flt
+from frappe.query_builder import DocType
 
 def fund_management_and_negative_salary(self, method):
     if self.custom_adjust_negative_salary == 1 and self.custom_check_adjustment == 1 and self.net_pay < 0 :
@@ -534,15 +535,16 @@ def fund_management_and_negative_salary(self, method):
                             break
 
    
+ 
+
+    set_fix_days(self)
+    before_save_salaryslip(self)
+
     self.custom_check_adjustment = 0
     self.calculate_net_pay()
     self.compute_year_to_date()
     self.compute_month_to_date()
     self.compute_component_wise_year_to_date()
-
-    #################### Call Further before_save functions ########################
-    set_fix_days(self)
-    before_save_salaryslip(self)
 
 
 
@@ -971,28 +973,24 @@ def cancel_related_docs(self, method):
         
 
 def before_save_salaryslip(doc):
-
-
-######################## Safi Work #########################
     if frappe.db.get_value('Employee', doc.employee, 'custom_allow_overtime'): 
         recalculate = True
-        ot_hours_list = frappe.get_all("Employee Overtime",filters={
-                        "employee": ["=", doc.employee],
-                        "overtime_date": ["Between", [doc.start_date,doc.end_date]],
-                        "docstatus": ["=", 1]
-                        },fields=['approved_overtime_hours'])                        
+        EmployeeOvertime = DocType("Employee Overtime")
+        ot_hours_list = (
+            frappe.qb.from_(EmployeeOvertime)
+            .select(EmployeeOvertime.approved_overtime_hours)
+            .where(
+                (EmployeeOvertime.employee == doc.employee)
+                & (EmployeeOvertime.overtime_date.between(doc.start_date, doc.end_date))
+                & (EmployeeOvertime.docstatus == 1)
+            )
+        ).run(as_dict=True)                       
+
         ot_sum = 0
         if len(ot_hours_list) > 0 : 
             for item in ot_hours_list:        
                 ot_sum = flt(item.approved_overtime_hours) + flt(ot_sum)
             doc.custom_ot_hours = ot_sum
-######################## Safi Work #########################
-
-
-
-
-
-####################### Sufyan Work ########################
 
         shift_req_hrs = 0
         shift_name = None
@@ -1030,14 +1028,16 @@ def before_save_salaryslip(doc):
             holiday_dates = [holiday.holiday_date for holiday in holiday_list_doc.holidays]
 
 
-
-
-        emp_ovrtime_list = frappe.db.get_list('Employee Overtime' , 
-                                filters={
-                                    'employee' : doc.employee ,
-                                    "overtime_date": ["Between", [doc.start_date,doc.end_date]],
-                                    'overtime_date': ['in', holiday_dates]
-                                }, fields = ['approved_overtime_hours'])
+        emp_ovrtime_list = (
+                        frappe.qb.from_(EmployeeOvertime)
+                        .select(EmployeeOvertime.approved_overtime_hours)
+                        .where(
+                            (EmployeeOvertime.employee == doc.employee)
+                            & (EmployeeOvertime.overtime_date.between(doc.start_date, doc.end_date))
+                            & (EmployeeOvertime.overtime_date.isin(holiday_dates))
+                            & (EmployeeOvertime.docstatus == 1)
+                        )
+                    ).run(as_dict=True)
 
         if emp_ovrtime_list :
             for row in emp_ovrtime_list :
@@ -1058,9 +1058,8 @@ def before_save_salaryslip(doc):
                 fields=['base'],
                 order_by='from_date desc',
             )
-        # frappe.throw('helo')
-        if base :
        
+        if base :
             one_zero = 1
             if shift_req_hrs == 0 :
                 shift_req_hrs = 1
@@ -1075,8 +1074,6 @@ def before_save_salaryslip(doc):
             else :
                 working_days_for_overtime = frappe.db.get_single_value('SowaanHR Payroll Settings','fixed_days')
 
-
-
             overtime_rate_on_working_days = frappe.db.get_single_value('SowaanHR Payroll Settings','overtime_hours_rate_on_working_day')
             overtime_rate_on_holidays = frappe.db.get_single_value('SowaanHR Payroll Settings','overtime_hours_rate_on_holiday')
 
@@ -1087,9 +1084,7 @@ def before_save_salaryslip(doc):
 
             doc.custom_overtime_per_hour_rate_for_working_day = (flt(base_amount) * flt(overtime_rate_on_working_days)) * flt(doc.custom_overtime_hours_on_working_day)
             doc.custom_overtime_per_hour_rate_for_holiday = (flt(base_amount) * flt(overtime_rate_on_holidays)) * flt(doc.custom_overtime_hours_on_holiday)
-        # frappe.throw('helo')
-####################### Sufyan Work ########################
-
+    
 
 def own_fund_tax(self,method):
     doc = self

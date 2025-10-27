@@ -233,6 +233,33 @@ def send_password_expiry_alerts():
                 frappe.sendmail(recipients=[user.name], subject=subject, message=message)       
           
 
+@frappe.whitelist()
+def check_work_flow_exist(doctype) :
+
+    worf_flow_doc = frappe.db.get_list("Workflow",
+                        filters = {
+                            'document_type' : doctype ,
+                            'is_active' : 1 ,
+                        })
+    
+    if worf_flow_doc :
+        return worf_flow_doc[0].name
+    
+    return None
+
+
+
+@frappe.whitelist()
+def get_workflow_states(docname) :
+
+    states = []
+    workflow_doc = frappe.get_doc('Workflow' , docname)
+
+    for row in workflow_doc.states :
+        if row.doc_status != '2' :
+            states.append(row.state)
+    
+    return states
 
 
 

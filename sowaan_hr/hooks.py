@@ -72,7 +72,8 @@ fixtures = [
 doctype_js = {
     "Salary Slip" : "overrides/salary_slip.js" , 
     "Employee Checkin":"sowaan_hr/client_scripts/employee_checkin_form.js",
-    "Payroll Entry" : "public/js/payroll_entry.js",
+    "Payroll Entry" : "public/js/payroll_entry.js",    
+	"Leave Application" : "sowaan_hr/client_scripts/leave_adjustment_scheduler.js",
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -189,9 +190,13 @@ doc_events = {
         "before_submit": "sowaan_hr.sowaan_hr.events.Salary_slip.salary_slip_after_submit",
         "before_cancel": "sowaan_hr.sowaan_hr.events.Salary_slip.cancel_related_docs",
         "on_cancel": "sowaan_hr.sowaan_hr.events.Salary_slip.on_cancel",
+        "before_delete": "sowaan_hr.sowaan_hr.events.Salary_slip.before_delete",
 	},
     "Loan Application":{
 		"before_save": "sowaan_hr.sowaan_hr.events.loan_application.loan_withdrawal"
+	},
+    "Leave Adjustment Scheduler":{
+		"before_save": "sowaan_hr.sowaan_hr.events.leave_adjustment_scheduler.process_scheduler_doc"
 	},
     "Attendance":{
 		"before_insert": "sowaan_hr.sowaan_hr.events.Attendance.late_approval",

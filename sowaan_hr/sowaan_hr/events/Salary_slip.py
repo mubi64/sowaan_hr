@@ -4,6 +4,12 @@ from sowaan_hr.sowaan_hr.api.api import create_salary_adjustment_for_negative_sa
 from datetime import datetime, timedelta
 from frappe.utils import cint, flt
 from frappe.query_builder import DocType
+from frappe import (_,utils)
+from frappe.utils import today
+from frappe.utils import nowdate
+from hrms.hr.doctype.leave_application.leave_application import get_leave_details
+#from erpnext.hr.doctype.leave_ledger_entry.leave_ledger_entry import create_leave_ledger_entry
+#from erpnext.hr.doctype.leave_application.leave_application import get_leave_details
 
 def fund_management_and_negative_salary(self, method):
     if self.custom_adjust_negative_salary == 1 and self.custom_check_adjustment == 1 and self.net_pay < 0 :
@@ -642,13 +648,18 @@ def on_cancel(self, method):
 ########################## Umair's Work ##########################
 
 def set_fix_days(self):
+    
     hr_setting = frappe.db.get_list('Sowaan HR Setting')
     if not hr_setting:
         return
     parent_to_use = get_deduction_parent(self.employee, self.salary_structure)
+    #frappe.msgprint(f"parent_to_use {parent_to_use}")
+    
     if not parent_to_use:
         return
 
+    # frappe.msgprint(f"Start Date {self.start_date} End Date {self.end_date}")
+    # return
     calculation_criteria = frappe.db.get_value('Sowaan HR Setting', parent_to_use, 'calculation_criteria')
     if calculation_criteria == "Fix Days":
         self.total_working_days = int(frappe.db.get_value('Sowaan HR Setting', parent_to_use, 'days'))
@@ -665,7 +676,8 @@ def get_deduction_parent(employee, salary_structure):
         fields=["employee", "parent"],
         ignore_permissions=True
     )
-    
+    #frappe.msgprint(f"Deduction Employees {ded_emp_list}")
+
     ded_ss_list = frappe.get_all(
         "Deduction Salary Structures",
         filters={"parenttype": "Sowaan HR Setting"},
@@ -673,12 +685,15 @@ def get_deduction_parent(employee, salary_structure):
         ignore_permissions=True
     )
 
+    #frappe.msgprint(f"Deduction Salary Structure {ded_ss_list}")
     
+
     if not ded_emp_list and not ded_ss_list:
         return None
 
     emp_dict = {emp["employee"]: emp["parent"] for emp in ded_emp_list if isinstance(emp, dict)}
     ss_dict = {ss["salary_structure"]: ss["parent"] for ss in ded_ss_list if isinstance(ss, dict)}
+
     if employee not in emp_dict and salary_structure not in ss_dict:
         return None
     
@@ -691,6 +706,8 @@ def handle_late_scenario(self, parent_to_use):
         """Fetch component, ensure company is in accounts, then create Additional Salary."""
         if amount == 0:
             return
+        
+        #frappe.msgprint(f"Amount {amount} Component_name {component_name}......")
         existing = frappe.db.exists(
             "Additional Salary",
             {
@@ -702,14 +719,15 @@ def handle_late_scenario(self, parent_to_use):
                 "docstatus": 1  
             }
         )
+        
         if existing:
             existing_amount = frappe.db.get_value(
                 "Additional Salary",
                 existing,
                 "amount"
             )
-            if flt(existing_amount) == flt(amount):
-                return
+            # if flt(existing_amount) == flt(amount):
+            #     return
 
             as_doc = frappe.get_doc("Additional Salary", existing)
             as_doc.ignore_permissions = True
@@ -719,7 +737,20 @@ def handle_late_scenario(self, parent_to_use):
                 self.deductions.remove(existing_row)
 
 
+        # check_attendance = frappe.db.get_list('Attendance', filters={
+        # 'employee': self.employee,
+        # 'status': ['in', ['Present', 'Half Day']],
+        # 'attendance_date': ['between', [self.start_date, self.end_date]],
+        # 'docstatus': 1
+        # }, fields=['in_time', 'out_time', 'status', 'late_entry', 'early_exit', 'attendance_date'], order_by='attendance_date asc')
 
+      
+        # if check_attendance:
+        #    for x in attendance:
+        #         if check_late_approval(self.employee, x['attendance_date']):
+        #             #frappe.msgprint(f"Late is approved in attendance for {self.employee}")
+        #             continue  # skip this record and move to next     
+    
         component = frappe.get_doc("Salary Component", component_name)
         if not any(acc.company == self.company for acc in component.accounts):
             default_account = frappe.get_cached_value(
@@ -733,6 +764,7 @@ def handle_late_scenario(self, parent_to_use):
             })
             component.save()
 
+        
 
         additional_salary = frappe.get_doc({
             "doctype": "Additional Salary",
@@ -748,6 +780,7 @@ def handle_late_scenario(self, parent_to_use):
         })
         additional_salary.insert(ignore_permissions=True)
         additional_salary.submit()
+        #frappe.msgprint(f"submitting.... {amount} Component_name {component_name}......")
             
         # deductions_dict = {d.salary_component: d for d in self.deductions}
         # # frappe.msgprint(str(deductions_dict))
@@ -763,6 +796,7 @@ def handle_late_scenario(self, parent_to_use):
         #     self.append('deductions', {'salary_component': component, 'amount': amount})
         # frappe.msgprint(str({d.salary_component: d for d in self.deductions}))
 
+    
 
     hr_settings = frappe.get_doc('Sowaan HR Setting', parent_to_use)
     if not any([hr_settings.is_late_deduction_applicable,
@@ -803,13 +837,16 @@ def handle_late_scenario(self, parent_to_use):
     minute_salary = ded_salary / total_working_days / shift_hours / 60
     half_day_salary = ded_salary / total_working_days / 2
 
+    
+
     attendance = frappe.db.get_list('Attendance', filters={
         'employee': self.employee,
         'status': ['in', ['Present', 'Half Day']],
         'attendance_date': ['between', [self.start_date, self.end_date]],
         'docstatus': 1
-    }, fields=['in_time', 'out_time', 'status', 'late_entry', 'early_exit'], order_by='attendance_date asc')
+    }, fields=['in_time', 'out_time', 'status', 'late_entry', 'early_exit', 'attendance_date'], order_by='attendance_date asc')
 
+      
     if not attendance:
         return
 
@@ -831,17 +868,28 @@ def handle_late_scenario(self, parent_to_use):
     total_late_minutes = total_early_minutes = 0
     total_late_count = total_early_departure_count = deduction_half_day_count = 0
     
+    half_day_violations = []
+    early_departure_violations = []
+    late_arrival_violations = []   
+    
+
     for a in attendance:
+        # frappe.msgprint(f"in_time{a['in_time'] } out_time {a['out_time']}")
+    
+        # frappe.msgprint(f"Attendance {attendance}")
         if not a['in_time'] or not a['out_time']:
+            #frappe.msgprint(f"In Tme....{a['in_time']} ...Out time {a['out_time']} ... Status {a['status']}")
             continue
 
         in_time = timedelta(hours=a['in_time'].hour, minutes=a['in_time'].minute, seconds=a['in_time'].second)
-        out_time = timedelta(hours=a['out_time'].hour, minutes=a['out_time'].minute, seconds=a['out_time'].second)
-
+        out_time = timedelta(hours=a['out_time'].hour, minutes=a['out_time'].minute, seconds=a['out_time'].second)     
+       
         
         
         ## Half Day Work ##
+        #frappe.msgprint(f"Status....{a['status']}")
         if hr_settings.is_half_day_deduction_applicable and a['status'] == 'Half Day':
+            #frappe.msgprint(f"Status....{a['status']}")
             half_day_count += 1
 
             if half_day_count < half_day_flag_count + exemptions["half_day"]:
@@ -850,9 +898,16 @@ def handle_late_scenario(self, parent_to_use):
                 excess_half_days = flt(half_day_count) - flt(half_day_flag_count)
                 if half_day_flag_count == 0:
                     deduction_half_day_count += 1
+                    half_day_violations.append({
+                        "date": a['attendance_date'],
+                        "half_day": 1                        
+                    })
                 elif excess_half_days % half_day_flag_count == 0:
                     deduction_half_day_count += 1
-            
+                    half_day_violations.append({
+                        "date": a['attendance_date'],
+                        "half_day": 1                        
+                    })
         ## Early Work ##
         if hr_settings.is_early_deduction_applicable and a['status'] == 'Present' and a['early_exit']:
             early_departure_count += 1
@@ -863,24 +918,48 @@ def handle_late_scenario(self, parent_to_use):
                 if early_flag_count == 0:
                     total_early_minutes += (shift_end_time - out_time).seconds // 60
                     total_early_departure_count += 1
+                    early_departure_violations.append({
+                        "date": a['attendance_date'],
+                        "early_departure": 1                        
+                    })
                 elif excess_early_days % early_flag_count == 0:
                     total_early_minutes += (shift_end_time - out_time).seconds // 60
                     total_early_departure_count += 1
+                    early_departure_violations.append({
+                        "date": a['attendance_date'],
+                        "early_departure": 1                        
+                    })
                     
         ## Late Work ##
-        if hr_settings.is_late_deduction_applicable and a['status'] == 'Present' and a['late_entry']:
-            late_count += 1
-            if late_count < late_flag_count + exemptions["late_entry"]:
-                pass
-            else:
-                excess_late_days = late_count - late_flag_count
-                ## if condition neccessary (flag_count == 0) ##
-                if late_flag_count == 0:
-                    total_late_minutes += (in_time - shift_start_time).seconds // 60
-                    total_late_count += 1 
-                elif excess_late_days % late_flag_count == 0:
-                    total_late_minutes += (in_time - shift_start_time).seconds // 60
-                    total_late_count += 1
+        if hr_settings.is_late_deduction_applicable and a['status'] == 'Present' and a['late_entry']:         
+                
+                if check_late_approval(self.employee, a['attendance_date']):
+                    #frappe.msgprint(f"Late is approved in attendance for {self.employee}")
+                    continue  # skip this record and move to next                
+
+                late_count += 1
+
+                if late_count < late_flag_count + exemptions["late_entry"]:
+                    pass
+                else:
+                    excess_late_days = late_count - late_flag_count
+                    ## if condition neccessary (flag_count == 0) ##
+                    if late_flag_count == 0:
+                        total_late_minutes += (in_time - shift_start_time).seconds // 60
+                        total_late_count += 1 
+                        #frappe.msgprint(f"Late is approved in attendance for {a['attendance_date']}")
+                        late_arrival_violations.append({
+                            "date": a['attendance_date'],
+                            "late_arrival": 1                        
+                        })
+                    elif excess_late_days % late_flag_count == 0:
+                        total_late_minutes += (in_time - shift_start_time).seconds // 60
+                        total_late_count += 1
+                        #frappe.msgprint(f"Late is approved in attendance for {a['attendance_date']}")
+                        late_arrival_violations.append({
+                            "date": a['attendance_date'],
+                            "late_arrival": 1                        
+                        })
 
 
 
@@ -926,34 +1005,360 @@ def handle_late_scenario(self, parent_to_use):
         if hr_settings.is_half_day_deduction_applicable:
             create_additional_salary(hr_settings.half_day_salary_component, deduction_half_day_count * half_day_salary)
     elif hr_settings.calculation_method == 'Counts':
-        if hr_settings.is_late_deduction_applicable:
-            if hr_settings.late_deduction_factor and hr_settings.late_deduction_factor != 0:
-                create_additional_salary(hr_settings.late_salary_component, total_late_count * hr_settings.late_deduction_factor * (ded_salary / total_working_days))
+        
+        #if late deduction is applicable
+        if hr_settings.is_late_deduction_applicable and hr_settings.deduct_from_leaves and late_arrival_violations:
+            
+            #frappe.msgprint(f"Total Late Count In Late{total_late_count}") 
+            #add new condition here.... if duduct from leaves is selected then adjust late in leaves
+              
+            #if deduct from leaves late deduction factor are selected and late deduction factor is not 0
+            if  hr_settings.late_deduction_factor and hr_settings.late_deduction_factor != 0:               
+               remaining_deduction = check_late_application(self.employee, late_arrival_violations, hr_settings.late_deduction_factor)
+
+            #    frappe.msgprint(f"Remaining Reduction {remaining_deduction}") 
+            #    return
+               if remaining_deduction and remaining_deduction > 0:  
+                    #if not sufficient leaves are left for adjustment then adjust in salary                  
+                    if hr_settings.late_deduction_factor and hr_settings.late_deduction_factor != 0:
+                        create_additional_salary(hr_settings.late_salary_component, remaining_deduction * (ded_salary / total_working_days))
+                    else:                        
+                        create_additional_salary(hr_settings.late_salary_component, remaining_deduction * minute_salary)
+               else: 
+                    frappe.msgprint("✅ All late deductions adjusted in leaves. No salary deduction required.")  
             else:
-                create_additional_salary(hr_settings.late_salary_component, total_late_count * minute_salary)
-        if hr_settings.is_early_deduction_applicable:
+                if hr_settings.late_deduction_factor and hr_settings.late_deduction_factor != 0:                    
+                    create_additional_salary(hr_settings.late_salary_component, total_late_count * hr_settings.late_deduction_factor * (ded_salary / total_working_days))
+                else:                   
+                    create_additional_salary(hr_settings.late_salary_component, total_late_count * minute_salary)
+        else:
+                if hr_settings.late_deduction_factor and hr_settings.late_deduction_factor != 0:                   
+                    create_additional_salary(hr_settings.late_salary_component, total_late_count * hr_settings.late_deduction_factor * (ded_salary / total_working_days))
+                else:                    
+                    create_additional_salary(hr_settings.late_salary_component, total_late_count * minute_salary)
+        #end of late deduction case
+
+        #if early deduction is applicable            
+        if hr_settings.is_early_deduction_applicable and hr_settings.custom_early_deduct_from_leaves and early_departure_violations:
+
+            #add new condition here.... if duduct from leaves is selected then adjust early in leaves
+
+            #if deduct from leaves early deduction factor are selected and early deduction factor is not 0
+            if hr_settings.custom_early_deduct_from_leaves and hr_settings.early_deduction_factor and hr_settings.early_deduction_factor != 0:               
+               #adjust in leaves
+               remaining_deduction = check_early_application(self.employee, early_departure_violations, hr_settings.early_deduction_factor)
+            #    frappe.msgprint(f"Remaining Reduction {remaining_deduction}")             
+            #    return
+               if remaining_deduction and remaining_deduction > 0:  
+                    #if not sufficient leaves are left for adjustment then adjust in salary                  
+                    if hr_settings.early_deduction_factor and hr_settings.early_deduction_factor != 0:
+                        create_additional_salary(hr_settings.early_salary_component, remaining_deduction * (ded_salary / total_working_days))
+                    else:
+                        create_additional_salary(hr_settings.early_salary_component, remaining_deduction * minute_salary)
+            else:
+                if hr_settings.early_deduction_factor and hr_settings.early_deduction_factor != 0:
+                    create_additional_salary(hr_settings.early_salary_component, total_early_departure_count * hr_settings.early_deduction_factor * (ded_salary / total_working_days))
+                else:
+                    create_additional_salary(hr_settings.early_salary_component, total_early_departure_count * minute_salary)
+        else:
             if hr_settings.early_deduction_factor and hr_settings.early_deduction_factor != 0:
                 create_additional_salary(hr_settings.early_salary_component, total_early_departure_count * hr_settings.early_deduction_factor * (ded_salary / total_working_days))
             else:
                 create_additional_salary(hr_settings.early_salary_component, total_early_departure_count * minute_salary)
-        if hr_settings.is_half_day_deduction_applicable:
-            if hr_settings.half_day_deduction_factor and hr_settings.half_day_deduction_factor != 0:
-                create_additional_salary(hr_settings.half_day_salary_component, deduction_half_day_count * hr_settings.half_day_deduction_factor * (ded_salary / total_working_days))
-            else:
-                create_additional_salary(hr_settings.half_day_salary_component, deduction_half_day_count * half_day_salary)
+        #end early arrival deduction case
 
+        #if half day deduction is applicable      
+        # frappe.msgprint(f"halfday_deduction_factor {half_day_violations}")    
+        # frappe.msgprint(f"is_half_day_deduction_applicable {hr_settings.is_half_day_deduction_applicable}") 
+        # frappe.msgprint(f"hr_settings.custom_half_day_deduct_from_leaves {hr_settings.custom_half_day_deduct_from_leaves}") 
+
+        if hr_settings.is_half_day_deduction_applicable and hr_settings.custom_half_day_deduct_from_leaves and half_day_violations:
+            #frappe.msgprint(f"In Half Day deduction")     
+            #add new condition here.... if duduct from leaves is selected then adjust half day in leaves
+
+            #if deduct from leaves half day deduction factor are selected and half day deduction factor is not 0
+            if hr_settings.custom_half_day_deduct_from_leaves and hr_settings.half_day_deduction_factor and hr_settings.half_day_deduction_factor != 0:               
+               #adjust in leaves
+               remaining_deduction = check_halfday_application(self.employee, half_day_violations, hr_settings.half_day_deduction_factor)
+               #frappe.msgprint(f"Remaining Reduction {remaining_deduction}")             
+            #    return 
+               if remaining_deduction and remaining_deduction > 0:  
+                    #if not sufficient leaves are left for adjustment then adjust in salary                  
+                    if hr_settings.half_day_deduction_factor and hr_settings.half_day_deduction_factor != 0:
+                        create_additional_salary(hr_settings.half_day_salary_component, remaining_deduction * (ded_salary / total_working_days))
+                    else:
+                        create_additional_salary(hr_settings.half_day_salary_component, remaining_deduction * minute_salary)
+            else:
+                if hr_settings.half_day_deduction_factor and hr_settings.half_day_deduction_factor != 0:
+                    create_additional_salary(hr_settings.half_day_salary_component, deduction_half_day_count * hr_settings.half_day_deduction_factor * (ded_salary / total_working_days))
+                else:
+                    create_additional_salary(hr_settings.half_day_salary_component, deduction_half_day_count * minute_salary)
+        #end of half day deduction case
+        else:
+            if hr_settings.is_half_day_deduction_applicable:
+                if hr_settings.half_day_deduction_factor and hr_settings.half_day_deduction_factor != 0:
+                    create_additional_salary(hr_settings.half_day_salary_component, deduction_half_day_count * hr_settings.half_day_deduction_factor * (ded_salary / total_working_days))
+                else:
+                    create_additional_salary(hr_settings.half_day_salary_component, deduction_half_day_count * minute_salary)
+                    
     self.calculate_net_pay()
     self.compute_year_to_date()
     self.compute_month_to_date()
     self.compute_component_wise_year_to_date()
 
 
+@frappe.whitelist()
 
+#check if leave application already exist
+def check_late_application(employee, violations, late_deduction_factor):
+    
+    try:
+        attendance_date = today()        
 
+        #frappe.msgprint(f"late_arrival_violations {violations}") 
 
+        if not violations:
+            frappe.msgprint("No violations found — no leave adjustments needed.")
+            return
+    
+        for v in violations:
+            attendance_date = v["date"]
+            deduction = v["late_arrival"]
 
+            #frappe.msgprint(f"Attendance Date: {attendance_date}")
 
+            #total_late_days = deduction * late_deduction_factor
+            total_late_days = round(deduction * late_deduction_factor, 2)
+            #frappe.msgprint(f"Total Late Days: {total_late_days}")
 
+            if not employee or not total_late_days:
+                frappe.throw("Employee and total late days are required")  
+
+            frappe.msgprint(f"Late deduction process started for Employee: {employee}")
+
+            frappe.msgprint(f"Late Days {total_late_days}")
+
+            remaining_deduction = total_late_days            
+            
+            if remaining_deduction <= 0:
+                frappe.throw("Deduction days must be greater than zero.")
+
+            #for lt in leave_types:
+            if remaining_deduction <= 0:
+                break
+
+            # Check if leave already exists for this employee and date
+            existing_leave = frappe.db.exists(
+            "Leave Application",
+            {
+                "employee": employee,
+                "from_date": attendance_date,
+                "to_date": attendance_date,
+                "docstatus": 1  # only submitted leaves
+            }
+    )
+            if existing_leave:
+               remaining_deduction -= deduction 
+
+            elif not existing_leave:
+                frappe.msgprint(
+                f"⚠️ No Leave Application found for {attendance_date}. Remaining deduction: {remaining_deduction}"                
+            )
+                frappe.msgprint(f"remaining balance ⚠️ {remaining_deduction} day(s).")    
+                return remaining_deduction  # stop and send remaining deduction
+        
+    except Exception as e:
+        error_msg = str(e)
+        print(f"Error: {error_msg}")
+        frappe.log_error("Error in late adjustment in leaves", str(e))
+
+#check if leave application already exist
+def check_early_application(employee, violations, early_deduction_factor):
+   
+    try:
+        attendance_date = today()        
+
+        #frappe.msgprint(f"late_arrival_violations {violations}") 
+
+        if not violations:
+            frappe.msgprint("No violations found — no leave adjustments needed.")
+            return
+    
+        for v in violations:
+            attendance_date = v["date"]
+            deduction = v["early_departure"]
+
+            #frappe.msgprint(f"Attendance Date: {attendance_date}")
+
+            #total_early_days = deduction * late_deduction_factor
+            total_early_days = round(deduction * early_deduction_factor, 2)
+            #frappe.msgprint(f"Total Late Days: {total_late_days}")
+
+            if not employee or not total_early_days:
+                frappe.throw("Employee and total early days are required")  
+
+            frappe.msgprint(f"Early leave check process started for Employee: {employee}")
+
+            #frappe.msgprint(f"Early Days {total_early_days}")
+
+            remaining_deduction = total_early_days            
+            
+            if remaining_deduction <= 0:
+                frappe.throw("Deduction days must be greater than zero.")
+
+            #for lt in leave_types:
+            if remaining_deduction <= 0:
+                break
+
+            # Check if leave already exists for this employee and date
+            existing_leave = frappe.db.exists(
+            "Leave Application",
+            {
+                "employee": employee,
+                "from_date": attendance_date,
+                "to_date": attendance_date,
+                "docstatus": 1  # only submitted leaves
+            }
+    )
+            if existing_leave:
+               remaining_deduction -= deduction 
+
+            elif not existing_leave:
+                frappe.msgprint(
+                f"⚠️ No Leave Application found for {attendance_date}. Remaining deduction: {remaining_deduction}"                
+            )
+                frappe.msgprint(f"remaining balance ⚠️ {remaining_deduction} day(s).")    
+                return remaining_deduction  # stop and send remaining deduction
+        
+    except Exception as e:
+        error_msg = str(e)
+        print(f"Error: {error_msg}")
+        frappe.log_error("Error in early adjustment in leaves", str(e))
+
+#check if leave application already exist
+def check_halfday_application(employee, violations, halfday_deduction_factor):
+   
+    try:
+        attendance_date = today()        
+
+        #frappe.msgprint(f"halfday_deduction_factor {violations}") 
+
+        if not violations:
+            frappe.msgprint("No violations found — no leave adjustments needed.")
+            return
+    
+        for v in violations:
+            attendance_date = v["date"]
+            deduction = v["half_day"]
+
+            #frappe.msgprint(f"Attendance Date: {attendance_date}")
+
+            #total_half_days = deduction * late_deduction_factor
+            total_half_days = round(deduction * halfday_deduction_factor, 2)
+
+            #frappe.msgprint(f"Total Half Days: {total_half_days}")
+
+            if not employee or not total_half_days:
+                frappe.throw("Employee and total half days are required")  
+
+            frappe.msgprint(f"Half leave check process started for Employee: {employee}")
+
+            #frappe.msgprint(f"Half Days {total_half_days}")
+
+            remaining_deduction = total_half_days            
+            
+            if remaining_deduction <= 0:
+                frappe.throw("Deduction days must be greater than zero.")
+
+            #for lt in leave_types:
+            if remaining_deduction <= 0:
+                break
+
+            # Check if leave already exists for this employee and date
+            existing_leave = frappe.db.exists(
+            "Leave Application",
+            {
+                "employee": employee,
+                "from_date": attendance_date,
+                "to_date": attendance_date,
+                "docstatus": 1  # only submitted leaves
+            }
+    )
+            if existing_leave:
+               remaining_deduction -= deduction 
+
+            elif not existing_leave:
+                frappe.msgprint(
+                f"⚠️ No Leave Application found for {attendance_date}. Remaining deduction: {remaining_deduction}"                
+            )
+                frappe.msgprint(f"remaining balance ⚠️ {remaining_deduction} day(s).")    
+                return remaining_deduction  # stop and send remaining deduction
+        
+    except Exception as e:
+        error_msg = str(e)
+        print(f"Error: {error_msg}")
+        frappe.log_error("Error in half days leaves", str(e))
+
+def check_late_approval(employee, late_date):    
+
+    
+    """Check if attendance exists and late is approved"""
+    att = frappe.db.get_value(
+        "Attendance",
+        {"employee": employee, "attendance_date": late_date},
+        ["late_entry", "late_approved"],
+        as_dict=True,
+    )        
+
+    #frappe.msgprint(f"Attendance {att}")
+
+    if not att:
+        return False  # no attendance found
+
+    if att.late_entry and att.late_approved:
+        frappe.msgprint(f"Late is approved in attendance for {employee} on {late_date}")
+
+        frappe.logger().info(f"Late is approved in attendance for {employee} on {late_date}")
+        return True
+
+    
+
+def before_delete(self):
+    
+    # Find all leave applications linked to this Salary Slip
+    linked_leaves = frappe.get_all(
+        "Leave Application",
+        filters={"custom_salary_slip_reference": self.name},
+        fields=["name", "docstatus"]
+    )
+
+    for leave in linked_leaves:
+        leave_doc = frappe.get_doc("Leave Application", leave.name)
+        
+        # Cancel if submitted
+        if leave_doc.docstatus == 1:
+            leave_doc.cancel()
+        
+        # Delete leave (or unlink if you prefer to keep record)
+        frappe.delete_doc("Leave Application", leave_doc.name, force=1)
+        
+        # Also unlink attendance records
+        attendance_list = frappe.get_all(
+            "Attendance",
+            filters={"leave_application": leave_doc.name},
+            pluck="name"
+        )
+    for att_name in attendance_list:
+        try:
+            att_doc = frappe.get_doc("Attendance", att_name)
+            # Cancel attendance if submitted
+            if att_doc.docstatus == 1:
+                att_doc.cancel()
+                # If not submitted, delete it
+            elif att_doc.docstatus == 0:
+                    frappe.delete_doc("Attendance", att_name, force=1)    
+        except Exception as e:
+                    frappe.log_error(f"Error canceling/deleting attendance {att_name}: {e}")
 
 
 def cancel_related_docs(self, method):

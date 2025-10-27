@@ -37,6 +37,7 @@ def handle_half_day(self, method):
                         checkout_time_td = timedelta(hours=checkout_time.hour, minutes=checkout_time.minute, seconds=checkout_time.second)
                         if start_time <= checkin_time_td <= end_time or start_time <= checkout_time_td <= end_time:
                             self.status = 'Half Day'
+                            self.late_entry = False
 
 def after_insert_attendance(doc, method):
     if frappe.db.get_value('Employee', doc.employee, 'custom_allow_overtime'):

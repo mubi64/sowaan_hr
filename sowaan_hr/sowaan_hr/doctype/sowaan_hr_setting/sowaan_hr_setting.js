@@ -18,7 +18,8 @@ frappe.ui.form.on("Sowaan HR Setting", {
         frm.doc.late_salary_component = "";
         frm.doc.late_entry_exemptions = 0;
         frm.doc.late_deduction_factor = 0;
-
+        frm.doc.deduct_from_leaves = false;
+        frm.doc.leave_type = "";
     },
     is_early_deduction_applicable(frm) {
         frm.doc.early_salary_component = "";

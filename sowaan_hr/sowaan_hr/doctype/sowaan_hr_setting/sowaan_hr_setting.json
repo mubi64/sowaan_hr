@@ -22,6 +22,8 @@
   "late_entry_exemptions",
   "late_flag_count",
   "late_deduction_factor",
+  "deduct_from_leaves",
+  "leave_type",
   "early_section_section",
   "is_early_deduction_applicable",
   "early_salary_component",
@@ -215,6 +217,26 @@
   },
   {
    "default": "0",
+   "depends_on": "eval: doc.calculation_method == 'Counts' && doc.is_late_deduction_applicable == true;",
+   "description": "Deduction will apply on leaves instead of same month salary",
+   "fieldname": "deduct_from_leaves",
+   "fieldtype": "Check",
+   "label": "Deduct From Leaves"
+  },
+  {
+   "depends_on": "eval: doc.calculation_method == 'Counts' && doc.deduct_from_leaves == true;",
+   "description": "Adjust in leaves.",
+   "fieldname": "leave_type",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "in_standard_filter": 1,
+   "label": "Leave Type",
+   "mandatory_depends_on": "eval: doc.deduct_from_leaves == true;",
+   "options": "Leave Type",
+   "search_index": 1
+  },
+  {
+   "default": "0",
    "depends_on": "eval: doc.is_late_deduction_applicable == true;",
    "fieldname": "late_flag_count",
    "fieldtype": "Int",
@@ -233,11 +255,77 @@
    "fieldname": "half_day_flag_count",
    "fieldtype": "Int",
    "label": "Half Day  Flag Count"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval: doc.calculation_method == 'Counts' && doc.is_late_deduction_applicable == true;",
+   "description": "Deduction will apply on leaves instead of same month salary.",
+   "fieldname": "deduct_from_leaves",
+   "fieldtype": "Check",
+   "label": "Is Deduct From Leaves"
+  },
+  {
+   "depends_on": "eval: doc.calculation_method == 'Counts' && doc.deduct_from_leaves == true && doc.is_late_deduction_applicable == true;",
+   "description": "Adjust late in leaves.",
+   "fieldname": "leave_type",
+   "fieldtype": "Table",
+   "ignore_user_permissions": 1,
+   "in_standard_filter": 1,
+   "label": "Late Adjustment Leave Types",
+   "mandatory_depends_on": "eval: doc.deduct_from_leaves == true;",
+   "options": "Employee Leave Types",
+   "search_index": 1
+  },
+  
+
+  {
+   "default": "0",
+   "depends_on": "eval: doc.calculation_method == 'Counts' && doc.is_early_deduction_applicable == true;",
+   "description": "Deduction will apply on leaves instead of same month salary.",
+   "fieldname": "custom_early_deduct_from_leaves",
+   "fieldtype": "Check",
+   "label": "Is Early Deduct From Leaves"
+  },
+  {
+   "depends_on": "eval: doc.calculation_method == 'Counts' && doc.custom_early_deduct_from_leaves == true && doc.is_early_deduction_applicable == true;",
+   "description": "Adjust early in leaves.",
+   "fieldname": "custom_early_late_adjustment_leave_types",
+   "fieldtype": "Table",
+   "ignore_user_permissions": 1,
+   "in_standard_filter": 1,
+   "label": "Early Late Adjustment Leave Types",
+   "mandatory_depends_on": "eval: doc.custom_early_deduct_from_leaves == true;",
+   "options": "Employee Leave Types",
+   "search_index": 1
+  },
+  
+
+  {
+   "default": "0",
+   "depends_on": "eval: doc.calculation_method == 'Counts' && doc.is_half_day_deduction_applicable == true;",
+   "description": "Deduction will apply on leaves instead of same month salary.",
+   "fieldname": "custom_half_day_deduct_from_leaves",
+   "fieldtype": "Check",
+   "label": "Is Half Day Deduct From Leaves"
+  },
+  {
+   "depends_on": "eval: doc.calculation_method == 'Counts' && doc.custom_early_deduct_from_leaves == true && doc.is_early_deduction_applicable == true;",
+   "description": "Adjust half day in leaves.",
+   "fieldname": "custom_early_late_adjustment_leave_types",
+   "fieldtype": "Table",
+   "ignore_user_permissions": 1,
+   "in_standard_filter": 1,
+   "label": "Half Day Adjustment Leave Types",
+   "mandatory_depends_on": "eval: doc.custom_half_day_deduct_from_leaves == true;",
+   "options": "Employee Leave Types",
+   "search_index": 1
   }
+
+
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-03-14 00:26:28.514193",
+ "modified": "2025-10-08 14:04:38.360371",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Sowaan HR Setting",
@@ -255,6 +343,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

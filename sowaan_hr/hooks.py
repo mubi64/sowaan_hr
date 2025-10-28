@@ -43,7 +43,11 @@ fixtures = [
 				)
 			]
 		]
-	}
+	},
+    # 👇 Add this to include your merged doctype fixture
+    {
+        "doctype": "Sowaan HR Setting"
+    }
 ]
 
 

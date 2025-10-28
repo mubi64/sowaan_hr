@@ -196,7 +196,7 @@ doc_events = {
 		"before_save": "sowaan_hr.sowaan_hr.events.loan_application.loan_withdrawal"
 	},
     "Leave Adjustment Scheduler":{
-		"before_save": "sowaan_hr.sowaan_hr.events.leave_adjustment_scheduler.process_scheduler_doc"
+		"before_submit": "sowaan_hr.sowaan_hr.events.leave_adjustment_scheduler.process_scheduler_doc"
 	},
     "Attendance":{
 		"before_insert": "sowaan_hr.sowaan_hr.events.Attendance.late_approval",

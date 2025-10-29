@@ -2,7 +2,7 @@
  "actions": [],
  "allow_rename": 1,
  "autoname": "format:HR-SETTING-{###}",
- "creation": "2025-02-04 18:35:55.611089",
+ "creation": "2025-10-29 11:34:37.026097",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -23,7 +23,6 @@
   "late_flag_count",
   "late_deduction_factor",
   "deduct_from_leaves",
-  "leave_type",
   "early_section_section",
   "is_early_deduction_applicable",
   "early_salary_component",
@@ -35,7 +34,8 @@
   "half_day_salary_component",
   "half_day_exemptions",
   "half_day_flag_count",
-  "half_day_deduction_factor"
+  "half_day_deduction_factor",
+  "custom_is_absent_adjustment_in_leaves"
  ],
  "fields": [
   {
@@ -224,18 +224,6 @@
    "label": "Deduct From Leaves"
   },
   {
-   "depends_on": "eval: doc.calculation_method == 'Counts' && doc.deduct_from_leaves == true;",
-   "description": "Adjust in leaves.",
-   "fieldname": "leave_type",
-   "fieldtype": "Link",
-   "ignore_user_permissions": 1,
-   "in_standard_filter": 1,
-   "label": "Leave Type",
-   "mandatory_depends_on": "eval: doc.deduct_from_leaves == true;",
-   "options": "Leave Type",
-   "search_index": 1
-  },
-  {
    "default": "0",
    "depends_on": "eval: doc.is_late_deduction_applicable == true;",
    "fieldname": "late_flag_count",
@@ -265,21 +253,17 @@
    "label": "Deduct From Leaves"
   },
   {
-   "depends_on": "eval: doc.calculation_method == 'Counts' && doc.deduct_from_leaves == true;",
-   "description": "Adjust in leaves.",
-   "fieldname": "leave_type",
-   "fieldtype": "Link",
-   "ignore_user_permissions": 1,
-   "in_standard_filter": 1,
-   "label": "Leave Type",
-   "mandatory_depends_on": "eval: doc.deduct_from_leaves == true;",
-   "options": "Leave Type",
-   "search_index": 1
+   "default": "0",
+   "depends_on": "eval: doc.calculation_method == 'Counts' && doc.is_late_deduction_applicable == true;",
+   "description": "Deduction will apply on leaves instead of same month salary",
+   "fieldname": "custom_is_absent_adjustment_in_leaves",
+   "fieldtype": "Check",
+   "label": "Deduct From Leaves"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-08 14:04:38.360371",
+ "modified": "2025-10-29 17:14:38.732068",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Sowaan HR Setting",

@@ -511,15 +511,5 @@
   "translatable": 0,
   "unique": 0,
   "width": null
- }, 
-  {
-    "fieldname": "leave_type",
-    "label": "Leave Type",
-    "fieldtype": "Link",
-    "insert_after": null,
-    "options": "Leave Type",
-    "reqd": 0,
-    "read_only": 0,
-    "hidden": 0
-  }    
+ } 
 ]

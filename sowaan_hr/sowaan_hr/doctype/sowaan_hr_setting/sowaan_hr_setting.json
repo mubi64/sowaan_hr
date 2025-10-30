@@ -259,7 +259,17 @@
    "fieldname": "custom_is_absent_adjustment_in_leaves",
    "fieldtype": "Check",
    "label": "Deduct From Leaves"
-  }
+  },  
+  {
+  "fieldname": "leave_type",  
+  "label": "Leave Type",
+  "fieldtype": "Link",
+  "insert_after": null,
+  "options": "Leave Type",
+  "reqd": 0,
+  "read_only": 0,
+  "hidden": 0
+  }      
  ],
  "index_web_pages_for_search": 1,
  "links": [],

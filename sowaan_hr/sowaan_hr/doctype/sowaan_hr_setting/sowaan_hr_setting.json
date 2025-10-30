@@ -243,15 +243,7 @@
    "fieldname": "half_day_flag_count",
    "fieldtype": "Int",
    "label": "Half Day  Flag Count"
-  },
-  {
-   "default": "0",
-   "depends_on": "eval: doc.calculation_method == 'Counts' && doc.is_late_deduction_applicable == true;",
-   "description": "Deduction will apply on leaves instead of same month salary",
-   "fieldname": "deduct_from_leaves",
-   "fieldtype": "Check",
-   "label": "Deduct From Leaves"
-  },
+  },  
   {
    "default": "0",
    "depends_on": "eval: doc.calculation_method == 'Counts' && doc.is_late_deduction_applicable == true;",

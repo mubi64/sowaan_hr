@@ -461,7 +461,7 @@ def adjust_early_deduction(employee, violations, early_deduction_factor, hr_sett
             # Get leave types from child table (in the order they appear)
             leave_types = [
                 row.leave_type
-                for row in sorted(hr_settings.custom_leave_types, key=lambda x: x.idx)
+                for row in sorted(hr_settings.custom_early_late_adjustment_leave_types, key=lambda x: x.idx)
                 if row.leave_type
             ]
 
@@ -593,7 +593,7 @@ def adjust_halfday_deduction(employee, violations, halfday_deduction_factor, hr_
         # Get leave types from child table (in the order they appear)
         leave_types = [
             row.leave_type
-            for row in sorted(hr_settings.custom_leave_types, key=lambda x: x.idx)
+            for row in sorted(hr_settings.custom_half_day_adjustment_leave_types, key=lambda x: x.idx)
             if row.leave_type
         ]
 
@@ -721,7 +721,7 @@ def adjust_absent_leaves(employee, start_date, end_date, hr_settings):
         # Get leave types from child table (in the order they appear)
         leave_types = [
             row.leave_type
-            for row in sorted(hr_settings.custom_leave_types, key=lambda x: x.idx)
+            for row in sorted(hr_settings.custom_absent_adjustment_in_leaves, key=lambda x: x.idx)
             if row.leave_type
         ]
 

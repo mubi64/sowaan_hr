@@ -7,7 +7,21 @@ from frappe.query_builder import DocType
 from frappe import (_,utils)
 from frappe.utils import today
 from frappe.utils import nowdate
+from frappe.query_builder.functions import Max, Min, Sum
 from hrms.hr.doctype.leave_application.leave_application import get_leave_details
+from frappe.utils import (
+	add_days,
+	cint,
+	cstr,
+	date_diff,
+	flt,
+	formatdate,
+	get_fullname,
+	get_link_to_form,
+	getdate,
+	nowdate,
+)
+from erpnext.setup.doctype.employee.employee import get_holiday_list_for_employee
 
 def process_scheduler_doc(self, method):
     """
@@ -53,6 +67,11 @@ def process_leave_adjustment_for_all_employees(self):
     for emp in employees:
         try:
 
+            #frappe.msgprint(f"Attendance {attendance}")
+            # current_balance = get_true_leave_balance(emp.employee.name, 'shayan')
+            # frappe.msgprint(f"Current Balance {current_balance}")
+            # return
+        
             hr_setting = frappe.db.get_list('Sowaan HR Setting')
 
             #frappe.msgprint(f"HR Setting {hr_setting}")
@@ -147,8 +166,6 @@ def create_leave_application(doc, parent_to_use):
         'docstatus': 1
     }, fields=['in_time', 'out_time', 'status', 'late_entry', 'early_exit', 'attendance_date'], order_by='attendance_date asc')
 
-    #frappe.msgprint(f"Attendance {attendance}")
-      
     if not attendance:
         return        
 
@@ -172,6 +189,7 @@ def create_leave_application(doc, parent_to_use):
     early_departure_violations = []
     late_arrival_violations = []
     
+    lateCount = 0
     for a in attendance:
         # frappe.msgprint(f"in_time{a['in_time'] } out_time {a['out_time']}")
 
@@ -182,27 +200,32 @@ def create_leave_application(doc, parent_to_use):
 
         in_time = timedelta(hours=a['in_time'].hour, minutes=a['in_time'].minute, seconds=a['in_time'].second)
         out_time = timedelta(hours=a['out_time'].hour, minutes=a['out_time'].minute, seconds=a['out_time'].second)     
-               
+       
+       
         ## Half Day Work ##
         if hr_settings.is_half_day_deduction_applicable and a['status'] == 'Half Day':
             half_day_count += 1
-
+            #frappe.msgprint(f"Half Day Flag Count {half_day_flag_count}")
             if half_day_count < half_day_flag_count + exemptions["half_day"]:
                 pass
             else:
                 excess_half_days = flt(half_day_count) - flt(half_day_flag_count)
                 if half_day_flag_count == 0:
+                    #frappe.msgprint(f"Half Day Count {deduction_half_day_count}")
                     deduction_half_day_count += 1
                     half_day_violations.append({
                         "date": a['attendance_date'],
                         "half_day": 1                        
                     })
+                    #frappe.msgprint(f"Half Day Violations {half_day_violations}")
                 elif excess_half_days % half_day_flag_count == 0:
+                    #frappe.msgprint(f"Half Day Count {deduction_half_day_count}")
                     deduction_half_day_count += 1
                     half_day_violations.append({
                         "date": a['attendance_date'],
                         "half_day": 1                        
                     })
+                    #frappe.msgprint(f"Half Day Violations {half_day_violations}")
         ## Early Work ##
         if hr_settings.is_early_deduction_applicable and a['status'] == 'Present' and a['early_exit']:
             early_departure_count += 1
@@ -227,9 +250,13 @@ def create_leave_application(doc, parent_to_use):
                     
         ## Late Work ##
         if hr_settings.is_late_deduction_applicable and a['status'] == 'Present' and a['late_entry']:         
-                
+                lateCount += 1
+
+                #frappe.msgprint(f"Late Count {lateCount}")
+
+                #frappe.msgprint(f"Late for {a['attendance_date']}")
                 if check_late_approval(doc.employee, a['attendance_date']):
-                    #frappe.msgprint(f"Late is approved in attendance for {self.employee}")
+                    #frappe.msgprint(f"Late is approved in attendance for {a['attendance_date']}")
                     continue  # skip this record and move to next                
 
                 late_count += 1
@@ -242,22 +269,30 @@ def create_leave_application(doc, parent_to_use):
                     if late_flag_count == 0:
                         total_late_minutes += (in_time - shift_start_time).seconds // 60
                         total_late_count += 1 
-                        #frappe.msgprint(f"Late is approved in attendance for {a['attendance_date']}")
+                        #frappe.msgprint(f"Late for {a['attendance_date']}")
                         late_arrival_violations.append({
                             "date": a['attendance_date'],
                             "late_arrival": 1                        
                         })
+                        #frappe.msgprint(f"Late Arrival Vioation {late_arrival_violations}")
                     elif excess_late_days % late_flag_count == 0:
                         total_late_minutes += (in_time - shift_start_time).seconds // 60
                         total_late_count += 1
-                        #frappe.msgprint(f"Late is approved in attendance for {a['attendance_date']}")
+                        frappe.msgprint(f"Late for {a['attendance_date']}")
                         late_arrival_violations.append({
                             "date": a['attendance_date'],
                             "late_arrival": 1                        
                         })
+                        #frappe.msgprint(f"Late Arrival Vioation {late_arrival_violations}")
     
     if hr_settings.calculation_method == 'Counts':
         
+        # available_leave = get_leave_details(doc.employee, today())
+
+        # for k, v in available_leave.get("leave_allocation", {}).items():
+        #     frappe.msgprint(f"Now, remaining leaves {k}: {v['remaining_leaves']}")
+
+        # return
         #add a leave application in the case of employee absent
         #if late deduction is applicable
         if hr_settings.custom_is_absent_adjustment_in_leaves: 
@@ -315,11 +350,12 @@ def adjust_late_deduction(employee, violations, late_deduction_factor, hr_settin
         if not violations:
             frappe.msgprint("No violations found — no leave adjustments needed.")
             return
-    
+
+        #frappe.msgprint(f"Violation: {violations}")
         for v in violations:
             attendance_date = v["date"]
             deduction = v["late_arrival"]
-
+            
             if not check_late_approval(employee, attendance_date):
 
                 #frappe.msgprint(f"Attendance Date: {attendance_date}")
@@ -359,7 +395,7 @@ def adjust_late_deduction(employee, violations, late_deduction_factor, hr_settin
 
                 frappe.msgprint(f"Late deduction process started for Employee: {employee}")
 
-                #frappe.msgprint(f"Late Days {total_late_days}")
+                # frappe.msgprint(f"Late Days {total_late_days}")
 
                 remaining_deduction = total_late_days
                 current_balance = 0
@@ -373,19 +409,33 @@ def adjust_late_deduction(employee, violations, late_deduction_factor, hr_settin
 
                     leave_info = available_leave.get("leave_allocation", {}).get(lt, {})
 
+                    frappe.msgprint(f"Leave Info {leave_info}")
+
                     if leave_info:
-                        current_balance = leave_info.get("remaining_leaves", 0)
-                        #frappe.msgprint(f"{lt} balance: {current_balance}")
+                        current_balance = get_live_leave_balance(employee, lt)
+                        if not current_balance:
+                           frappe.msgprint(f"{lt} No Current Balance Leave: {current_balance}") 
+                        #current_balance = leave_info.get("remaining_leaves", 0)
+                        frappe.msgprint(f"{lt} balance: {current_balance}")
                     else:
                         frappe.msgprint(f"No data found for {lt}")
 
                     
-                    #frappe.msgprint(f"Current Balance {current_balance} Leave Type {lt}")
+                    frappe.msgprint(f"Current Balance {current_balance} Leave Type {lt}")
 
                     if not current_balance or current_balance <= 0:
                         continue  # skip leave types with zero balance
 
                     deduction = min(current_balance, remaining_deduction)
+
+                    frappe.msgprint(f"remaining_deduction {remaining_deduction} current_balance {current_balance}")
+
+                    #if remaining deduction is less than currect balanace then exit   
+                    if remaining_deduction and current_balance:     
+                        if remaining_deduction > current_balance:    
+                            frappe.msgprint(f"⚠️ {remaining_deduction} day(s) could not be deducted — insufficient leave balance.")
+                            return remaining_deduction
+                    
 
                     leave_app = frappe.get_doc({
                     "doctype": "Leave Application",
@@ -408,7 +458,7 @@ def adjust_late_deduction(employee, violations, late_deduction_factor, hr_settin
                     leave_app.flags.ignore_links = True
                     leave_app.flags.ignore_mandatory = True
 
-                    # insert & submit the leave application
+                    #insert & submit the leave application
                     leave_app.insert(ignore_permissions=True)
                     leave_app.submit()
 
@@ -453,7 +503,7 @@ def adjust_early_deduction(employee, violations, early_deduction_factor, hr_sett
 
             total_early_days = deduction * early_deduction_factor
 
-            frappe.msgprint(f"Total Early Days: {total_early_days}")
+            #frappe.msgprint(f"Total Early Days: {total_early_days}")
 
             if not employee or not total_early_days:
                 frappe.throw("Employee and total early days are required")       
@@ -498,17 +548,24 @@ def adjust_early_deduction(employee, violations, early_deduction_factor, hr_sett
                 leave_info = available_leave.get("leave_allocation", {}).get(lt, {})
 
                 if leave_info:
-                    current_balance = leave_info.get("remaining_leaves", 0)
+                    current_balance = get_live_leave_balance(employee, lt)
+                    #current_balance = leave_info.get("remaining_leaves", 0)
                     frappe.msgprint(f"{lt} balance: {current_balance}")
                 else:
                     frappe.msgprint(f"No data found for {lt}")
                 
-                #frappe.msgprint(f"Current Balance {current_balance} Leave Type {lt}")
+                frappe.msgprint(f"Current Balance {current_balance} Leave Type {lt}")
 
                 if not current_balance or current_balance <= 0:
                     continue  # skip leave types with zero balance
-            
+
                 deduction = min(current_balance, remaining_deduction)
+
+                #if remaining deduction is less than currect balanace then exit  
+                if remaining_deduction and current_balance:   
+                    if remaining_deduction > current_balance:    
+                        frappe.msgprint(f"⚠️ {remaining_deduction} day(s) could not be deducted — insufficient leave balance.")
+                        return remaining_deduction
 
                 leave_app = frappe.get_doc({
                 "doctype": "Leave Application",
@@ -583,106 +640,113 @@ def adjust_halfday_deduction(employee, violations, halfday_deduction_factor, hr_
             attendance_date = v["date"]
             deduction = v["half_day"]
         
-        total_half_days = deduction * halfday_deduction_factor
+            total_half_days = deduction * halfday_deduction_factor
 
-        #frappe.msgprint(f"Total Half Days: {total_half_days}")
+            #frappe.msgprint(f"Total Half Days: {total_half_days}")
 
-        if not employee or not total_half_days:
-            frappe.throw("Employee and total half days are required")       
+            if not employee or not total_half_days:
+                frappe.throw("Employee and total half days are required")       
 
-        # Get leave types from child table (in the order they appear)
-        leave_types = [
-            row.leave_type
-            for row in sorted(hr_settings.custom_half_day_adjustment_leave_types, key=lambda x: x.idx)
-            if row.leave_type
-        ]
+            # Get leave types from child table (in the order they appear)
+            leave_types = [
+                row.leave_type
+                for row in sorted(hr_settings.custom_half_day_adjustment_leave_types, key=lambda x: x.idx)
+                if row.leave_type
+            ]
 
-        if not leave_types:
-            frappe.throw("No leave types defined in 'Sowaan HR Setting' for half days adjustment")              
+            if not leave_types:
+                frappe.throw("No leave types defined in 'Sowaan HR Setting' for half days adjustment")              
 
-        # Ensure a valid Leave Period exists
-        leave_period = frappe.db.get_value(
-            "Leave Period",
-            {"from_date": ["<=", attendance_date], "to_date": [">=", attendance_date]},
-            "name"
-        )
+            # Ensure a valid Leave Period exists
+            leave_period = frappe.db.get_value(
+                "Leave Period",
+                {"from_date": ["<=", attendance_date], "to_date": [">=", attendance_date]},
+                "name"
+            )
 
-        #frappe.msgprint(f"Leave period: {leave_period}")
+            #frappe.msgprint(f"Leave period: {leave_period}")
 
-        if not leave_period:
-            frappe.throw("No active Leave Period found for today")        
+            if not leave_period:
+                frappe.throw("No active Leave Period found for today")        
 
-        # Fetch all leave details for the employee
-        available_leave = get_leave_details(employee, today())
+            # Fetch all leave details for the employee
+            available_leave = get_leave_details(employee, today())
 
-        frappe.msgprint(f"Hald days deduction process started for Employee: {employee}")
+            frappe.msgprint(f"Hald days deduction process started for Employee: {employee}")
 
-        remaining_deduction = total_half_days
-        current_balance = 0
-        
-        if remaining_deduction <= 0:
-           frappe.throw("Deduction days must be greater than zero.")
-
-        for lt in leave_types:
+            remaining_deduction = total_half_days
+            current_balance = 0
+            
             if remaining_deduction <= 0:
-                break
+                frappe.throw("Deduction days must be greater than zero.")
 
-            leave_info = available_leave.get("leave_allocation", {}).get(lt, {})
+            for lt in leave_types:
+                if remaining_deduction <= 0:
+                    break
 
-            if leave_info:
-                current_balance = leave_info.get("remaining_leaves", 0)
-                #frappe.msgprint(f"{lt} balance: {current_balance}")
-            else:
-                frappe.msgprint(f"No data found for {lt}")
-            
-            #frappe.msgprint(f"Current Balance {current_balance} Leave Type {lt}")
+                leave_info = available_leave.get("leave_allocation", {}).get(lt, {})
 
-            if not current_balance or current_balance <= 0:
-                continue  # skip leave types with zero balance
-            
+                if leave_info:
+                    current_balance = get_live_leave_balance(employee, lt)
+                    #current_balance = leave_info.get("remaining_leaves", 0)
+                    frappe.msgprint(f"{lt} balance: {current_balance}")
+                else:
+                    frappe.msgprint(f"No data found for {lt}")
+                
+                frappe.msgprint(f"Current Balance {current_balance} Leave Type {lt}")
 
-            deduction = min(current_balance, remaining_deduction)
+                if not current_balance or current_balance <= 0:
+                    continue  # skip leave types with zero balance               
+                
+                 
+                deduction = min(current_balance, remaining_deduction)
 
-            leave_app = frappe.get_doc({
-            "doctype": "Leave Application",
-            "employee": employee,
-            "leave_type": lt,
-            "from_date": attendance_date,
-            "to_date": attendance_date,
-            "half_day": 0,
-            "total_leave_days": deduction,  # directly set fractional amount
-            "status": "Approved",
-            "custom_is_adjusted_leave" : True,
-            "leave_approver": "Administrator",             
-            "description":  "Adjustment for half day leave",
-            "custom_salary_slip_reference": doc.name,
-            })
+                #if remaining deduction is less than currect balanace then exit  
+                if remaining_deduction and current_balance:   
+                    if remaining_deduction > current_balance:    
+                        frappe.msgprint(f"⚠️ {remaining_deduction} day(s) could not be deducted — insufficient leave balance.")
+                        return remaining_deduction   
+                
+                leave_app = frappe.get_doc({
+                "doctype": "Leave Application",
+                "employee": employee,
+                "leave_type": lt,
+                "from_date": attendance_date,
+                "to_date": attendance_date,
+                "half_day": 0,
+                "total_leave_days": deduction,  # directly set fractional amount
+                "status": "Approved",
+                "custom_is_adjusted_leave" : True,
+                "leave_approver": "Administrator",             
+                "description":  "Adjustment for half day leave",
+                "custom_salary_slip_reference": doc.name,
+                })
 
-            # ignore the restrictions to submit the leave application
-            leave_app.flags.ignore_validate = True
-            leave_app.flags.ignore_validate_update_after_submit = True
-            leave_app.flags.ignore_links = True
-            leave_app.flags.ignore_mandatory = True
-            
-            # insert & submit the leave application
-            leave_app.insert(ignore_permissions=True)
-            leave_app.submit()
+                # ignore the restrictions to submit the leave application
+                leave_app.flags.ignore_validate = True
+                leave_app.flags.ignore_validate_update_after_submit = True
+                leave_app.flags.ignore_links = True
+                leave_app.flags.ignore_mandatory = True
+                
+                # insert & submit the leave application
+                leave_app.insert(ignore_permissions=True)
+                leave_app.submit()
 
-            frappe.msgprint(f"Leave Application {leave_app.name} created and submitted.")            
-            
-            frappe.msgprint(f"✅ Deducted {deduction} day(s) from {lt}")
-            remaining_deduction -= deduction
+                frappe.msgprint(f"Leave Application {leave_app.name} created and submitted.")            
+                
+                frappe.msgprint(f"✅ Deducted {deduction} day(s) from {lt}")
+                remaining_deduction -= deduction
 
-            frappe.msgprint(f"remaining balance ⚠️ {remaining_deduction} day(s).")
+                frappe.msgprint(f"remaining balance ⚠️ {remaining_deduction} day(s).")
 
-            #for checking only
-            leave_info = available_leave.get("leave_allocation", {}).get(lt, {})
+                #for checking only
+                leave_info = available_leave.get("leave_allocation", {}).get(lt, {})
 
-            if leave_info:
-                current_balance = leave_info.get("remaining_leaves", 0)
-                frappe.msgprint(f"{lt} balance: {current_balance}")
-            else:
-                frappe.msgprint(f"No data found for {lt}")
+                if leave_info:
+                    current_balance = leave_info.get("remaining_leaves", 0)
+                    frappe.msgprint(f"{lt} balance: {current_balance}")
+                else:
+                    frappe.msgprint(f"No data found for {lt}")
             #end checking block
 
         if remaining_deduction and remaining_deduction > 0:
@@ -728,7 +792,7 @@ def adjust_absent_leaves(employee, start_date, end_date, hr_settings):
         if not leave_types:
             frappe.throw("No leave types defined in 'Sowaan HR Setting' for absent adjustment")       
         
-        #check if any casual leave is available of employee
+        #check if any selected leave type is available of employee
         for lt in leave_types:            
 
             available_leave = get_leave_details(employee, today())
@@ -758,7 +822,7 @@ def adjust_absent_leaves(employee, start_date, end_date, hr_settings):
                         "employee": employee,
                         "from_date": att.attendance_date,
                         "to_date": att.attendance_date,
-                        "leave_type": "Casual Leave",
+                        "leave_type": lt,
                         "docstatus": ["!=", 2],  # not cancelled
                     }
                 )    
@@ -767,7 +831,7 @@ def adjust_absent_leaves(employee, start_date, end_date, hr_settings):
                     leave_app = frappe.get_doc({
                     "doctype": "Leave Application",
                     "employee": employee,
-                    "leave_type": "Casual Leave",
+                    "leave_type": lt,
                     "from_date": att.attendance_date,
                     "to_date": att.attendance_date,
                     "half_day": 0,
@@ -821,6 +885,26 @@ def check_late_approval(employee, late_date):
             frappe.logger().info(f"Late is approved in attendance for {employee} on {late_date}")
             return True
 
+#get currecnt leave balance
+def get_live_leave_balance(employee, leave_type):
+    """Return exact leave balance, ignoring ERPNext rounding."""
+    frappe.msgprint("I've been called")
+    allocated = frappe.db.sql("""
+        SELECT IFNULL(SUM(total_leaves_allocated), 0)
+        FROM `tabLeave Allocation`
+        WHERE employee=%s AND leave_type=%s AND docstatus=1
+    """, (employee, leave_type))[0][0] or 0
+
+    used = frappe.db.sql("""
+        SELECT IFNULL(SUM(total_leave_days), 0)
+        FROM `tabLeave Application`
+        WHERE employee=%s AND leave_type=%s AND docstatus=1
+    """, (employee, leave_type))[0][0] or 0
+
+    balance = round(allocated - used, 2)
+    frappe.msgprint(f"🧮 {leave_type} → Allocated: {allocated}, Used: {used}, Remaining: {balance}")
+    return balance
+
 
 @frappe.whitelist()
 def get_deduction_parent(employee, salary_structure):
@@ -855,7 +939,34 @@ def get_deduction_parent(employee, salary_structure):
     
     return emp_dict.get(employee) or ss_dict.get(salary_structure)
 
-    
+def get_exact_leave_balance(employee, leave_type, as_of_date=None):
+    """
+    Return the exact remaining leave balance (to 2 decimal places) for a given employee and leave type.
+    Uses ERPNext's get_leave_balance_on but forces higher precision to avoid rounding (e.g., 0.25 → 0.5 errors).
+    """
 
+    if not as_of_date:
+        as_of_date = frappe.utils.today()
 
+    try:
+        # Get balance using ERPNext's internal function
+        balance = get_leave_balance_on(
+            employee,
+            leave_type,
+            as_of_date,
+            as_of_date,
+            consider_all_leaves_in_the_allocation_period=True,
+            for_consumption=True,
+        )
+
+        # Force precision to 2 decimals
+        balance = round(float(balance or 0), 2)
+
+        frappe.msgprint(f"✅ Exact Leave Balance for {employee} ({leave_type}): {balance}")
+        return balance
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "get_exact_leave_balance Error")
+        frappe.msgprint(f"⚠️ Error getting leave balance: {e}")
+        return 0.0
 

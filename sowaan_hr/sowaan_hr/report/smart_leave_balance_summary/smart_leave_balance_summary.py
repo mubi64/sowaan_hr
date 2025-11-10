@@ -5,8 +5,9 @@
 import frappe
 from frappe import (_,utils)
 
-from hrms.hr.doctype.leave_application.leave_application import get_leave_details
-# from hrms.hr.report.employee_leave_balance.employee_leave_balance import (
+#from hrms.hr.doctype.leave_application.leave_application import get_leave_details
+from sowaan_hr.sowaan_hr.api.leave_application import get_leave_details
+#from hrms.hr.report.employee_leave_balance.employee_leave_balance import (
 # 	get_department_leave_approver_map,
 # )
 

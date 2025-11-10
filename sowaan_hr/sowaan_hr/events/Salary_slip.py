@@ -902,12 +902,14 @@ def handle_late_scenario(self, parent_to_use):
                         "date": a['attendance_date'],
                         "half_day": 1                        
                     })
+                    #frappe.msgprint(f"Status....{a['attendance_date']}")
                 elif excess_half_days % half_day_flag_count == 0:
                     deduction_half_day_count += 1
                     half_day_violations.append({
                         "date": a['attendance_date'],
                         "half_day": 1                        
                     })
+                    #frappe.msgprint(f"Status....{a['attendance_date']}")
         ## Early Work ##
         if hr_settings.is_early_deduction_applicable and a['status'] == 'Present' and a['early_exit']:
             early_departure_count += 1
@@ -997,6 +999,29 @@ def handle_late_scenario(self, parent_to_use):
     self.custom_early_exit_minutes = total_early_minutes
     self.custom_total_half_days = half_day_count
 
+    meta = frappe.get_meta("Salary Slip")
+
+    # total_half_days field
+    total_half_days_field = meta.get_field("custom_total_half_days")
+    if self.custom_total_half_days:
+        total_half_days_field.hidden = 0
+    else:
+        total_half_days_field.hidden = 1
+
+    # deductible_total_half_days field
+    deductible_field = meta.get_field("custom_deductible_half_days")
+    if self.custom_deductible_half_days:
+        deductible_field.hidden = 0
+    else:
+        deductible_field.hidden = 1
+
+    # frappe.msgprint(f"Custom Half Day Field {self.custom_total_half_days }")
+    # frappe.msgprint(f"Half Day Count {self.custom_total_half_days }")
+
+    # frappe.msgprint(f"Custom Half Day Field Deductable {self.custom_deductible_half_days }")
+    # frappe.msgprint(f"Half Day Count Deductable {deduction_half_day_count}")
+
+    #return
     if hr_settings.calculation_method == 'Minutes':
         if hr_settings.is_late_deduction_applicable:
             create_additional_salary(hr_settings.late_salary_component, total_late_minutes * minute_salary)
@@ -1113,6 +1138,7 @@ def handle_late_scenario(self, parent_to_use):
 def check_late_application(employee, violations, late_deduction_factor):
     
     try:
+        net_remaining_deduction = 0
         attendance_date = today()        
 
         #frappe.msgprint(f"late_arrival_violations {violations}") 
@@ -1161,11 +1187,12 @@ def check_late_application(employee, violations, late_deduction_factor):
                remaining_deduction -= deduction 
 
             elif not existing_leave:
+                net_remaining_deduction += 1
                 frappe.msgprint(
                 f"⚠️ No Leave Application found for {attendance_date}. Remaining deduction: {remaining_deduction}"                
             )
                 frappe.msgprint(f"remaining balance ⚠️ {remaining_deduction} day(s).")    
-                return remaining_deduction  # stop and send remaining deduction
+        return net_remaining_deduction  # stop and send remaining deduction
         
     except Exception as e:
         error_msg = str(e)
@@ -1177,7 +1204,7 @@ def check_early_application(employee, violations, early_deduction_factor):
    
     try:
         attendance_date = today()        
-
+        net_remaining_deduction =0
         #frappe.msgprint(f"late_arrival_violations {violations}") 
 
         if not violations:
@@ -1224,11 +1251,12 @@ def check_early_application(employee, violations, early_deduction_factor):
                remaining_deduction -= deduction 
 
             elif not existing_leave:
+                net_remaining_deduction += 1
                 frappe.msgprint(
                 f"⚠️ No Leave Application found for {attendance_date}. Remaining deduction: {remaining_deduction}"                
             )
                 frappe.msgprint(f"remaining balance ⚠️ {remaining_deduction} day(s).")    
-                return remaining_deduction  # stop and send remaining deduction
+        return net_remaining_deduction  # stop and send remaining deduction
         
     except Exception as e:
         error_msg = str(e)
@@ -1239,12 +1267,13 @@ def check_early_application(employee, violations, early_deduction_factor):
 def check_halfday_application(employee, violations, halfday_deduction_factor):
    
     try:
+        net_remaining_deduction =0
         attendance_date = today()        
 
         #frappe.msgprint(f"halfday_deduction_factor {violations}") 
 
         if not violations:
-            frappe.msgprint("No violations found — no leave adjustments needed.")
+            #frappe.msgprint("No violations found — no leave adjustments needed.")
             return
     
         for v in violations:
@@ -1253,7 +1282,7 @@ def check_halfday_application(employee, violations, halfday_deduction_factor):
 
             #frappe.msgprint(f"Attendance Date: {attendance_date}")
 
-            #total_half_days = deduction * late_deduction_factor
+            #total_half_days = deduction * halfday_deduction_factor
             total_half_days = round(deduction * halfday_deduction_factor, 2)
 
             #frappe.msgprint(f"Total Half Days: {total_half_days}")
@@ -1288,11 +1317,12 @@ def check_halfday_application(employee, violations, halfday_deduction_factor):
                remaining_deduction -= deduction 
 
             elif not existing_leave:
+                net_remaining_deduction += 1
                 frappe.msgprint(
                 f"⚠️ No Leave Application found for {attendance_date}. Remaining deduction: {remaining_deduction}"                
             )
                 frappe.msgprint(f"remaining balance ⚠️ {remaining_deduction} day(s).")    
-                return remaining_deduction  # stop and send remaining deduction
+        return net_remaining_deduction  # stop and send remaining deduction
         
     except Exception as e:
         error_msg = str(e)
@@ -1537,3 +1567,22 @@ def own_fund_tax(self,method):
             doc.compute_year_to_date()
             doc.compute_month_to_date()
             doc.compute_component_wise_year_to_date()
+
+# def onload(doc, method):
+#     meta = frappe.get_meta("Salary Slip")
+    
+#     # total_half_days field
+#     total_half_days_field = meta.get_field("custom_total_half_days")
+#     if doc.custom_total_half_days:
+#         total_half_days_field.hidden = 0
+#     else:
+#         total_half_days_field.hidden = 1
+
+#     # deductible_total_half_days field
+#     deductible_field = meta.get_field("custom_deductible_half_days")
+#     if doc.custom_deductible_half_days:
+#         deductible_field.hidden = 0
+#     else:
+#         deductible_field.hidden = 1
+    
+#     frappe.msgprint(f"deductible_field {deductible_field}")

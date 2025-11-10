@@ -66,7 +66,7 @@ function get_hr_settings(frm) {
                     }
 
                     // Half-day deduction visibility
-                    if (r.message.is_early_deduction_applicable) {
+                    if (r.message.is_half_day_deduction_applicable) {
                         set_field_visibility(frm, 'custom_total_half_days', r.message.is_half_day_deduction_applicable);
                         set_field_visibility(frm, 'custom_deductible_half_days', r.message.is_half_day_deduction_applicable);
                     } else {

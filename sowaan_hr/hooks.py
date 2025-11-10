@@ -24,6 +24,26 @@ app_license = "mit"
 # 	}
 # ]
 
+#updated to include Sowaan HR Setting, Leave Application
+
+fixtures = [
+    # All custom fields for Sowaan HR Setting
+    {
+        "doctype": "Custom Field",
+        "filters": [
+            ["dt", "in", ("Sowaan HR Setting", "Leave Adjustment Scheduler")]
+        ]
+    },
+
+    # Property Setters for Leave Application (for precision or other changes)
+    {
+        "doctype": "Property Setter",
+        "filters": [
+            ["doc_type", "in", ("Leave Application",)]
+        ]
+    }
+]
+
 # fixtures = [
 # 	{
 # 		"doctype":"Custom Field",        
@@ -51,18 +71,18 @@ app_license = "mit"
 # 	}
 # ]
 
-fixtures = [
-    {
-        "doctype": "Custom Field",
-        "filters": [
-            [
-                "dt",
-                "in",
-                ("Sowaan HR Setting", "Leave Adjustment Scheduler")
-            ]
-        ]
-    }
-]
+# fixtures = [
+#     {
+#         "doctype": "Custom Field",
+#         "filters": [
+#             [
+#                 "dt",
+#                 "in",
+#                 ("Sowaan HR Setting", "Leave Adjustment Scheduler")
+#             ]
+#         ]
+#     }
+# ]
 
 
 # Includes in <head>
@@ -185,6 +205,22 @@ override_doctype_class = {
     "Additional Salary": "sowaan_hr.overrides.employee_additional_salary.EmployeeAdditionalSalary"
 }
 
+# override_doctype_class = {
+#     "Leave Application": "sowaan_hr.sowaan_hr.api.leave_application.GetLeaveApplication"
+# }
+
+# override_whitelisted_methods = {
+#     "hrms.hr.doctype.leave_application.leave_application.get_leave_details":
+#         "sowaan_hr.sowaan_hr.api.custom_leave.get_leave_details"
+# }
+
+
+override_whitelisted_methods = {
+    "hrms.hr.doctype.leave_application.leave_application.get_leave_details":
+        "sowaan_hr.sowaan_hr.api.leave_application.get_leave_details"
+}
+
+
 # Document Events
 # ---------------
 # Hook on document methods and events
@@ -203,7 +239,7 @@ doc_events = {
 		"before_save": "sowaan_hr.sowaan_hr.events.Salary_slip.fund_management_and_negative_salary",
         # "before_save": "sowaan_hr.sowaan_hr.events.Salary_slip.before_save_salaryslip",
         "after_save" : "sowaan_hr.sowaan_hr.events.Salary_slip.own_fund_tax",
-
+        #"onload": "sowaan_hr.sowaan_hr.events.Salary_slip.onload",
         # "before_save": "sowaan_hr.sowaan_hr.events.Salary_slip.set_fix_days",
         "before_submit": "sowaan_hr.sowaan_hr.events.Salary_slip.salary_slip_after_submit",
         "before_cancel": "sowaan_hr.sowaan_hr.events.Salary_slip.cancel_related_docs",

@@ -199,6 +199,8 @@ def get_leave_balance_on(
 
 	leaves_taken = get_leaves_for_period(employee, leave_type, allocation.from_date, end_date)
 
+	#frappe.msgprint(f"Leave Taken. {leaves_taken}")
+
 	remaining_leaves = get_remaining_leaves(allocation, leaves_taken, date, cf_expiry)
 
 	if for_consumption:

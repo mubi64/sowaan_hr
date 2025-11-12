@@ -214,12 +214,10 @@ override_doctype_class = {
 #         "sowaan_hr.sowaan_hr.api.custom_leave.get_leave_details"
 # }
 
-
 override_whitelisted_methods = {
     "hrms.hr.doctype.leave_application.leave_application.get_leave_details":
         "sowaan_hr.sowaan_hr.api.leave_application.get_leave_details"
 }
-
 
 # Document Events
 # ---------------

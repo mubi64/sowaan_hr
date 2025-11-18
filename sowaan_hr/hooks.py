@@ -219,6 +219,23 @@ override_whitelisted_methods = {
         "sowaan_hr.sowaan_hr.api.leave_application.get_leave_details"
 }
 
+# in sowaan_hr/hooks.py
+
+report = [
+    {
+        "module": "Sowaan HR",
+        "report_name": "Employee Leave Balance 2",
+        "doctype": "Report",
+        "is_query_report": False  # False because it's a Script Report
+    },
+    {
+        "module": "Sowaan HR",
+        "report_name": "Employee Leave Balance Summary 2",
+        "doctype": "Report",
+        "is_query_report": False  # False because it's a Script Report
+    }
+]
+
 # Document Events
 # ---------------
 # Hook on document methods and events

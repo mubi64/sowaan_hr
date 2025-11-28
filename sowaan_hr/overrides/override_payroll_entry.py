@@ -661,6 +661,7 @@ class OverridePayrollEntry(PayrollEntry):
         user_remark="",
         submitted_salary_slips: list | None = None,
         submit_journal_entry=False,
+        employee_wise_accounting_enabled=False, # New parameter 
     ) -> str:
         multi_currency = 0
         if len(currencies) > 1:
@@ -674,6 +675,8 @@ class OverridePayrollEntry(PayrollEntry):
         journal_entry.custom_smart_posting_date = self.posting_date
         journal_entry.set("accounts", accounts)
         journal_entry.multi_currency = multi_currency
+        # Set employee-wise accounting if enabled 
+        journal_entry.employee_wise_accounting_enabled = employee_wise_accounting_enabled
 
         if voucher_type == "Journal Entry":
             journal_entry.title = payroll_payable_account

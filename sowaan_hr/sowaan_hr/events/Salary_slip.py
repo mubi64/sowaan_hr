@@ -1568,21 +1568,60 @@ def own_fund_tax(self,method):
             doc.compute_month_to_date()
             doc.compute_component_wise_year_to_date()
 
-# def onload(doc, method):
-#     meta = frappe.get_meta("Salary Slip")
-    
-#     # total_half_days field
-#     total_half_days_field = meta.get_field("custom_total_half_days")
-#     if doc.custom_total_half_days:
-#         total_half_days_field.hidden = 0
-#     else:
-#         total_half_days_field.hidden = 1
+#calculating overtime working dats and holidays from Project Work Distribution if Salary Slip Based on Timesheet is checked
+def apply_project_work_distribution_overtime(doc, method=None):
 
-#     # deductible_total_half_days field
-#     deductible_field = meta.get_field("custom_deductible_half_days")
-#     if doc.custom_deductible_half_days:
-#         deductible_field.hidden = 0
-#     else:
-#         deductible_field.hidden = 1
+    #frappe.msgprint("Called")
+    if not doc.employee:
+        return
+
+    if not doc.start_date or not doc.end_date:
+        return
+
+    calculate_ot = frappe.db.get_value(
+        "Employee",
+        doc.employee,
+        "custom_calculate_overtime_as_per_timesheet"
+    )
     
-#     frappe.msgprint(f"deductible_field {deductible_field}")
+    if not calculate_ot:
+        return
+
+    pwd_name = frappe.db.get_value(
+        "Project Work Distribution",
+        {
+            "employee": doc.employee,
+            "from_date": ["<=", doc.start_date],
+            "to_date": [">=", doc.end_date],
+            "docstatus": 1
+        },
+        "name"
+    )
+
+    #frappe.msgprint(f"pwd_name {pwd_name}")
+    if not pwd_name:
+        doc.overtime_hours_working_day = 0
+        doc.overtime_hours_holiday = 0
+        return
+
+    pwd = frappe.get_doc("Project Work Distribution", pwd_name)    
+
+    total_working_ot = 0.0
+    total_holiday_ot = 0.0
+
+    for d in pwd.project_details:
+        if not d.holiday:
+            total_working_ot = total_working_ot + (d.working_days_overtime or 0)
+        else:
+            total_holiday_ot = total_holiday_ot + (d.holiday_overtime or 0)
+
+    frappe.msgprint(f"total_working_ot {total_working_ot}")
+
+    frappe.msgprint(f"total_holiday_ot {total_holiday_ot}")
+
+    doc.custom_overtime_hours_on_working_day = total_working_ot
+    doc.custom_overtime_hours_on_holiday = total_holiday_ot
+    doc.custom_ot_hours = total_working_ot + total_holiday_ot
+
+
+

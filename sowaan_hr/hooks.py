@@ -111,8 +111,13 @@ doctype_js = {
     "Salary Slip" : "overrides/salary_slip.js" , 
     "Employee Checkin":"sowaan_hr/client_scripts/employee_checkin_form.js",
     "Payroll Entry" : "public/js/payroll_entry.js",    
-	"Leave Application" : "sowaan_hr/client_scripts/leave_adjustment_scheduler.js",
+	"Leave Application" : "sowaan_hr/client_scripts/leave_adjustment_scheduler.js"
+    #"Project Work Distribution": "sowaan_hr/client_scripts/project_work_distribution.js",
 }
+
+# app_include_js = [
+#     "sowaan_hr/public/js/project_work_distribution.js"
+# ]
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -251,7 +256,10 @@ report = [
 doc_events = {
 	"Salary Slip":{
 		# "before_save": "sowaan_hr.sowaan_hr.doctype.arrears_process.arrears_process.add_arrears_to_earnings",
-		"before_save": "sowaan_hr.sowaan_hr.events.Salary_slip.fund_management_and_negative_salary",
+		"before_save": [
+            "sowaan_hr.sowaan_hr.events.Salary_slip.fund_management_and_negative_salary",
+            "sowaan_hr.sowaan_hr.events.Salary_slip.apply_project_work_distribution_overtime"
+        ],
         # "before_save": "sowaan_hr.sowaan_hr.events.Salary_slip.before_save_salaryslip",
         "after_save" : "sowaan_hr.sowaan_hr.events.Salary_slip.own_fund_tax",
         #"onload": "sowaan_hr.sowaan_hr.events.Salary_slip.onload",

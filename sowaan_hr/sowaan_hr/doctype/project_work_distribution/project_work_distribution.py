@@ -100,10 +100,13 @@ class ProjectWorkDistribution(Document):
         if not self.project_details:
             frappe.throw(_("No Project Work Distribution details found."))
 
+        if not self.salary_structure:
+            frappe.throw(_("Please select a Salary Structure."))
+
         from_date = getdate(self.from_date)
         to_date = get_last_day(from_date)
 
-        # Duplicate check
+        # Prevent duplicate assignment for same month
         if frappe.db.exists(
             "Salary Structure Assignment",
             {
@@ -117,25 +120,10 @@ class ProjectWorkDistribution(Document):
             )
             return
 
-        # Get active salary structure
-        salary_structure = frappe.db.get_value(
-            "Salary Structure Assignment",
-            {
-                "employee": self.employee,
-                "docstatus": 1
-            },
-            "salary_structure"
-        )
-
-        if not salary_structure:
-            frappe.throw(
-                _("No active Salary Structure Assignment found for this employee.")
-            )
-
-        # Create SSA
+        # ---------------- CREATE SSA ----------------
         new_ssa = frappe.new_doc("Salary Structure Assignment")
         new_ssa.employee = self.employee
-        new_ssa.salary_structure = salary_structure
+        new_ssa.salary_structure = self.salary_structure   # ✅ FROM FORM
         new_ssa.company = self.company
         new_ssa.from_date = from_date
         new_ssa.to_date = to_date
@@ -143,7 +131,7 @@ class ProjectWorkDistribution(Document):
         new_ssa.custom_project_work_distribution = self.name
         new_ssa.base = self.base
 
-        # Cost Center Distribution
+        # ---------------- COST CENTER DISTRIBUTION ----------------
         added_cc = set()
 
         for d in self.project_details:
@@ -169,6 +157,7 @@ class ProjectWorkDistribution(Document):
             _("✅ Salary Structure Assignment created successfully: <b>{0}</b>")
             .format(new_ssa.name)
         )
+
 
 
 # -------------------------------------------------

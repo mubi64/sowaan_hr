@@ -10,6 +10,7 @@
   "employee",
   "employee_name",
   "base",
+  "salary_structure",
   "column_break_hlwl",
   "company",
   "from_date",
@@ -102,13 +103,20 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "salary_structure",
+   "fieldtype": "Link",
+   "label": "Salary Structure",
+   "options": "Salary Structure",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-12-17 21:08:14.953926",
+ "modified": "2025-12-23 10:01:07.821382",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Project Work Distribution",

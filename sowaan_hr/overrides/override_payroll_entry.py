@@ -665,7 +665,8 @@ class OverridePayrollEntry(PayrollEntry):
     ) -> str:
         multi_currency = 0
 
-        frappe.error_log("Parameter Error", "Just to see if the code is working.")
+        frappe.log_error(title="Parameter Error", message="Just to see if the code is working."
+)
         if len(currencies) > 1:
             multi_currency = 1
 

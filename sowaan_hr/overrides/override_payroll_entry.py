@@ -650,8 +650,8 @@ class OverridePayrollEntry(PayrollEntry):
 
             self.employee_cost_centers.setdefault(employee, cost_centers)
 
-        return self.employee_cost_centers.get(employee, {})
-    
+        return self.employee_cost_centers.get(employee, {})    
+       
     def make_journal_entry(
         self,
         accounts,
@@ -659,16 +659,15 @@ class OverridePayrollEntry(PayrollEntry):
         payroll_payable_account=None,
         voucher_type="Journal Entry",
         user_remark="",
-        submitted_salary_slips=None,
+        submitted_salary_slips: list | None = None,
         submit_journal_entry=False,
-        **kwargs,  # 👈 absorb ALL future args
+        employee_wise_accounting_enabled=False, # New parameter 
     ) -> str:
+        multi_currency = 0
 
-        employee_wise_accounting_enabled = kwargs.get(
-            "employee_wise_accounting_enabled", False
-        )
-
-        multi_currency = 1 if len(currencies) > 1 else 0
+        frappe.error_log("Parameter Error", "Just to see if the code is working.")
+        if len(currencies) > 1:
+            multi_currency = 1
 
         journal_entry = frappe.new_doc("Journal Entry")
         journal_entry.voucher_type = voucher_type
@@ -678,24 +677,19 @@ class OverridePayrollEntry(PayrollEntry):
         journal_entry.custom_smart_posting_date = self.posting_date
         journal_entry.set("accounts", accounts)
         journal_entry.multi_currency = multi_currency
-
-        journal_entry.employee_wise_accounting_enabled = (
-            employee_wise_accounting_enabled
-        )
+        # Set employee-wise accounting if enabled 
+        journal_entry.employee_wise_accounting_enabled = employee_wise_accounting_enabled
 
         if voucher_type == "Journal Entry":
             journal_entry.title = payroll_payable_account
 
         journal_entry.save(ignore_permissions=True)
-
         try:
             if submit_journal_entry:
                 journal_entry.submit()
 
             if submitted_salary_slips:
-                self.set_journal_entry_in_salary_slips(
-                    submitted_salary_slips, jv_name=journal_entry.name
-                )
+                self.set_journal_entry_in_salary_slips(submitted_salary_slips, jv_name=journal_entry.name)
 
         except Exception as e:
             if type(e) in (str, list, tuple):
@@ -705,53 +699,6 @@ class OverridePayrollEntry(PayrollEntry):
             raise
 
         return journal_entry
-
-    #commented due to parameter error
-    # def make_journal_entry(
-    #     self,
-    #     accounts,
-    #     currencies,
-    #     payroll_payable_account=None,
-    #     voucher_type="Journal Entry",
-    #     user_remark="",
-    #     submitted_salary_slips: list | None = None,
-    #     submit_journal_entry=False,
-    #     employee_wise_accounting_enabled=False, # New parameter 
-    # ) -> str:
-    #     multi_currency = 0
-    #     if len(currencies) > 1:
-    #         multi_currency = 1
-
-    #     journal_entry = frappe.new_doc("Journal Entry")
-    #     journal_entry.voucher_type = voucher_type
-    #     journal_entry.user_remark = user_remark
-    #     journal_entry.company = self.company
-    #     journal_entry.posting_date = self.posting_date
-    #     journal_entry.custom_smart_posting_date = self.posting_date
-    #     journal_entry.set("accounts", accounts)
-    #     journal_entry.multi_currency = multi_currency
-    #     # Set employee-wise accounting if enabled 
-    #     journal_entry.employee_wise_accounting_enabled = employee_wise_accounting_enabled
-
-    #     if voucher_type == "Journal Entry":
-    #         journal_entry.title = payroll_payable_account
-
-    #     journal_entry.save(ignore_permissions=True)
-    #     try:
-    #         if submit_journal_entry:
-    #             journal_entry.submit()
-
-    #         if submitted_salary_slips:
-    #             self.set_journal_entry_in_salary_slips(submitted_salary_slips, jv_name=journal_entry.name)
-
-    #     except Exception as e:
-    #         if type(e) in (str, list, tuple):
-    #             frappe.msgprint(e)
-
-    #         self.log_error("Journal Entry creation against Salary Slip failed")
-    #         raise
-
-    #     return journal_entry
     
     def set_journal_entry_in_salary_slips(self, submitted_salary_slips, jv_name=None):
         SalarySlip = frappe.qb.DocType("Salary Slip")

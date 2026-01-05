@@ -31,7 +31,7 @@ fixtures = [
     {
         "doctype": "Custom Field",
         "filters": [
-            ["dt", "in", ("Sowaan HR Setting", "Leave Adjustment Scheduler")]
+            ["dt", "in", ("Sowaan HR Setting", "Leave Adjustment Scheduler", "Employee")]
         ]
     },
 

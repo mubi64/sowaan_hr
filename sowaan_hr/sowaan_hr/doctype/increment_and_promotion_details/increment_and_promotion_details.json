@@ -1,0 +1,50 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-08-17 11:34:25.542496",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "promotionincrement_title",
+  "promotionincrement_date",
+  "promotionincrement_document",
+  "increment_amountdesignation"
+ ],
+ "fields": [
+  {
+   "fieldname": "promotionincrement_title",
+   "fieldtype": "Data",
+   "label": "Promotion/Increment Title"
+  },
+  {
+   "fieldname": "promotionincrement_date",
+   "fieldtype": "Date",
+   "label": "Promotion/Increment Date"
+  },
+  {
+   "fieldname": "promotionincrement_document",
+   "fieldtype": "Attach",
+   "label": "Promotion/Increment Document"
+  },
+  {
+   "fieldname": "increment_amountdesignation",
+   "fieldtype": "Data",
+   "label": "Increment Amount/Designation"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-01-05 18:45:45.430150",
+ "modified_by": "Administrator",
+ "module": "Sowaan Hr",
+ "name": "Increment And Promotion Details",
+ "owner": "shayan.rahim@sowaan.com",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

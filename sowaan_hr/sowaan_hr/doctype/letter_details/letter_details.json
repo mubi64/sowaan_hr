@@ -1,0 +1,55 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-10-07 13:51:18.821364",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "warning_letter_type",
+  "warning_date",
+  "warning_reason",
+  "warning_letter_attachment"
+ ],
+ "fields": [
+  {
+   "fieldname": "warning_letter_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Warning Letter Type",
+   "options": "\nPrecautionary Letter\nWarning Letter 1\nWarning Letter 2"
+  },
+  {
+   "fieldname": "warning_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Warning Date"
+  },
+  {
+   "fieldname": "warning_reason",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Warning Reason"
+  },
+  {
+   "fieldname": "warning_letter_attachment",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "Warning Letter Attachment "
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-01-05 19:01:41.005445",
+ "modified_by": "Administrator",
+ "module": "Sowaan Hr",
+ "name": "Letter Details",
+ "owner": "shayan.rahim@sowaan.com",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

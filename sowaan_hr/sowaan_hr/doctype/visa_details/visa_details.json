@@ -1,0 +1,68 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-08-17 11:01:07.072479",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "visa_no",
+  "visa_issue_place",
+  "visa_issue_date",
+  "visa_expiry_date",
+  "visa_attachment",
+  "visa_company"
+ ],
+ "fields": [
+  {
+   "fieldname": "visa_no",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Visa No"
+  },
+  {
+   "fieldname": "visa_issue_place",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Visa Issue Place"
+  },
+  {
+   "fieldname": "visa_issue_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Visa Issue Date"
+  },
+  {
+   "fieldname": "visa_expiry_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Visa Expiry Date"
+  },
+  {
+   "fieldname": "visa_attachment",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "Visa Attachment"
+  },
+  {
+   "fieldname": "visa_company",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Visa Branch"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-01-05 18:59:51.030255",
+ "modified_by": "Administrator",
+ "module": "Sowaan Hr",
+ "name": "Visa Details",
+ "owner": "shayan.rahim@sowaan.com",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

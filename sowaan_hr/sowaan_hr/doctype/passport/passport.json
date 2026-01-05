@@ -1,0 +1,74 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-08-17 10:52:26.172838",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "passport_no",
+  "passport_expiry_date",
+  "passport_attachment",
+  "column_break_lhlq",
+  "passport_issue_date",
+  "passport_issue_place",
+  "passport_taken"
+ ],
+ "fields": [
+  {
+   "fieldname": "passport_no",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Passport No"
+  },
+  {
+   "fieldname": "passport_expiry_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Passport Expiry Date"
+  },
+  {
+   "fieldname": "passport_attachment",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "Passport Attachment"
+  },
+  {
+   "fieldname": "column_break_lhlq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "passport_issue_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Passport Issue Date"
+  },
+  {
+   "fieldname": "passport_issue_place",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Passport Issue Place"
+  },
+  {
+   "default": "0",
+   "fieldname": "passport_taken",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Passport Taken"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-01-05 18:59:12.647847",
+ "modified_by": "Administrator",
+ "module": "Sowaan Hr",
+ "name": "Passport",
+ "owner": "shayan.rahim@sowaan.com",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

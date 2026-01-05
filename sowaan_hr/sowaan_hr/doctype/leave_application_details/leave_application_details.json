@@ -1,0 +1,54 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-08-17 11:41:21.085963",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "from_date",
+  "to_date",
+  "leave_type",
+  "leave_application_form"
+ ],
+ "fields": [
+  {
+   "fieldname": "from_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "From Date"
+  },
+  {
+   "fieldname": "to_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "To Date"
+  },
+  {
+   "fieldname": "leave_type",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Leave type"
+  },
+  {
+   "fieldname": "leave_application_form",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "Leave Application Form"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-01-05 19:02:19.438477",
+ "modified_by": "Administrator",
+ "module": "Sowaan Hr",
+ "name": "Leave Application Details",
+ "owner": "shayan.rahim@sowaan.com",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

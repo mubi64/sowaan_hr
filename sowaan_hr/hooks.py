@@ -31,10 +31,13 @@ fixtures = [
     {
         "doctype": "Custom Field",
         "filters": [
-            ["dt", "in", ("Sowaan HR Setting", "Leave Adjustment Scheduler", "Employee")]
+            ["dt", "in", ("Sowaan HR Setting", "Leave Adjustment Scheduler", "Employee", 
+                          "Attendance", "Employee Checkin", "Employee Checkout", "Shift Roaster", 
+                          "Shift Type", "Shift Assignment", "Gratuity Rule Slab", "Salary Slip",
+                          "Payroll Employee Detail", "Journal Entry")]
         ]
     },
-
+    
     # Property Setters for Leave Application (for precision or other changes)
     {
         "doctype": "Property Setter",
@@ -49,7 +52,7 @@ fixtures = [
 # 		"doctype":"Custom Field",        
 #         "filters": [
 #             [
-#                 "dt", "=", "Sowaan HR Setting"
+#                 "dt", "in", "Sowaan HR Setting", "Leave Adjustment Scheduler", "Employee"
 #             ]
 #         ],
 # 		"filters":[
@@ -65,10 +68,21 @@ fixtures = [
 # 					"custom_overtime_per_hour_rate_for_working_day", "custom_overtime_per_hour_rate_for_holiday", "custom_smart_posting_date", "custom_payable", 
 #                     "custom_deductible_half_days", "custom_deductible_early_exit_counts", "custom_deductible_late_entry_counts", "custom_late_entry_counts",
 #                     "custom_allow_auto_checkin", "salary_mode"
-# 				)
+# 				),
+
+                
+                
 # 			]
 # 		]
-# 	}
+# 	},
+
+#     # Property Setters for Leave Application (for precision or other changes)
+#     {
+#         "doctype": "Property Setter",
+#         "filters": [
+#             ["doc_type", "in", ("Leave Application",)]
+#         ]
+#     }
 # ]
 
 # fixtures = [

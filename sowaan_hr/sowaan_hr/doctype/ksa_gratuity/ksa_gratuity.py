@@ -271,6 +271,9 @@ def calculate_gratuity_amount(employee, gratuity_rule, experience):
 		employee, applicable_earnings_component, gratuity_rule
 	)
 
+	if total_applicable_components_amount == 0:
+		return 0
+
 	calculate_gratuity_amount_based_on = frappe.db.get_value(
 		"Gratuity Rule", gratuity_rule, "calculate_gratuity_amount_based_on"
 	)
@@ -363,11 +366,17 @@ def get_applicable_components(gratuity_rule):
 
 	return applicable_earnings_component
 
-
 def get_total_applicable_component_amount(employee, applicable_earnings_component, gratuity_rule):
 	sal_slip = get_last_salary_slip(employee)
+	
+	# Salary Slip not found → log & continue
 	if not sal_slip:
-		frappe.throw(_("No Salary Slip is found for Employee: {0}").format(bold(employee)))
+		frappe.logger("gratuity").warning(
+			f"No Salary Slip found for Employee {employee}. "
+			f"Gratuity Rule: {gratuity_rule}"
+		)
+		return 0
+	
 	component_and_amounts = frappe.get_all(
 		"Salary Detail",
 		filters={
@@ -380,10 +389,40 @@ def get_total_applicable_component_amount(employee, applicable_earnings_componen
 	)
 	total_applicable_components_amount = 0
 	if not len(component_and_amounts):
-		frappe.throw(_("No Applicable Component is present in last month salary slip"))
+		frappe.logger("gratuity").warning(
+			f"No applicable earning components found in Salary Slip {sal_slip} "
+			f"for Employee {employee}. Components: {applicable_earnings_component}"
+		)
+		return 0
+
+		
 	for data in component_and_amounts:
 		total_applicable_components_amount += data.amount
 	return total_applicable_components_amount
+
+
+
+
+# def get_total_applicable_component_amount(employee, applicable_earnings_component, gratuity_rule):
+# 	sal_slip = get_last_salary_slip(employee)
+# 	if not sal_slip:
+# 		frappe.throw(_("No Salary Slip is found for Employee: {0}").format(bold(employee)))
+# 	component_and_amounts = frappe.get_all(
+# 		"Salary Detail",
+# 		filters={
+# 			"docstatus": 1,
+# 			"parent": sal_slip,
+# 			"parentfield": "earnings",
+# 			"salary_component": ("in", applicable_earnings_component),
+# 		},
+# 		fields=["amount"],
+# 	)
+# 	total_applicable_components_amount = 0
+# 	if not len(component_and_amounts):
+# 		frappe.throw(_("No Applicable Component is present in last month salary slip"))
+# 	for data in component_and_amounts:
+# 		total_applicable_components_amount += data.amount
+# 	return total_applicable_components_amount
 
 
 def calculate_amount_based_on_current_slab(

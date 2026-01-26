@@ -2,8 +2,8 @@
 # For license information, please see license.txt
 
 # import frappe
-from frappe.model.document import Document
+from hrms.hr.doctype.shift_type.shift_type import ShiftType as HRMSShiftType
 
+class ShiftType(HRMSShiftType):
+    pass
 
-class ShiftType(Document):
-	pass

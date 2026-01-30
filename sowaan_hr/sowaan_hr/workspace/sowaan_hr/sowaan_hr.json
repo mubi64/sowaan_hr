@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"6hVB9d7mLT\",\"type\":\"header\",\"data\":{\"text\":\"<b>Your Shortcuts</b>\",\"col\":12}},{\"id\":\"V59AbnVM81\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Emp Checkin Request\",\"col\":3}},{\"id\":\"wALkolZYY5\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Late Approval Request\",\"col\":3}},{\"id\":\"QsfVaV4FZi\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"FDGjrd7vqM\",\"type\":\"header\",\"data\":{\"text\":\"<b>Reports &amp; Masters</b>\",\"col\":12}},{\"id\":\"RHio7SRZJV\",\"type\":\"card\",\"data\":{\"card_name\":\"Setup\",\"col\":4}},{\"id\":\"qzHPJGepqX\",\"type\":\"card\",\"data\":{\"card_name\":\"Attendance\",\"col\":4}},{\"id\":\"ubRZrlCimD\",\"type\":\"card\",\"data\":{\"card_name\":\"Fund\",\"col\":4}},{\"id\":\"wcGHvoOMhf\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"maxJnvXCJm\",\"type\":\"card\",\"data\":{\"card_name\":\"Loan\",\"col\":4}}]",
+ "content": "[{\"id\":\"6hVB9d7mLT\",\"type\":\"header\",\"data\":{\"text\":\"<b>Your Shortcuts</b>\",\"col\":12}},{\"id\":\"MJiNJKvFwJ\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"ESS Dashboard\",\"col\":3}},{\"id\":\"V59AbnVM81\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Emp Checkin Request\",\"col\":3}},{\"id\":\"wALkolZYY5\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Late Approval Request\",\"col\":3}},{\"id\":\"QsfVaV4FZi\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"FDGjrd7vqM\",\"type\":\"header\",\"data\":{\"text\":\"<b>Reports &amp; Masters</b>\",\"col\":12}},{\"id\":\"RHio7SRZJV\",\"type\":\"card\",\"data\":{\"card_name\":\"Setup\",\"col\":4}},{\"id\":\"qzHPJGepqX\",\"type\":\"card\",\"data\":{\"card_name\":\"Attendance\",\"col\":4}},{\"id\":\"wcGHvoOMhf\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"maxJnvXCJm\",\"type\":\"card\",\"data\":{\"card_name\":\"Loan\",\"col\":4}}]",
  "creation": "2022-05-30 12:19:40.717080",
  "custom_blocks": [],
  "docstatus": 0,
@@ -127,69 +127,9 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Fund",
-   "link_count": 5,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Fund Setting",
-   "link_count": 0,
-   "link_to": "Fund Setting",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Fund Contribution",
-   "link_count": 0,
-   "link_to": "Fund Contribution",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Fund Withdrawal",
-   "link_count": 0,
-   "link_to": "Fund Withdrawal",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Profit Fund",
-   "link_count": 0,
-   "link_to": "Profit Fund",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Fund Ledger Report",
-   "link_count": 0,
-   "link_to": "Fund Ledger",
-   "link_type": "Report",
-   "onboard": 0,
-   "report_ref_doctype": "Fund Contribution",
-   "type": "Link"
   }
  ],
- "modified": "2025-05-05 10:43:21.387626",
+ "modified": "2026-01-19 08:56:11.783371",
  "modified_by": "Administrator",
  "module": "Sowaan Hr",
  "name": "Sowaan Hr",
@@ -199,7 +139,7 @@
  "public": 1,
  "quick_lists": [],
  "roles": [],
- "sequence_id": 14.0,
+ "sequence_id": 31.0,
  "shortcuts": [
   {
    "color": "#ECAD4B",
@@ -209,6 +149,13 @@
    "link_to": "Employee Checkin Request",
    "stats_filter": "{\"docstatus\":\"Draft\"}",
    "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "ESS Dashboard",
+   "link_to": "ess",
+   "type": "Page"
   },
   {
    "color": "#ECAD4B",

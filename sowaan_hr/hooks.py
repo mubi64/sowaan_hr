@@ -27,25 +27,42 @@ app_license = "mit"
 #updated to include Sowaan HR Setting, Leave Application
 
 fixtures = [
-    # All custom fields for Sowaan HR Setting
     {
         "doctype": "Custom Field",
         "filters": [
-            ["dt", "in", ("Sowaan HR Setting", "Leave Adjustment Scheduler", "Employee", 
-                          "Attendance", "Employee Checkin", "Employee Checkout", "Shift Roaster", 
-                          "Shift Type", "Shift Assignment", "Gratuity Rule Slab", "Salary Slip",
-                          "Payroll Employee Detail", "Journal Entry")]
-        ]
+            ["module", "=", "Sowaan Hr"],
+            [
+                "dt",
+                "in",
+                (
+                    "Sowaan HR Setting",
+                    "Leave Adjustment Scheduler",
+                    "Employee",
+                    "Attendance",
+                    "Employee Checkin",
+                    "Employee Checkout",
+                    "Shift Roaster",
+                    "Shift Assignment",
+                    "Gratuity Rule Slab",
+                    "Salary Slip",
+                    "Payroll Employee Detail",
+                    "Journal Entry",
+                ),
+            ],
+        ],
     },
-    
-    # Property Setters for Leave Application (for precision or other changes)
+
+    # Property Setters for Leave Application
     {
         "doctype": "Property Setter",
         "filters": [
-            ["doc_type", "in", ("Leave Application",)]
-        ]
-    }
+            ["module", "=", "Sowaan Hr"],
+            ["doc_type", "in", ("Leave Application",)],
+        ],
+    },
 ]
+
+
 
 # fixtures = [
 # 	{

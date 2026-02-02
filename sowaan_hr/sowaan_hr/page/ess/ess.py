@@ -272,16 +272,17 @@ def get_employee_ratio_by_nationality():
     }
 
 
-
-
+@frappe.whitelist()
 
 
 @frappe.whitelist()
+
 def get_compliance_summary():
     """
     Employee Compliance & Expiry Summary
-    Role-based: Self / Subordinates / HR
-    Merged-card, UI-ready response
+    - Pending Confirmations (always)
+    - Missing Leave Allocation (always)
+    - Expiry items (configurable via ESS Dashboard Setup)
     """
 
     t = today()
@@ -293,20 +294,20 @@ def get_compliance_summary():
 
     results = []
 
-    meta = frappe.get_meta("Employee")
-    fields = {f.fieldname for f in meta.fields}
+    # ======================================================
+    # 1️⃣ PENDING CONFIRMATIONS (UNCHANGED)
+    # ======================================================
+    emp_meta = frappe.get_meta("Employee")
+    emp_fields = {f.fieldname for f in emp_meta.fields}
 
-    # ======================================================
-    # Pending Confirmations
-    # ======================================================
     confirmation_filters = {
         "status": "Active",
         "name": ["in", allowed_employees]
     }
 
-    if "confirmation_date" in fields:
+    if "confirmation_date" in emp_fields:
         confirmation_filters["confirmation_date"] = ["is", "not set"]
-    if "final_confirmation_date" in fields:
+    if "final_confirmation_date" in emp_fields:
         confirmation_filters["final_confirmation_date"] = ["is", "not set"]
 
     pending_confirmation_employees = frappe.db.get_all(
@@ -323,28 +324,7 @@ def get_compliance_summary():
         })
 
     # ======================================================
-    # Expiring Contracts (30 Days)
-    # ======================================================
-    if "contract_end_date" in fields:
-        contract_employees = frappe.db.get_all(
-            "Employee",
-            filters={
-                "status": "Active",
-                "name": ["in", allowed_employees],
-                "contract_end_date": ["between", [t, t30]]
-            },
-            pluck="name"
-        )
-
-        if contract_employees:
-            results.append({
-                "label": "Expiring Contracts (30 Days)",
-                "count": len(contract_employees),
-                "employees": contract_employees
-            })
-
-    # ======================================================
-    # Missing Leave Allocation
+    # 2️⃣ MISSING LEAVE ALLOCATION (UNCHANGED)
     # ======================================================
     missing_leave_employees = [
         r[0] for r in frappe.db.sql("""
@@ -367,84 +347,94 @@ def get_compliance_summary():
         })
 
     # ======================================================
-    # Visa Expiry (30 Days)
+    # 3️⃣ EXPIRY ITEMS (CONFIGURABLE)
     # ======================================================
-    # ======================================================
+    default_expiry_map = {
+        "Contract End Date (30 Days)": {
+            "doctype": "Employee",
+            "field": "contract_end_date"
+        },
+        "Visa Expiry (30 Days)": {
+            "doctype": "Employee",
+            "field": "custom_visa_expiry"
+        },
+        "Iqama Expiry (30 Days)": {
+            "doctype": "Employee",
+            "field": "custom_iqama_expiry_date"
+        },
+        "Passport Expiry (30 Days)": {
+            "doctype": "Employee",
+            "field": "valid_upto"
+        },
+        "Labor Card Expiry (30 Days)": {
+            "doctype": "Employee",
+            "field": "custom_labour_card_expiry"
+        },
+        "Emirates ID Expiry (30 Days)": {
+            "doctype": "Employee",
+            "field": "custom_emirates_id_expiry"
+        }
+    }
 
+    setup_config = get_ess_expiry_config()  # None if no setup exists
 
-    meta = frappe.get_meta("Employee") 
-    employee_fields = {df.fieldname for df in meta.fields}
-    if "custom_visa_expiry" in employee_fields:
-        visa_employees = frappe.db.sql("""
-            SELECT e.name
-            FROM `tabEmployee` e
+    #frappe.msgprint(f"setup config {setup_config}")
+
+    for label, default_rule in default_expiry_map.items():
+
+        # 🔑 Precedence logic
+        if setup_config is None:
+            rule = default_rule
+        else:
+            rule = setup_config.get(label, default_rule)
+
+        doctype = rule["doctype"]
+        field = rule["field"]
+
+        #frappe.msgprint(f"doctype {setup_config} field {field}")
+
+        # 🔒 Safety checks
+        # if not frappe.db.table_exists(f"tab{doctype}"):
+        #     continue
+
+        meta = frappe.get_meta(doctype)
+
+        #frappe.msgprint(f"meta {meta}")
+        
+        if not meta.has_field(field):
+            continue
+
+        params = {
+            "start": t,
+            "end": t30,
+            "emps": tuple(allowed_employees)
+        }
+
+        # 🔐 Employee scoping
+        if meta.has_field("employee"):
+            emp_filter = "AND employee IN %(emps)s"
+        elif meta.has_field("parent"):
+            emp_filter = "AND parent IN %(emps)s"
+        else:
+            emp_filter = "AND name IN %(emps)s"
+
+        rows = frappe.db.sql(f"""
+            SELECT DISTINCT name
+            FROM `tab{doctype}`
             WHERE
-                e.status = 'Active'
-                AND e.custom_visa_expiry IS NOT NULL
-                AND e.custom_visa_expiry BETWEEN %s AND %s
-                AND e.name IN %s
-        """, (t, t30, tuple(allowed_employees)), pluck="name")
+                `{field}` IS NOT NULL
+                AND `{field}` BETWEEN %(start)s AND %(end)s
+                {emp_filter}
+        """, params, pluck="name")
 
-        if visa_employees:
+        if rows:
             results.append({
-                "label": "Visa Expiry (30 Days)",
-                "count": len(visa_employees),
-                "employees": visa_employees
-            })
-
-
-
-    # ======================================================
-    # Passport Expiry (30 Days)
-    # ======================================================
-    if frappe.db.table_exists("Passport"):
-        passport_employees = [
-            r[0] for r in frappe.db.sql("""
-                SELECT DISTINCT p.parent
-                FROM `tabPassport` p
-                JOIN `tabEmployee` e ON e.name = p.parent
-                WHERE
-                    p.parenttype = 'Employee'
-                    AND p.passport_expiry_date BETWEEN %s AND %s
-                    AND e.status = 'Active'
-                    AND p.parent IN %s
-            """, (t, t30, tuple(allowed_employees)))
-        ]
-
-        if passport_employees:
-            results.append({
-                "label": "Passport Expiry (30 Days)",
-                "count": len(passport_employees),
-                "employees": passport_employees
-            })
-
-    # ======================================================
-    # Labor Card Expiry (30 Days)
-    # ======================================================
-    if frappe.db.table_exists("Labor Card"):
-        labor_card_employees = [
-            r[0] for r in frappe.db.sql("""
-                SELECT DISTINCT lc.parent
-                FROM `tabLabor Card` lc
-                JOIN `tabEmployee` e ON e.name = lc.parent
-                WHERE
-                    lc.parenttype = 'Employee'
-                    AND lc.labor_card_expiry_date BETWEEN %s AND %s
-                    AND e.status = 'Active'
-                    AND lc.parent IN %s
-            """, (t, t30, tuple(allowed_employees)))
-        ]
-
-        if labor_card_employees:
-            results.append({
-                "label": "Labor Card Expiry (30 Days)",
-                "count": len(labor_card_employees),
-                "employees": labor_card_employees
+                "label": label,
+                "count": len(rows),
+                "employees": rows
             })
 
     return results
-
-
 
 
 
@@ -544,146 +534,190 @@ def get_today_attendance_summary():
 def get_pending_approvals_for_me():
     """
     Pending workflow approvals for current user
-    Works for ROLE-BASED workflows
+    Supports ROLE-based and USER-based workflows
+    Cached per user
     """
 
     user = frappe.session.user
+    cache_key = f"pending_approvals::{user}"
+
+    # 🔹 1️⃣ Return from cache if exists
+    cached = frappe.cache().get_value(cache_key)
+    if cached is not None:
+        return cached
+
     user_roles = set(frappe.get_roles(user))
     result = {}
 
-    # Subordinates only
     allowed_employees = get_accessible_employees()
 
     self_emp = frappe.db.get_value("Employee", {"user_id": user}, "name")
     if self_emp in allowed_employees:
         allowed_employees.remove(self_emp)
 
-    if not allowed_employees:
-        return result
-
-    # All open workflow actions (user may be NULL)
+    # 🔹 2️⃣ Fetch open workflow actions
     workflow_rows = frappe.db.sql("""
         SELECT
             wa.reference_doctype,
-            wa.reference_name
+            wa.reference_name,
+            wa.user,
+            wa.creation
         FROM `tabWorkflow Action` wa
         WHERE wa.status = 'Open'
+        ORDER BY wa.creation DESC
     """, as_dict=True)
 
     for row in workflow_rows:
         doctype = row.reference_doctype
         name = row.reference_name
+        assigned_user = row.user
 
-        if not frappe.db.table_exists(f"tab{doctype}"):
+        # 🔹 User-based workflow check
+        if assigned_user and assigned_user != user:
             continue
 
-        # 1️⃣ Check workflow exists
         workflow = frappe.db.get_value(
             "Workflow",
-            {
-                "document_type": doctype,
-                "is_active": 1
-            },
+            {"document_type": doctype, "is_active": 1},
             ["name"],
             as_dict=True
         )
         if not workflow:
             continue
-
-        # 2️⃣ Check approver role from current workflow state
+        
+        
         state = frappe.db.get_value(doctype, name, "workflow_state")
         if not state:
             continue
 
-        allowed_roles = frappe.db.get_all(
-            "Workflow Transition",
-            filters={
-                "parent": workflow.name,
-                "state": state
-            },
-            pluck="allowed"
-        )
+        # 🔹 Role-based workflow check
+        if assigned_user is None:
+            allowed_roles = frappe.db.get_all(
+                "Workflow Transition",
+                filters={
+                    "parent": workflow.name,
+                    "state": state
+                },
+                pluck="allowed"
+            )
 
-        # 3️⃣ Role match
-        if not user_roles.intersection(allowed_roles):
-            continue
+            if not user_roles.intersection(set(allowed_roles)):
+                continue
 
-        # 4️⃣ Employee ownership check
+        # 🔹 Optional employee filtering
         meta = frappe.get_meta(doctype)
-        if not meta.has_field("employee"):
+        if meta.has_field("employee"):
+            emp = frappe.db.get_value(doctype, name, "employee")
+            if emp and emp not in allowed_employees:
+                continue
+        
+        if not frappe.has_permission(doctype, "read", name):
             continue
-
-        emp = frappe.db.get_value(doctype, name, "employee")
-        if emp not in allowed_employees:
+        
+        try:
+            doc = frappe.get_doc(doctype, name)
+            #frappe.msgprint(f"doc {doc}")
+            if doc.workflow_state in ["Rejected", "Rejected by HOD"]:
+                continue
+        except:
             continue
 
         result.setdefault(doctype, []).append(name)
 
-    return {
-        dt: {"count": len(names), "names": names}
+    final_result = {
+        dt: {
+            "count": len(names),
+            "names": names
+        }
         for dt, names in result.items()
     }
+
+    #🔹 3️⃣ Store in cache (5 minutes)
+    frappe.cache().set_value(
+        cache_key,
+        final_result,
+        expires_in_sec=300
+    )
+
+    return final_result
+
 
 @frappe.whitelist()
 def get_pending_requests_sent_by_me():
     """
-    Pending requests created by current user
-    Workflow-safe (role-based or user-based)
+    Pending workflow requests created by current user
+    (Still waiting for approval)
     """
 
     user = frappe.session.user
+    cache_key = f"pending_requests::{user}"
+
+    cached = frappe.cache().get_value(cache_key)
+    if cached is not None:
+        return cached
+
     result = {}
 
-    # Get all doctypes that have workflow OR are submittable
-    doctypes = frappe.get_all(
-        "DocType",
-        filters={
-            "issingle": 0,
-            "is_submittable": 1
-        },
-        pluck="name"
+    workflows = frappe.get_all(
+        "Workflow",
+        filters={"is_active": 1},
+        fields=["name", "document_type"]
     )
 
-    for dt in doctypes:
+    for wf in workflows:
+        doctype = wf.document_type
 
-        # Safety
-        if not frappe.db.table_exists(f"tab{dt}"):
-            continue
+        # Safety: table exists
+        # if not frappe.db.table_exists(f"tab{doctype}"):
+        #     continue
 
-        meta = frappe.get_meta(dt)
+        # Load workflow once
+        workflow_doc = frappe.get_doc("Workflow", wf.name)
 
-        # Must have owner
-        if not meta.has_field("owner"):
-            continue
-
-        # Pending logic:
-        # - Workflow docs → docstatus < 2
-        # - Non-workflow docs → docstatus = 0
-        filters = {
-            "owner": user,
-            "docstatus": ["<", 2]
+        final_states = {
+            row.state
+            for row in workflow_doc.states
+            if row.allow_edit == 0   # final-ish states
         }
 
-        try:
-            names = frappe.get_all(
-                dt,
-                filters=filters,
-                pluck="name"
-            )
-        except Exception:
-            # some doctypes may still fail due to permissions
-            continue
+        docs = frappe.db.sql(f"""
+            SELECT name, workflow_state
+            FROM `tab{doctype}`
+            WHERE owner = %s
+              AND docstatus = 0
+              AND workflow_state IS NOT NULL
+        """, user, as_dict=True)
 
-        if names:
-            result[dt] = {
-                "count": len(names),
-                "names": names
-            }
+        for row in docs:
+            docname = row.name
+            state = row.workflow_state
 
-    return result
+            # Skip final / rejected
+            if state in final_states:
+                continue
+            if state in ("Rejected", "Rejected by HOD"):
+                continue
 
+            # Hard safety
+            if not frappe.db.exists(doctype, docname):
+                continue
 
+            # # Permission check (light)
+            if not frappe.has_permission(doctype, "read", docname):
+                continue
 
+            result.setdefault(doctype, []).append(docname)
+
+    final_result = {
+        dt: {
+            "count": len(names),
+            "names": names
+        }
+        for dt, names in result.items()
+    }
+
+    frappe.cache().set_value(cache_key, final_result, expires_in_sec=300)
+    return final_result
 
 
 def has_workflow(doctype):
@@ -700,15 +734,8 @@ def has_workflow(doctype):
 
 @frappe.whitelist()
 def get_leave_balance_employees():
-    """
-    Returns employees visible to the current user:
-    - Self
-    - Subordinates (if any)
-    """
-
     user = frappe.session.user
 
-    # Get current employee
     current_emp = frappe.db.get_value(
         "Employee",
         {"user_id": user, "status": "Active"},
@@ -719,7 +746,6 @@ def get_leave_balance_employees():
     if not current_emp:
         return []
 
-    # Get subordinates
     subordinates = frappe.get_all(
         "Employee",
         filters={
@@ -730,16 +756,11 @@ def get_leave_balance_employees():
         order_by="employee_name asc"
     )
 
-    # 🔑 Always include self
     employees = [current_emp]
-    
-    # Add subordinates (if any)
     employees.extend(subordinates)
-
+    
     #frappe.msgprint(f"employees {employees}")
     return employees
-
-
 
 
 @frappe.whitelist()
@@ -796,12 +817,11 @@ def get_leave_balance_for_employee(employee=None):
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
-
 def employee_leave_access_query(doctype, txt, searchfield, start, page_len, filters):
+
     allowed_employees = get_accessible_employees()
 
-    # 🔒 HARD LIMIT (override Frappe default)
-    page_len = min(int(page_len or 20), 20)   # ← max 10 per fetch
+    page_len = min(int(page_len or 20), 20)
 
     conditions = ["status = 'Active'"]
     values = {
@@ -819,7 +839,7 @@ def employee_leave_access_query(doctype, txt, searchfield, start, page_len, filt
     return frappe.db.sql(f"""
         SELECT
             name,
-            employee_name
+            employee_name AS description   -- 🔥 THIS IS THE KEY
         FROM `tabEmployee`
         WHERE
             {where_clause}
@@ -1435,399 +1455,131 @@ def get_net_payroll_breakdown_by_year(year, by):
         }]
     }
 
-# =========================================================
-# EMPLOYEE COMPLIANCE SUMMARY (SCHEMA SAFE)
-# =========================================================
-# @frappe.whitelist()
-# def get_compliance_summary():
-#     """
-#     Employee compliance summary
-#     Role-based: Self / Subordinates / HR
-#     Fully schema-safe
-#     """
 
-#     t = today()
-#     t30 = add_days(t, 30)
+    """
+    Returns:
+    {
+        "Visa Expiry": {
+            "doctype": "Employee",
+            "field": "custom_visa_expiry"
+        },
+        ...
+    }
+    """
+    rules = {}
 
-#     allowed_employees = get_accessible_employees()
+    setup = frappe.get_all(
+        "ESS Dashboard Setup",
+        fields=["name"],
+        limit=1
+    )
 
-#     # 🚫 No access
-#     if allowed_employees == []:
-#         return {
-#             "pending_confirmations": {"count": 0, "employees": []},
-#             "expiring_contracts": {"count": 0, "employees": []},
-#             "missing_leave_allocations": {"count": 0, "employees": []},
-#             "visa_expiry": {"count": 0, "employees": []},
-#         }
+    if not setup:
+        return rules
 
-#     meta = frappe.get_meta("Employee")
-#     fields = {f.fieldname for f in meta.fields}
+    rows = frappe.get_all(
+        "ESS Dashboard Setup Item",
+        filters={"parent": setup[0].name},
+        fields=["expiry_type", "ref_doctype", "expiry_field"]
+    )
 
-#     emp_filter = {}
-#     if allowed_employees is not None:
-#         emp_filter["name"] = ["in", allowed_employees]
+    for r in rows:
+        if r.expiry_type and r.ref_doctype and r.expiry_field:
+            rules[r.expiry_type] = {
+                "doctype": r.ref_doctype,
+                "field": r.expiry_field
+            }
 
-#     employee_fields = [df.fieldname for df in meta.fields]
+    return rules
 
-#     # ======================================================
-#     # Pending Confirmations
-#     # ======================================================
-#     confirmation_filters = {
-#         **emp_filter,
-#         "status": "Active"
-#     }
+def get_ess_expiry_config():
+    """
+    Returns expiry configuration map
+    Works with SINGLE DocType: ESS Dashboard Setup
+    """
 
-#     if "confirmation_date" in employee_fields and "final_confirmation_date" in employee_fields:
-#         confirmation_filters["confirmation_date"] = ["is", "not set"]
-#         confirmation_filters["final_confirmation_date"] = ["is", "not set"]
-#     elif "confirmation_date" in employee_fields:
-#         confirmation_filters["confirmation_date"] = ["is", "not set"]
-#     elif "final_confirmation_date" in employee_fields:
-#         confirmation_filters["final_confirmation_date"] = ["is", "not set"]
+    config = {}
 
-#     pending_confirmation_employees = frappe.db.get_all(
-#         "Employee",
-#         filters=confirmation_filters,
-#         pluck="name"
-#     )
+    # 🔹 SINGLE doctype → always use get_single
+    setup = frappe.get_single("ESS Dashboard Setup")
 
-#     pending_confirmations = len(pending_confirmation_employees)
+    # 🔹 Child table lives on the single doc
+    rows = setup.get("expiry_configurations") or []
 
-#     # ======================================================
-#     # Expiring Contracts
-#     # ======================================================
-#     expiring_contract_employees = []
+    #frappe.msgprint(f"rows {rows}")
 
-#     if "contract_end_date" in fields:
-#         expiring_contract_employees = frappe.db.get_all(
-#             "Employee",
-#             filters={
-#                 **emp_filter,
-#                 "status": "Active",
-#                 "contract_end_date": ["between", [t, t30]]
-#             },
-#             pluck="name"
-#         )
+    for r in rows:
+        if r.expiry_type and r.ref_doctype and r.expiry_field:
+            config[r.expiry_type] = {
+                "doctype": r.ref_doctype,
+                "field": r.expiry_field
+            }
 
-#     expiring_contracts = len(expiring_contract_employees)
+    # 🔑 If no rows configured → treat as NO SETUP
+    return config or None
 
-#     # ======================================================
-#     # Missing Leave Allocations
-#     # ======================================================
-#     emp_condition = ""
-#     values = []
+@frappe.whitelist()
+def get_turnover_breakdown(month, by):
+    """
+    Employee Turnover (Joined vs Left)
+    Grouped by department / branch / employment_type
+    """
 
-#     if allowed_employees is not None:
-#         emp_condition = "AND e.name IN %s"
-#         values.append(tuple(allowed_employees))
+    if not month:
+        return {}
 
-#     missing_leave_allocation_employees = [
-#         r[0] for r in frappe.db.sql(f"""
-#             SELECT DISTINCT e.name
-#             FROM `tabEmployee` e
-#             LEFT JOIN `tabLeave Allocation` la
-#                 ON la.employee = e.name AND la.docstatus = 1
-#             WHERE
-#                 e.status = 'Active'
-#                 {emp_condition}
-#                 AND la.name IS NULL
-#         """, values)
-#     ]
+    field_map = {
+        "department": "department",
+        "branch": "branch",
+        "employment_type": "employment_type"
+    }
 
-#     missing_leave_allocations = len(missing_leave_allocation_employees)
+    group_field = field_map.get(by)
+    if not group_field:
+        return {}
 
-#     # ======================================================
-#     # Visa Expiry (Child Table)
-#     # ======================================================
-#     visa_condition = ""
-#     visa_values = [t, t30]
+    month_start = f"{month}-01"
+    month_end = frappe.utils.get_last_day(month_start)
 
-#     if allowed_employees is not None:
-#         visa_condition = "AND vd.parent IN %s"
-#         visa_values.append(tuple(allowed_employees))
+    rows = frappe.db.sql(f"""
+        SELECT
+            IFNULL(e.{group_field}, 'Not Set') AS label,
 
-#     visa_expiry_employees = [
-#         r[0] for r in frappe.db.sql(f"""
-#             SELECT DISTINCT vd.parent
-#             FROM `tabVisa Details` vd
-#             WHERE
-#                 vd.visa_expiry_date IS NOT NULL
-#                 AND DATE(vd.visa_expiry_date) BETWEEN %s AND %s
-#                 {visa_condition}
-#         """, visa_values)
-#     ]
+            SUM(
+                CASE
+                    WHEN e.date_of_joining BETWEEN %(start)s AND %(end)s
+                    THEN 1 ELSE 0
+                END
+            ) AS joined_count,
 
-#     visa_expiry = len(visa_expiry_employees)
+            SUM(
+                CASE
+                    WHEN e.relieving_date BETWEEN %(start)s AND %(end)s
+                    THEN 1 ELSE 0
+                END
+            ) AS left_count
+        FROM `tabEmployee` e
+        GROUP BY e.{group_field}
+        ORDER BY label
+    """, {
+        "start": month_start,
+        "end": month_end
+    }, as_dict=True)
 
-#     # ======================================================
-#     # FINAL RESPONSE (COUNT + IDS)
-#     # ======================================================
-#     return {
-#         "pending_confirmations": {
-#             "count": pending_confirmations,
-#             "employees": pending_confirmation_employees
-#         },
-#         "expiring_contracts": {
-#             "count": expiring_contracts,
-#             "employees": expiring_contract_employees
-#         },
-#         "missing_leave_allocations": {
-#             "count": missing_leave_allocations,
-#             "employees": missing_leave_allocation_employees
-#         },
-#         "visa_expiry": {
-#             "count": visa_expiry,
-#             "employees": visa_expiry_employees
-#         }
-#     }
+    labels = []
+    joined = []
+    left = []
 
-# # =========================================================
-# # PENDING APPRAISALS LIST
-# # =========================================================
-# @frappe.whitelist()
-# def get_pending_appraisals_list(limit=5):
-#     if not frappe.db.table_exists("Appraisal"):
-#         return []
+    for r in rows:
+        labels.append(r.label)
+        joined.append(int(r.joined_count or 0))
+        left.append(int(r.left_count or 0))
 
-#     return frappe.db.sql("""
-#         SELECT
-#             a.name,
-#             a.employee,
-#             e.employee_name
-#         FROM `tabAppraisal` a
-#         LEFT JOIN `tabEmployee` e ON e.name = a.employee
-#         WHERE a.docstatus = 0
-#         ORDER BY a.modified DESC
-#         LIMIT %s
-#     """, limit, as_dict=True)
+    # 🔑 THIS IS THE CRITICAL FIX
+    return {
+        "labels": labels,
+        "joined": joined,
+        "left": left
+    }
 
 
-# =========================================================
-# EXPIRING SOON LIST (Visa / Iqama / Contract)
-# =========================================================
-# @frappe.whitelist()
-# def get_expiring_soon_list(limit=5):
-#     """
-#     Expiring soon list
-#     Matches Compliance logic exactly
-#     """
-
-#     t = today()
-#     t30 = add_days(t, 30)
-
-#     allowed_employees = get_accessible_employees()
-#     if allowed_employees == []:
-#         return []
-
-#     params = {
-#         "t": t,
-#         "t30": t30,
-#         "limit": limit
-#     }
-
-#     emp_condition = ""
-#     if allowed_employees is not None:
-#         emp_condition = "AND e.name IN %(employees)s"
-#         params["employees"] = tuple(allowed_employees)
-
-    
-#     return frappe.db.sql(f"""
-#         /* ---------------- Contract Expiry ---------------- */
-#         SELECT
-#             e.name,
-#             e.employee_name,
-#             'Contract Expiry' AS expiry_type,
-#             e.contract_end_date AS expiry_date
-#         FROM `tabEmployee` e
-#         WHERE
-#             e.status = 'Active'
-#             {emp_condition}
-#             AND e.contract_end_date BETWEEN %(t)s AND %(t30)s
-
-#         UNION ALL
-
-#         /* ---------------- Visa Expiry ---------------- */
-#         SELECT
-#             e.name,
-#             e.employee_name,
-#             'Visa Expiry' AS expiry_type,
-#             vd.visa_expiry_date AS expiry_date
-#         FROM `tabEmployee` e
-#         JOIN `tabVisa Details` vd ON vd.parent = e.name
-#         WHERE
-#             e.status = 'Active'
-#             {emp_condition}
-#             AND vd.visa_expiry_date BETWEEN %(t)s AND %(t30)s
-
-#         ORDER BY expiry_date
-#         LIMIT %(limit)s
-#     """, params, as_dict=True)
-
-# =========================================================
-# MONTHLY ATTENDANCE TREND (LAST 6 MONTHS)
-# =========================================================
-# @frappe.whitelist()
-# def get_monthly_attendance_trend():
-#     """
-#     Returns attendance trend for last 6 months:
-#     - Present
-#     - Absent + Late
-#     """
-
-#     data = frappe.db.sql("""
-#         SELECT
-#             DATE_FORMAT(attendance_date, '%b %Y') AS month,
-#             SUM(CASE WHEN status = 'Present' THEN 1 ELSE 0 END) AS present,
-#             SUM(CASE WHEN status IN ('Absent', 'Late') THEN 1 ELSE 0 END) AS absent_late
-#         FROM `tabAttendance`
-#         WHERE attendance_date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
-#         GROUP BY DATE_FORMAT(attendance_date, '%Y-%m')
-#         ORDER BY attendance_date
-#     """, as_dict=True)
-
-#     if not data:
-#         return {}
-
-#     return {
-#         "labels": [d.month for d in data],
-#         "datasets": [
-#             {
-#                 "name": "Present",
-#                 "values": [d.present for d in data]
-#             },
-#             {
-#                 "name": "Absent / Late",
-#                 "values": [d.absent_late for d in data]
-#             }
-#         ]
-#     }
-
-# def get_leave_balance_employees():
-#     """
-#     Returns employees visible to the current user:
-#     - Subordinates (reports_to)
-#     - If no subordinates → current employee only
-#     """
-
-#     user = frappe.session.user
-
-#     # Get current employee
-#     current_emp = frappe.db.get_value(
-#         "Employee",
-#         {"user_id": user, "status": "Active"},
-#         ["name", "employee_name"],
-#         as_dict=True
-#     )
-
-#     if not current_emp:
-#         return []
-
-#     # Get subordinates
-#     subordinates = frappe.get_all(
-#         "Employee",
-#         filters={
-#             "reports_to": current_emp.name,
-#             "status": "Active"
-#         },
-#         fields=["name", "employee_name"],
-#         order_by="employee_name asc"
-#     )
-
-#     # If no subordinates → return self only
-#     if not subordinates:
-#         return [current_emp]
-
-#     return subordinates
-
-# @frappe.whitelist() 
-# def get_pending_requests_summary():
-#     """
-#     Pending requests awaiting action
-#     Workflow-aware with safe fallback
-#     """
-
-#     result = {}
-#     user = frappe.session.user
-
-#     allowed_employees = get_accessible_employees()
-#     if not allowed_employees:
-#         return result
-
-#     doctypes = [
-#         "Leave Application",
-#         "Expense Claim",
-#         "Material Request"
-#     ]
-
-#     frappe.flags.ignore_permissions = True
-
-#     for dt in doctypes:
-
-#         # --------------------------------
-#         # STEP 1: Try workflow actions
-#         # --------------------------------
-#         workflow_names = []
-
-#         if has_workflow(dt):
-#             rows = frappe.db.sql("""
-#                 SELECT wa.reference_name
-#                 FROM `tabWorkflow Action` wa
-#                 WHERE
-#                     wa.status = 'Open'
-#                     AND wa.reference_doctype = %(dt)s
-#             """, {"dt": dt}, as_dict=True)
-
-#             workflow_names = [r.reference_name for r in rows]
-
-#         # --------------------------------
-#         # STEP 2: Fallback to doctype table
-#         # --------------------------------
-#         if workflow_names:
-#             names = workflow_names
-#         else:
-#             filters = {"docstatus": 0}
-
-#             if dt == "Material Request":
-#                 filters["owner"] = user
-#             else:
-#                 filters["employee"] = ["in", allowed_employees]
-
-#             names = frappe.db.get_all(
-#                 dt,
-#                 filters=filters,
-#                 pluck="name"
-#             )
-
-#         if not names:
-#             continue
-
-#         # --------------------------------
-#         # STEP 3: Access filtering
-#         # --------------------------------
-#         if dt == "Material Request":
-#             names = frappe.db.get_all(
-#                 "Material Request",
-#                 filters={
-#                     "name": ["in", names],
-#                     "owner": user
-#                 },
-#                 pluck="name"
-#             )
-#         else:
-#             names = frappe.db.get_all(
-#                 dt,
-#                 filters={
-#                     "name": ["in", names],
-#                     "employee": ["in", allowed_employees]
-#                 },
-#                 pluck="name"
-#             )
-
-#         if names:
-#             result[dt] = {
-#                 "count": len(names),
-#                 "names": names
-#             }
-
-#     frappe.flags.ignore_permissions = False
-#     return result

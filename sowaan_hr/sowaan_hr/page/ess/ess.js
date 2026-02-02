@@ -4,9 +4,14 @@ frappe.pages["ess"].on_page_show = function (wrapper) {
     wrapper.__ess_initialized = true;
 
     guard_and_render_ess(wrapper);
+
+    
 };
 
 let ess_guard_checked = false;
+let turnover_month_control = null;
+let current_turnover_by = "department";
+
 
 function guard_and_render_ess(wrapper) {
 
@@ -64,7 +69,7 @@ function render_ess_page(wrapper) {
             <div class="ess-kpi-strip">
 
                 <div class="ess-kpi-card ess-profile-card kpi-orange">
-                    <div class="kpi-header"><i class="fa fa-user"></i> Profile</div>
+                    <div class="ess-card-title"><i class="fa fa-user"></i> Profile</div>
                     <div class="ess-profile-body" id="ess-login-profile">
                         <div class="ess-muted">Loading...</div>
                     </div>
@@ -72,38 +77,39 @@ function render_ess_page(wrapper) {
                 </div>
 
                 <div class="ess-kpi-card kpi-blue">
-                    <div class="kpi-header"><i class="fa fa-users"></i> Reporting To You</div>
+                    <div class="ess-card-title"><i class="fa fa-users"></i> Reporting To You</div>
                     <div class="kpi-main" id="kpi-reporting">–</div>
                     <div class="kpi-sub" id="kpi-reporting-name">–</div>
                     <div class="kpi-line"></div>
                 </div>
 
                 <div class="ess-kpi-card kpi-green" data-route="/app/employee?status=Active">
-                    <div class="kpi-header"><i class="fa fa-check-circle"></i> Active Employees</div>
+                    <div class="ess-card-title"><i class="fa fa-check-circle"></i> Active Employees</div>
                     <div class="kpi-main" id="kpi-active">–</div>
                     <div class="kpi-sub">Company Wise</div>
                     <div class="kpi-line"></div>
                 </div>
 
                 <div class="ess-kpi-card kpi-purple" data-route="/app/appraisal?docstatus=0">
-                    <div class="kpi-header"><i class="fa fa-hourglass-half text-warning"></i>Pending Appraisals</div>
+                    <div class="ess-card-title"><i class="fa fa-hourglass-half text-warning"></i>Pending Appraisals</div>
                     <div class="kpi-main" id="kpi-appraisal-days">– Days</div>
                     <div class="kpi-sub" id="kpi-appraisal-count">– Appraisals</div>
                     <div class="kpi-line"></div>
                 </div> 
+
                 <div class="ess-card ess-pending-requests-card kpi-silver">
                     <div class="ess-card-header">
                         <div class="ess-card-header-row">
                             <div class="ess-card-title">
                                 <i class="fa fa-clock-o ess-card-title-icon"></i>
-                                Pending Requests & Approals
+                                Pending Requests & Approvals
                             </div>
                         </div>
 
                         <!-- 🔹 Tabs -->
                         <div class="ess-tabs" id="ess-pending-tabs">
                             <div class="ess-tab active" data-tab="pending_for_me">
-                                Approvvals
+                                Approvals
                             </div>
                             <div class="ess-tab" data-tab="sent_by_me">
                                 Requests
@@ -111,13 +117,21 @@ function render_ess_page(wrapper) {
                         </div>
                         <div class="kpi-line"></div>
                     </div>
-                
+
                     <!-- 🔹 Scrollable content -->
-                    <div id="ess-pending-requests" class="ess-pending-list"></div>
+                    <div id="ess-pending-requests" class="ess-pending-list">
+
+                        <!-- 🔹 Loading placeholder (DEFAULT) -->
+                        <div class="ess-loading" data-loading="pending_for_me">
+                            Loading pending approvals…
+                        </div>
+
+                    </div>
                 </div>
 
+
                 <div class="ess-kpi-card ess-compliance-expiry-card kpi-purple">
-                    <div class="kpi-header">
+                    <div class="ess-card-title">
                         <i class="fa fa-shield"></i>
                         Employee Compliance & Expiry
                     </div>
@@ -132,7 +146,7 @@ function render_ess_page(wrapper) {
 
 
                 <div class="ess-kpi-card ess-leave-card kpi-blue">
-                    <div class="ess-card-header">Leave Balance</div>               
+                    <div class="ess-card-title">Leave Balance</div>               
 
                     <!-- Leave list -->
                    <div id="leave-employee-link-control"></div>
@@ -189,7 +203,7 @@ function render_ess_page(wrapper) {
                 <!-- NATIONALITY -->
                 <div class="ess-card">
                     <div class="ess-card-header">
-                        Employee Ratio by Nationality
+                        Employee Nationality
                         <i class="fa fa-external-link chart-action"
                         onclick="window.open('/app/employee','_blank')"></i>
                     </div>
@@ -200,7 +214,46 @@ function render_ess_page(wrapper) {
                     </div>                   
                 </div>            
 
-                 
+
+                <div class="ess-card ess-turnover-card kpi-silver">
+
+                    <!-- HEADER -->
+                    <div class="ess-card-header">
+
+                        <!-- Row 1: Title -->
+                        <div class="ess-card-header-row">
+                            <div class="ess-card-title">
+                                <i class="fa fa-random ess-card-title-icon"></i>
+                                Employee Turnover Ratio
+                            </div>
+                        </div>
+
+                        <!-- Row 2: Month picker (moved here) -->
+                        <div class="ess-card-header-row">
+                            <div class="ess-card-control">Month
+                                <div id="turnover-month-picker"></div>
+                            </div>
+                        </div>
+
+                        <!-- Tabs (unchanged) -->
+                        <div class="ess-tabs" id="ess-turnover-tabs">
+                            <div class="ess-tab active" data-by="department">Department</div>
+                            <div class="ess-tab" data-by="branch">Branch</div>
+                            <div class="ess-tab" data-by="employment_type">Employment Type</div>
+                        </div>
+
+                    </div>
+
+                    <!-- BODY -->
+                    <div class="ess-card-body">
+                        <div
+                            id="ess-turnover-chart"
+                            class="ess-chart-container ess-turnover-chart">
+                        </div>
+                    </div>
+
+                </div>
+
 
                 <div class="ess-card">
                     <div class="ess-card-header">
@@ -228,6 +281,7 @@ function render_ess_page(wrapper) {
                    
                 </div> 
 
+                
                 <!-- NET PAYROLL SUMMARY -->
                     <div class="ess-card ess-netpay-summary-card ess-netpay-box">
                         <div class="ess-card-header">
@@ -295,6 +349,7 @@ function render_ess_page(wrapper) {
 `;
 
     let ESS_ALLOWED_EMPLOYEES = [];
+    let turnover_month_control = null;
 
     inject_styles();
     bind_events();
@@ -321,30 +376,51 @@ function init_ess_data() {
         }
     });
 
-    load_kpis();
-    init_pending_requests_tabs();
-    load_today_attendance();
-    load_compliance_and_expiry();
-    load_login_employee_profile();
-    //load_expiry_soon();
-    //load_compliance_summary();
-    init_leave_balance_card();
-    //load_leave_employee_list();
-    load_headcount_chart("department");
-    make_net_payroll_month_picker();
+    // =============================
+// 🔹 FAST / USER-CRITICAL
+// =============================
+load_login_employee_profile();
+init_leave_balance_card();        // ✅ should appear instantly
+load_kpis();
 
-    load_net_payroll_chart("department");
-    load_nationality_chart();    
-    make_salary_month_picker();
+// =============================
+// 🔹 MEDIUM
+// =============================
+load_today_attendance();
+load_compliance_and_expiry();
+
+// =============================
+// 🔹 HEAVY → defer to next tick
+// =============================
+setTimeout(() => {
+    init_pending_requests_tabs();
+}, 0);
+
+// =============================
+// 🔹 VERY HEAVY (charts) → defer more
+// =============================
+setTimeout(() => {
+    load_headcount_chart("department");
+    load_nationality_chart();
     load_monthly_attendance_trend();
-    // ensure_chartjs_loaded(() => {
-    //     load_performance_appraisal_summary();
-    // });
+
+    make_net_payroll_month_picker();
+    load_net_payroll_chart("department");
+
     make_net_payroll_summary_month_picker();
     load_net_payroll_summary();
+
     init_net_payroll_year_dropdown();
     load_net_payroll_year_summary();
 
+    init_turnover_month_picker();
+    init_turnover_tabs();
+    load_turnover_chart("department");
+
+
+}, 50);
+
+    
 
 }
 
@@ -943,8 +1019,8 @@ function inject_styles() {
         }
 
         .ess-card-title {
-            font-size: 14px;
-            font-weight: 700;
+            font-size: 12px;
+            font-weight: 600;
             color: #0f172a;
         }
 
@@ -3069,13 +3145,270 @@ function inject_styles() {
                 margin: 0px auto;
             }
 
-
-            .layout-main-sectionv{
-            padding-right: 0px !important
-            padding-left: 0px !important
+            /* Make chart/card borders visible but subtle */
+            .ess-card {
+                border: 2px solid rgba(15, 23, 42, 0.08); /* slate outline */
             }
-               
-        }
+
+            .ess-card:hover {
+                border-color: rgba(59, 130, 246, 0.35);
+            }
+
+            /* ================= ESS CARD – VISIBLE BUT SUBTLE BORDER ================= */
+
+            [data-page-route="ess"] .ess-card,
+            [data-page-route="ess"] .ess-kpi-card {
+                background: #e5e7eb; /* keep existing bg */
+                border: 1px solid rgba(15, 23, 42, 0.10);  /* 🔑 visible outline */
+                border-radius: 16px;
+                box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08); /* keep depth */
+            }
+
+            .ess-turnover-kpi {
+                text-align: center;
+                margin-bottom: 12px;
+            }
+
+            .ess-turnover-value {
+                font-size: 28px;
+                font-weight: 700;
+                color: #0f172a;
+            }
+
+            .ess-turnover-label {
+                font-size: 12px;
+                color: #64748b;
+            }
+
+                        /* Match payroll monthly spacing */
+            .ess-turnover-card .ess-field-label {
+                font-size: 12px;
+                color: #6b7280;
+                margin: 12px 0 6px;
+            }
+
+            .ess-turnover-body {
+                margin-top: 24px;
+                text-align: center;
+            }
+
+            .ess-turnover-value {
+                font-size: 32px;
+                font-weight: 600;
+                color: #1f2937;
+            }
+
+            .ess-turnover-label {
+                margin-top: 6px;
+                font-size: 13px;
+                color: #64748b;
+            }
+
+            /* Remove extra gap between label and control (Turnover only) */
+            .ess-turnover-card .ess-field-label {
+                margin-bottom: 4px;   /* ↓ reduce gap */
+            }
+
+            .ess-turnover-card .frappe-control {
+                margin-top: 0;
+            }
+
+            /* Remove extra space caused by clearfix in Turnover card only */
+            .ess-turnover-card .clearfix {
+                display: none;
+            }
+
+            /* Match height with other ESS cards */
+            .ess-turnover-card {
+                height: 360px;              /* 🔥 match other cards */
+                display: flex;
+                flex-direction: column;
+            }
+
+            /* Body should manage internal layout */
+            .ess-turnover-card .ess-turnover-body {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: flex-start;
+            }
+
+            /* Chart occupies fixed space like others */
+            .ess-turnover-card .ess-turnover-chart {
+                height: 160px;              /* 🔥 same chart height */
+                width: 100%;
+                margin-top: 12px;
+            }
+
+            /* Ensure canvas fills chart area */
+            .ess-turnover-card .ess-turnover-chart canvas {
+                width: 100% !important;
+                height: 100% !important;
+            }
+
+            /* Prevent extra spacing inside turnover card */
+            .ess-turnover-card .clearfix {
+                display: none;
+            }
+
+            /* ---------- Turnover Card Fixes ---------- */
+
+            .ess-turnover-card .ess-card-body {
+                padding-top: 12px;
+            }
+
+            .ess-turnover-kpi {
+                margin-bottom: 12px;
+                text-align: center;
+            }
+
+            .ess-turnover-chart {
+                height: 240px;
+            }
+
+            /* Prevent random clearfix spacing */
+            .ess-turnover-card .clearfix {
+                display: none;
+            }
+
+            /* Tabs spacing consistency */
+            #ess-turnover-tabs {
+                margin-top: 8px;
+            }
+
+            /* ---------- Month Picker Alignment ---------- */
+
+            .ess-turnover-card .ess-filter {
+                margin-bottom: 10px;
+            }
+
+            .ess-turnover-card .ess-filter-label {
+                font-size: 12px;
+                color: #6b7280;
+                margin-bottom: 4px;
+            }
+
+            .ess-turnover-card .control-input {
+                margin-top: 0 !important;
+            }
+
+            .ess-turnover-card .form-control {
+                background: #f9fafb;
+            }
+
+            /* Turnover chart MUST be taller */
+            .ess-turnover-chart {
+                height: 300px;   /* 
+                margin-top: 8px;
+                height: 300px;   /* 🔑 critical */
+            }
+
+            /* ---------- Turnover Month Picker FIX ---------- */
+
+            .ess-turnover-card .control-input-wrapper {
+                margin-top: 0 !important;
+            }
+
+            .ess-turnover-card .control-input {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+            }
+
+            .ess-turnover-card .control-input .clearfix {
+                display: none !important;   /* 🔑 removes extra space */
+            }
+
+            .ess-turnover-card .form-control {
+                height: 36px;
+                background: #f9fafb;
+            }
+
+            /* Label alignment */
+            .ess-turnover-card .ess-filter-label {
+                margin-bottom: 2px;
+                line-height: 1.2;
+            }
+
+            /* ===== Turnover Header Layout FIX ===== */
+
+            .ess-turnover-card .ess-card-header-row {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 12px;
+            }
+
+            /* Left: title */
+            .ess-turnover-card .ess-card-title {
+                flex: 1;
+            }
+
+            /* Right: month picker */
+            .ess-turnover-card .ess-filter {
+                min-width: 180px;
+                text-align: left;
+            }
+
+            /* 🔥 Kill Frappe label inside turnover card */
+            .ess-turnover-card .control-label {
+                display: none !important;
+            }
+
+            .ess-turnover-card .control-input-wrapper,
+            .ess-turnover-card .control-input {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .ess-turnover-card .form-control {
+                width: 100%;
+                height: 36px;
+                background: #f9fafb;
+                text-align: left;
+            }
+
+            /* Remove hidden spacing culprit */
+            .ess-turnover-card .control-input .clearfix {
+                display: none !important;
+            }
+
+            .ess-turnover-chart {
+                height: 320px;
+            }
+
+            /* ================================
+            TURNOVER MONTH PICKER POLISH
+            ================================ */
+
+            .ess-turnover-card .ess-card-control {
+                width: 100%;
+            }
+
+            /* Full-width input */
+            .ess-turnover-card .form-control {
+                width: 100%;
+                height: 40px;              /* 🔑 thicker */
+                padding: 8px 12px;         /* 🔑 better vertical feel */
+                font-size: 14px;
+                border-radius: 10px;
+                background: #f9fafb;
+            }
+
+            /* Remove any inherited max-width */
+            .ess-turnover-card .control-input-wrapper,
+            .ess-turnover-card .control-input {
+                max-width: none !important;
+                width: 100%;
+            }
+
+            /* Remove extra spacing injected by Frappe */
+            .ess-turnover-card .clearfix {
+                display: none !important;
+            }
+
+
+        }   
 
     `;              
 
@@ -3286,7 +3619,7 @@ const ESS_TEST_MODE = false;   // 🔥 set false in production
 
 function load_pending_requests_for_me() {
     const box = document.getElementById("ess-pending-requests");
-    console.log(box);
+    //console.log(box);
     if (!box) return;
 
     const card = box.closest(".ess-pending-requests-card");
@@ -3302,7 +3635,11 @@ function load_pending_requests_for_me() {
     frappe.call({
         method: "sowaan_hr.sowaan_hr.page.ess.ess.get_pending_approvals_for_me",
         callback: r => {
-            console.log(r.message);
+            render_pending_request_list(
+            r.message,
+            "ess-pending-approvals"
+        );
+            //console.log(r.message);
             const data = r.message || {};
             const entries = Object.entries(data);
 
@@ -3371,47 +3708,6 @@ function load_pending_requests_for_me() {
     });
 }
 
-
-
-
-
-// function load_pending_requests() {
-//     const box = document.getElementById("ess-pending-requests");
-//     if (!box) return;
-
-//     // 🧪 TEST DATA (matches screenshot)
-//     const DATA = {
-//         "Leave Application": 18,
-//         "Expense Claim": 7,
-//         "Purchase Order": 3
-//     };
-
-//     box.innerHTML = `<div class="ess-pending-inline"></div>`;
-//     const wrap = box.querySelector(".ess-pending-inline");
-
-//     Object.entries(DATA).forEach(([doctype, count]) => {
-//         if (!count) return;
-
-//         const label = doctype.split(" ")[0]; // Leave / Expense / Purchase
-
-//         const pill = document.createElement("div");
-//         pill.className = "ess-pending-pill";
-//         pill.innerHTML = `
-//             <i class="fa fa-file-text-o"></i>
-//             <b>${count}</b> ${label}
-//         `;
-
-//         pill.onclick = (e) => {
-//             e.stopPropagation();
-//             window.open(
-//                 `/app/${frappe.router.slug(doctype)}?docstatus=0`,
-//                 "_blank"
-//             );
-//         };
-
-//         wrap.appendChild(pill);
-//     });
-// }
 
 
 /* Attendance */
@@ -3679,7 +3975,7 @@ function load_headcount_chart(by) {
                 type: "bar",
 
                 // 🔑 KEY: chart geometry (NOT CSS)
-                height: 240,                 // gives space for labels
+                height: 280,                 // gives space for labels
                 barOptions: {
                     spaceRatio: 0.55          // bars not touching bottom
                 },
@@ -4015,23 +4311,7 @@ function load_nationality_chart_BK() {
                     position: "bottom"
                 }
             });
-          
-            // -----------------------------
-            // CLICK → Employee list (Nationality)
-            // -----------------------------
-            // setTimeout(() => {
-            //     const svg = container.querySelector("svg");
-            //     console.log("SVG FOUND:", svg);
-
-            //     if (!svg) {
-            //         console.error("SVG NOT FOUND");
-            //         return;
-            //     }
-
-            //     svg.onclick = () => {
-            //         alert("SVG CLICK WORKS");
-            //     };
-            // }, 300);
+                      
 
         setTimeout(() => {
     const legendItems = container.querySelectorAll(".chart-legend-item");
@@ -4435,45 +4715,107 @@ function render_leave_employee_link_dropdown() {
 
     if (!wrapper || !list) return;
 
-        wrapper.innerHTML = "";
+    wrapper.innerHTML = "";
 
-        leave_employee_link_control = frappe.ui.form.make_control({
+    leave_employee_link_control = frappe.ui.form.make_control({
         parent: wrapper,
         df: {
             fieldtype: "Link",
             fieldname: "employee",
-            label: "",              // ✅ remove label
+            label: "",                     // no label
             options: "Employee",
             placeholder: "Select Employee",
+
+            show_title_field: true,   // 👈 REQUIRED
+            
             get_query() {
                 return {
                     query: "sowaan_hr.sowaan_hr.page.ess.ess.employee_leave_access_query"
                 };
             },
+
+            // 🔑 FORMAT DISPLAY VALUE
+            formatter(value) {
+                if (!value) return "";
+
+                const row = this.last_selected_row;
+                if (row && row.employee_name) {
+                    return `${row.employee_name} (${value})`;
+                }
+                return value; // fallback
+            },
+
             onchange() {
                 const employee = leave_employee_link_control.get_value();
-               // 🔴 If cleared → reset UI
-                    if (!employee) {
-                        clear_leave_balance_ui();
-                        return;
-                    }
 
-                    // 🟢 Load balances
-                    load_leave_balance_for_employee(employee);
-                            }
-                        },
+                // If cleared → reset UI
+                if (!employee) {
+                    clear_leave_balance_ui();
+                    return;
+                }
+
+                // Load balances
+                load_leave_balance_for_employee(employee);
+            }
+        },
         render_input: true
     });
-
 
     leave_employee_link_control.refresh();
 
     // Dashboard styling
     leave_employee_link_control.$wrapper.addClass("ess-dashboard-link");
 
-    // 🔑 Setup behavior (single / multiple employee logic)
+    // Setup behavior (single / multiple employee logic)
     setup_leave_employee_behavior();
 }
+
+
+// function render_leave_employee_link_dropdown() {
+//     const wrapper = document.getElementById("leave-employee-link-control");
+//     const list = document.getElementById("ess-leave-balance-list");
+
+//     if (!wrapper || !list) return;
+
+//         wrapper.innerHTML = "";
+
+//         leave_employee_link_control = frappe.ui.form.make_control({
+//         parent: wrapper,
+//         df: {
+//             fieldtype: "Link",
+//             fieldname: "employee",
+//             label: "",              // ✅ remove label
+//             options: "Employee",
+//             placeholder: "Select Employee",
+//             get_query() {
+//                 return {
+//                     query: "sowaan_hr.sowaan_hr.page.ess.ess.employee_leave_access_query"
+//                 };
+//             },
+//             onchange() {
+//                 const employee = leave_employee_link_control.get_value();
+//                // 🔴 If cleared → reset UI
+//                     if (!employee) {
+//                         clear_leave_balance_ui();
+//                         return;
+//                     }
+
+//                     // 🟢 Load balances
+//                     load_leave_balance_for_employee(employee);
+//                             }
+//                         },
+//         render_input: true
+//     });
+
+
+//     leave_employee_link_control.refresh();
+
+//     // Dashboard styling
+//     leave_employee_link_control.$wrapper.addClass("ess-dashboard-link");
+
+//     // 🔑 Setup behavior (single / multiple employee logic)
+//     setup_leave_employee_behavior();
+// }
 
 
 function clear_leave_balance_ui() {
@@ -4740,13 +5082,13 @@ function load_login_employee_profile() {
     frappe.call({
         method: "sowaan_hr.sowaan_hr.page.ess.ess.get_logged_in_employee_profile",
         callback: r => {
-            console.log(r.message)
+            //console.log(r.message)
             const emp = r.message;
             if (!emp) {
                 box.innerHTML = `<div class="ess-muted">No profile found</div>`;
                 return;
             }
-            console.log(emp.image);
+            //console.log(emp.image);
             const img = emp.image
             ? encodeURI(frappe.urllib.get_full_url(emp.image))
             : "/files/default-profile.png";
@@ -4852,56 +5194,105 @@ document.addEventListener("click", e => {
 function load_pending_requests_sent_by_me() {
     frappe.call({
         method: "sowaan_hr.sowaan_hr.page.ess.ess.get_pending_requests_sent_by_me",
-        callback: function (r) {
-            const data = r.message || {};
-            render_pending_requests_list(data);
+        callback: r => {
+            render_pending_request_list(
+                r.message || {},
+                "ess-pending-requests"
+            );
         }
     });
 }
 
-function render_pending_requests_list(grouped_requests) {
-    const container = document.getElementById("ess-pending-requests");
-    if (!container) return;
 
-    container.innerHTML = "";
+function render_pending_request_list(data, containerId) {
+    const box = document.getElementById(containerId);
+    if (!box) return;
 
-    let hasData = false;
+    box.innerHTML = "";
 
-    Object.keys(grouped_requests).forEach(doctype => {
-        const info = grouped_requests[doctype];
-        if (!info || !info.names || !info.names.length) return;
-
-        hasData = true;
-
-        info.names.forEach(name => {
-            const row = document.createElement("div");
-            row.className = "ess-pending-item";
-
-            row.innerHTML = `
-                <div class="ess-pending-left">
-                    <i class="fa fa-file-text-o"></i>
-                    <span>${doctype}</span>
-                </div>
-                <div class="ess-pending-count">${name}</div>
-            `;
-
-            row.onclick = () => {
-                frappe.set_route("Form", doctype, name);
-            };
-
-            container.appendChild(row);
-        });
-    });
-
-    if (!hasData) {
-        container.innerHTML = `
+    if (!data || !Object.keys(data).length) {
+        box.innerHTML = `
             <div class="ess-muted">No pending requests</div>
         `;
+        return;
     }
+
+    const ICON_MAP = {
+        "Leave Application": {
+            icon: "fa-calendar-check-o",
+            color: "#22c55e"
+        },
+        "Expense Claim": {
+            icon: "fa-money",
+            color: "#3b82f6"
+        },
+        "Business Visit Visa Request": {
+            icon: "fa-plane",
+            color: "#8b5cf6"
+        },
+        "Loan Application": {
+            icon: "fa-bank",
+            color: "#f59e0b"
+        }
+    };
+
+    Object.entries(data).forEach(([doctype, info]) => {
+        const count = info?.count || 0;
+        const names = info?.names || [];
+
+        if (!count || !names.length) return;
+
+        const meta = ICON_MAP[doctype] || {
+            icon: "fa-file-text-o",
+            color: "#64748b"
+        };
+
+        const row = document.createElement("div");
+        row.className = "ess-pending-item";
+
+        row.innerHTML = `
+            <div class="ess-pending-left">
+                <div class="ess-pending-icon"
+                     style="background:${meta.color}">
+                    <i class="fa ${meta.icon}"></i>
+                </div>
+                <div class="ess-pending-title">
+                    ${doctype}
+                </div>
+            </div>
+            <div class="ess-pending-count">
+                ${count}
+            </div>
+        `;
+
+        // ✅ Drill-down with SAME filter logic as approvals
+        row.onclick = () => {
+
+            if (!names || !names.length) {
+                frappe.msgprint("This request no longer exists.");
+                return;
+            }
+            const params = new URLSearchParams();
+            params.append(
+                "name",
+                JSON.stringify(["in", names])
+            );
+
+            window.open(
+                `/app/${frappe.router.slug(doctype)}?${params.toString()}`,
+                "_blank"
+            );
+        };
+
+        box.appendChild(row);
+    });
 }
+
+
 
 function switch_pending_tab(tab) {
     if (tab === "sent_by_me") {
+        console.log(tab);
         load_pending_requests_sent_by_me();
     } else if (tab === "pending_for_me") {
         load_pending_requests_for_me(); // ← your EXISTING function
@@ -4910,6 +5301,16 @@ function switch_pending_tab(tab) {
 
 function init_pending_requests_tabs() {
     const tabs = document.querySelectorAll("#ess-pending-tabs .ess-tab");
+    const container = document.getElementById("ess-pending-requests");
+
+    function show_loader(key) {
+        const text =
+            key === "pending_for_me"
+                ? "Loading …"
+                : "Loading …";
+
+        container.innerHTML = `<div class="ess-loading">${text}</div>`;
+    }
 
     tabs.forEach(tab => {
         tab.addEventListener("click", function () {
@@ -4920,17 +5321,23 @@ function init_pending_requests_tabs() {
 
             const key = this.dataset.tab;
 
+            // 🔹 show loading immediately
+            show_loader(key);
+
+            // 🔹 load async data
             if (key === "pending_for_me") {
-                load_pending_requests_for_me();     // existing function
+                load_pending_requests_for_me();
             } else if (key === "sent_by_me") {
-                load_pending_requests_sent_by_me(); // new function
+                load_pending_requests_sent_by_me();
             }
         });
     });
 
-    // 🔑 default load
+    // 🔑 default load (Approvals)
+    show_loader("pending_for_me");
     load_pending_requests_for_me();
 }
+
 
 let selectedNetPayrollYear = new Date().getFullYear();
 let selectedNetPayrollYearBy = "department";
@@ -5044,6 +5451,159 @@ function init_net_payroll_year_dropdown() {
     select.addEventListener("change", () => {
         selectedNetPayrollYear = select.value;
         load_net_payroll_year_summary();
+    });
+}
+
+
+
+function init_turnover_month_picker() {
+    const wrapper = document.getElementById("turnover-month-picker");
+
+    if (!wrapper) {
+        setTimeout(init_turnover_month_picker, 100);
+        return;
+    }
+
+    wrapper.innerHTML = "";
+
+    turnover_month_control = frappe.ui.form.make_control({
+        parent: wrapper,
+        df: {
+            fieldtype: "Date",
+            fieldname: "turnover_month",
+            label: "",
+            onchange() {
+                const val = turnover_month_control.get_value();
+                if (!val) return;
+
+                load_turnover_chart(current_turnover_by);
+            }
+        },
+        render_input: true
+    });
+
+    turnover_month_control.refresh();
+
+    const monthStart =
+        frappe.datetime.month_start(frappe.datetime.get_today());
+
+    turnover_month_control.set_value(monthStart);
+}
+
+
+function init_turnover_tabs() {
+    const tabs = document.querySelectorAll(
+        "#ess-turnover-tabs .ess-tab"
+    );
+
+    if (!tabs.length) {
+        setTimeout(init_turnover_tabs, 100);
+        return;
+    }
+
+    tabs.forEach(tab => {
+        tab.addEventListener("click", function () {
+            tabs.forEach(t => t.classList.remove("active"));
+            this.classList.add("active");
+
+            current_turnover_by = this.dataset.by;
+
+            // 🔑 SAFE reload
+            load_turnover_chart(current_turnover_by);
+        });
+    });
+}
+
+
+function load_turnover_chart(by) {
+
+    if (!turnover_month_control) return;
+
+    const month = turnover_month_control.get_value();
+    if (!month) return;
+
+    frappe.call({
+        method: "sowaan_hr.sowaan_hr.page.ess.ess.get_turnover_breakdown",
+        args: {
+            month: month.slice(0, 7),
+            by: by
+        },
+        callback: r => {
+
+            const data = r.message;
+            if (!data) return;
+
+            const container =
+                document.getElementById("ess-turnover-chart");
+            if (!container) return;
+
+            container.replaceChildren();
+
+            /* ======================
+               HARD DATA VALIDATION
+            ====================== */
+
+            const labels = data.labels || [];
+            let joined = data.joined || [];
+            let left = data.left || [];
+
+            if (!labels.length) {
+                container.innerHTML =
+                    `<div class="ess-muted">No data</div>`;
+                return;
+            }
+
+            // 🔑 FORCE NUMBERS + ALIGN LENGTHS
+            joined = labels.map((_, i) => Number(joined[i] || 0));
+            left   = labels.map((_, i) => Number(left[i] || 0));
+
+            /* ======================
+               SHORT LABELS
+            ====================== */
+            const shortLabels = labels.map(l =>
+                l.length > 7 ? l.slice(0, 7) + "…" : l
+            );
+
+            /* ======================
+               RENDER CHART
+            ====================== */
+            new frappe.Chart(container, {
+                data: {
+                    labels: shortLabels,
+                    datasets: [
+                        {
+                            name: "Joined",
+                            values: joined
+                        },
+                        {
+                            name: "Left",
+                            values: left
+                        }
+                    ]
+                },
+                type: "bar",
+                height: 200,
+                colors: ["#22c55e", "#ef4444"],
+                barOptions: {
+                    stacked: false,
+                    spaceRatio: 0.4
+                },
+                axisOptions: {
+                    xAxisMode: "tick",
+                    yAxisMode: "tick",
+                    xIsSeries: true
+                },
+                legendOptions: {
+                    position: "bottom",
+                    align: "center"
+                },
+                tooltipOptions: {
+                    formatTooltipX: d =>
+                        labels[shortLabels.indexOf(d)] || d,
+                    formatTooltipY: d => `${d} Employees`
+                }
+            });
+        }
     });
 }
 

@@ -274,9 +274,6 @@ def get_employee_ratio_by_nationality():
 
 @frappe.whitelist()
 
-
-@frappe.whitelist()
-
 def get_compliance_summary():
     """
     Employee Compliance & Expiry Summary
@@ -641,12 +638,11 @@ def get_pending_approvals_for_me():
 
     return final_result
 
-
 @frappe.whitelist()
 def get_pending_requests_sent_by_me():
     """
     Pending workflow requests created by current user
-    (Still waiting for approval)
+    Optimized: single-pass, minimal queries
     """
 
     user = frappe.session.user
@@ -658,66 +654,147 @@ def get_pending_requests_sent_by_me():
 
     result = {}
 
-    workflows = frappe.get_all(
-        "Workflow",
-        filters={"is_active": 1},
-        fields=["name", "document_type"]
-    )
+    # 🔑 1. Fetch all open workflow actions
+    rows = frappe.db.sql("""
+        SELECT
+            wa.reference_doctype AS doctype,
+            wa.reference_name AS name
+        FROM `tabWorkflow Action` wa
+        WHERE
+            wa.status = 'Open'
+            AND wa.owner = %(user)s
+        ORDER BY wa.creation DESC
+    """, {"user": user}, as_dict=True)
 
-    for wf in workflows:
-        doctype = wf.document_type
+    if not rows:
+        frappe.cache().set_value(cache_key, {}, expires_in_sec=300)
+        return {}
 
-        # Safety: table exists
-        # if not frappe.db.table_exists(f"tab{doctype}"):
-        #     continue
+    # 🔑 2. Group documents by doctype
+    docs_by_doctype = {}
+    for r in rows:
+        docs_by_doctype.setdefault(r.doctype, []).append(r.name)
 
-        # Load workflow once
-        workflow_doc = frappe.get_doc("Workflow", wf.name)
+    # 🔑 3. Validate documents in bulk per doctype
+    for doctype, names in docs_by_doctype.items():
 
-        final_states = {
-            row.state
-            for row in workflow_doc.states
-            if row.allow_edit == 0   # final-ish states
-        }
+        if not frappe.db.table_exists(f"tab{doctype}"):
+            continue
 
-        docs = frappe.db.sql(f"""
-            SELECT name, workflow_state
+        meta = frappe.get_meta(doctype)
+        if not meta.has_field("workflow_state"):
+            continue
+
+        # 🔑 Bulk validation query
+        valid_docs = frappe.db.sql(f"""
+            SELECT name
             FROM `tab{doctype}`
-            WHERE owner = %s
-              AND docstatus = 0
-              AND workflow_state IS NOT NULL
-        """, user, as_dict=True)
+            WHERE
+                name IN %(names)s
+                AND docstatus = 0
+                AND workflow_state IS NOT NULL
+                AND workflow_state NOT IN (
+                    'Rejected',
+                    'Rejected by HOD',
+                    'Cancelled'
+                )
+        """, {"names": tuple(names)}, pluck="name")
 
-        for row in docs:
-            docname = row.name
-            state = row.workflow_state
+        if not valid_docs:
+            continue
 
-            # Skip final / rejected
-            if state in final_states:
-                continue
-            if state in ("Rejected", "Rejected by HOD"):
-                continue
+        # 🔑 Final permission filter (light)
+        permitted = [
+            d for d in valid_docs
+            if frappe.has_permission(doctype, "read", d)
+        ]
 
-            # Hard safety
-            if not frappe.db.exists(doctype, docname):
-                continue
+        if permitted:
+            result[doctype] = {
+                "count": len(permitted),
+                "names": permitted
+            }
 
-            # # Permission check (light)
-            if not frappe.has_permission(doctype, "read", docname):
-                continue
+    frappe.cache().set_value(cache_key, result, expires_in_sec=300)
+    return result
 
-            result.setdefault(doctype, []).append(docname)
 
-    final_result = {
-        dt: {
-            "count": len(names),
-            "names": names
-        }
-        for dt, names in result.items()
-    }
+# @frappe.whitelist()
+# def get_pending_requests_sent_by_me():
+#     """
+#     Pending workflow requests created by current user
+#     (Still waiting for approval)
+#     """
 
-    frappe.cache().set_value(cache_key, final_result, expires_in_sec=300)
-    return final_result
+#     user = frappe.session.user
+#     cache_key = f"pending_requests::{user}"
+
+#     cached = frappe.cache().get_value(cache_key)
+#     if cached is not None:
+#         return cached
+
+#     result = {}
+
+#     workflows = frappe.get_all(
+#         "Workflow",
+#         filters={"is_active": 1},
+#         fields=["name", "document_type"]
+#     )
+
+#     for wf in workflows:
+#         doctype = wf.document_type
+
+#         # Safety: table exists
+#         # if not frappe.db.table_exists(f"tab{doctype}"):
+#         #     continue
+
+#         # Load workflow once
+#         workflow_doc = frappe.get_doc("Workflow", wf.name)
+
+#         final_states = {
+#             row.state
+#             for row in workflow_doc.states
+#             if row.allow_edit == 0   # final-ish states
+#         }
+
+#         docs = frappe.db.sql(f"""
+#             SELECT name, workflow_state
+#             FROM `tab{doctype}`
+#             WHERE owner = %s
+#               AND docstatus = 0
+#               AND workflow_state IS NOT NULL
+#         """, user, as_dict=True)
+
+#         for row in docs:
+#             docname = row.name
+#             state = row.workflow_state
+
+#             # Skip final / rejected
+#             if state in final_states:
+#                 continue
+#             if state in ("Rejected", "Rejected by HOD"):
+#                 continue
+
+#             # Hard safety
+#             if not frappe.db.exists(doctype, docname):
+#                 continue
+
+#             # # Permission check (light)
+#             if not frappe.has_permission(doctype, "read", docname):
+#                 continue
+
+#             result.setdefault(doctype, []).append(docname)
+
+#     final_result = {
+#         dt: {
+#             "count": len(names),
+#             "names": names
+#         }
+#         for dt, names in result.items()
+#     }
+
+#     frappe.cache().set_value(cache_key, final_result, expires_in_sec=300)
+#     return final_result
 
 
 def has_workflow(doctype):
@@ -806,7 +883,7 @@ def get_leave_balance_for_employee(employee=None):
     #frappe.msgprint(f"used_map {used_map}")
     result = []
     for a in allocations:
-        balance = (a.total_leaves_allocated or 0) - used_map.get(a.leave_type, 0)
+        balance = round((a.total_leaves_allocated or 0) - used_map.get(a.leave_type, 0), 2)
         result.append({
             "leave_type": a.leave_type,
             "balance": balance
@@ -1574,7 +1651,7 @@ def get_turnover_breakdown(month, by):
         labels.append(r.label)
         joined.append(int(r.joined_count or 0))
         left.append(int(r.left_count or 0))
-
+    
     # 🔑 THIS IS THE CRITICAL FIX
     return {
         "labels": labels,

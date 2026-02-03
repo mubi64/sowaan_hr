@@ -1595,6 +1595,7 @@ def get_ess_expiry_config():
     # 🔑 If no rows configured → treat as NO SETUP
     return config or None
 
+
 @frappe.whitelist()
 def get_turnover_breakdown(month, by):
     """
@@ -1647,11 +1648,12 @@ def get_turnover_breakdown(month, by):
     joined = []
     left = []
 
+
     for r in rows:
         labels.append(r.label)
         joined.append(int(r.joined_count or 0))
         left.append(int(r.left_count or 0))
-    
+
     # 🔑 THIS IS THE CRITICAL FIX
     return {
         "labels": labels,

@@ -3,8 +3,8 @@ from frappe.utils import today, add_days
 from frappe.utils import today, add_months, getdate
 from frappe.utils import add_months, today, formatdate
 from frappe.utils import get_first_day, get_last_day
+from frappe.model.workflow import get_transitions
 from collections import defaultdict
-
 def onload(self):
     if not frappe.db.exists(
         "Employee",
@@ -234,9 +234,9 @@ def get_accessible_employees():
 # NATIONALITY RATIO (CUSTOM FIELD SAFE)
 # =========================================================
 @frappe.whitelist()
-def get_employee_ratio_by_nationality():
+def get_employee_ratio_by_nationality_bk():
     """
-    Returns employee count by nationality
+    Returns employee count by custom_expat_status
     LIMITED to current user + subordinates
     """
 
@@ -246,14 +246,13 @@ def get_employee_ratio_by_nationality():
 
     data = frappe.db.sql("""
         SELECT
-            e.custom_nationality AS nationality,
+            IFNULL(e.custom_expat_status, 'Not Set') AS expat_status,
             COUNT(*) AS total
         FROM `tabEmployee` e
         WHERE
             e.status = 'Active'
-            AND e.custom_nationality IS NOT NULL
             AND e.name IN %(employees)s
-        GROUP BY e.custom_nationality
+        GROUP BY e.custom_expat_status
         ORDER BY total DESC
     """, {
         "employees": tuple(allowed_employees)
@@ -263,14 +262,54 @@ def get_employee_ratio_by_nationality():
         return {}
 
     return {
-        "labels": [d.nationality for d in data],
+        "labels": [d.expat_status for d in data],
         "datasets": [
             {
+                "name": "Employees",
                 "values": [d.total for d in data]
             }
         ]
     }
 
+
+@frappe.whitelist()
+def get_employee_ratio_by_nationality():
+    """
+    Employee count by Expat Status
+    LIMITED to current user + subordinates
+    Returns employees per bar (for drill-down)
+    """
+
+    allowed_employees = get_accessible_employees()
+    if not allowed_employees:
+        return {}
+
+    rows = frappe.db.sql("""
+        SELECT
+            IFNULL(e.custom_expat_status, 'Not Set') AS label,
+            COUNT(*) AS value,
+            GROUP_CONCAT(e.name) AS employees
+        FROM `tabEmployee` e
+        WHERE
+            e.status = 'Active'
+            AND e.name IN %(employees)s
+        GROUP BY e.custom_expat_status
+        ORDER BY value DESC
+    """, {
+        "employees": tuple(allowed_employees)
+    }, as_dict=True)
+
+    return {
+        "labels": [r.label for r in rows],
+        "datasets": [{
+            "values": [r.value for r in rows]
+        }],
+        # 🔑 THIS IS THE FIX
+        "employees_by_index": [
+            r.employees.split(",") if r.employees else []
+            for r in rows
+        ]
+    }
 
 @frappe.whitelist()
 
@@ -434,7 +473,6 @@ def get_compliance_summary():
     return results
 
 
-
 @frappe.whitelist()
 def get_today_attendance_summary():
     today = frappe.utils.today()
@@ -526,275 +564,175 @@ def get_today_attendance_summary():
 
     return summary
 
-
 @frappe.whitelist()
 def get_pending_approvals_for_me():
-    """
-    Pending workflow approvals for current user
-    Supports ROLE-based and USER-based workflows
-    Cached per user
-    """
-
     user = frappe.session.user
     cache_key = f"pending_approvals::{user}"
 
-    # 🔹 1️⃣ Return from cache if exists
     cached = frappe.cache().get_value(cache_key)
-    if cached is not None:
+    if cached:
         return cached
 
-    user_roles = set(frappe.get_roles(user))
-    result = {}
+    result = defaultdict(list)
 
-    allowed_employees = get_accessible_employees()
-
-    self_emp = frappe.db.get_value("Employee", {"user_id": user}, "name")
-    if self_emp in allowed_employees:
-        allowed_employees.remove(self_emp)
-
-    # 🔹 2️⃣ Fetch open workflow actions
-    workflow_rows = frappe.db.sql("""
-        SELECT
-            wa.reference_doctype,
-            wa.reference_name,
-            wa.user,
-            wa.creation
-        FROM `tabWorkflow Action` wa
-        WHERE wa.status = 'Open'
-        ORDER BY wa.creation DESC
-    """, as_dict=True)
-
-    for row in workflow_rows:
-        doctype = row.reference_doctype
-        name = row.reference_name
-        assigned_user = row.user
-
-        # 🔹 User-based workflow check
-        if assigned_user and assigned_user != user:
-            continue
-
-        workflow = frappe.db.get_value(
-            "Workflow",
-            {"document_type": doctype, "is_active": 1},
-            ["name"],
-            as_dict=True
-        )
-        if not workflow:
-            continue
-        
-        
-        state = frappe.db.get_value(doctype, name, "workflow_state")
-        if not state:
-            continue
-
-        # 🔹 Role-based workflow check
-        if assigned_user is None:
-            allowed_roles = frappe.db.get_all(
-                "Workflow Transition",
-                filters={
-                    "parent": workflow.name,
-                    "state": state
-                },
-                pluck="allowed"
-            )
-
-            if not user_roles.intersection(set(allowed_roles)):
-                continue
-
-        # 🔹 Optional employee filtering
-        meta = frappe.get_meta(doctype)
-        if meta.has_field("employee"):
-            emp = frappe.db.get_value(doctype, name, "employee")
-            if emp and emp not in allowed_employees:
-                continue
-        
-        if not frappe.has_permission(doctype, "read", name):
-            continue
-        
-        try:
-            doc = frappe.get_doc(doctype, name)
-            #frappe.msgprint(f"doc {doc}")
-            if doc.workflow_state in ["Rejected", "Rejected by HOD"]:
-                continue
-        except:
-            continue
-
-        result.setdefault(doctype, []).append(name)
-
-    final_result = {
-        dt: {
-            "count": len(names),
-            "names": names
-        }
-        for dt, names in result.items()
-    }
-
-    #🔹 3️⃣ Store in cache (5 minutes)
-    frappe.cache().set_value(
-        cache_key,
-        final_result,
-        expires_in_sec=300
+    workflow_doctypes = frappe.get_all(
+        "Workflow",
+        filters={"is_active": 1},
+        pluck="document_type"
     )
 
-    return final_result
+    if not workflow_doctypes:
+        return {}
+
+    actions = frappe.get_all(
+        "Workflow Action",
+        filters={
+            "status": "Open",
+            "reference_doctype": ["in", workflow_doctypes]
+        },
+        fields=["reference_doctype", "reference_name"]
+    )
+
+    by_doctype = defaultdict(list)
+    for a in actions:
+        by_doctype[a.reference_doctype].append(a.reference_name)
+
+    for dt, names in by_doctype.items():
+
+        docs = frappe.get_all(
+            dt,
+            filters={"name": ["in", names]},
+            fields=["name", "owner", "workflow_state"],
+            ignore_permissions=False
+        )
+
+        for d in docs:
+
+            if d.owner == user:
+                continue
+
+            if not d.workflow_state:
+                continue
+
+            try:
+                # 🔥 Mute Frappe UI messages
+                frappe.flags.mute_messages = True
+
+                doc = frappe.get_doc(dt, d.name)
+                transitions = get_transitions(doc)
+
+                approval_actions = [
+                    t for t in transitions
+                    if t.get("action") not in ("Submit",)
+                ]
+
+                if approval_actions:
+                    result[dt].append(d.name)
+
+            except frappe.PermissionError:
+                # silently skip
+                continue
+
+            finally:
+                frappe.flags.mute_messages = False
+
+    final = {}
+    for dt in workflow_doctypes:
+        names = result.get(dt, [])
+        final[dt] = {
+            "names": names,
+            "count": len(names)
+        }
+
+    frappe.cache().set_value(cache_key, final, expires_in_sec=120)
+
+    return final
 
 @frappe.whitelist()
 def get_pending_requests_sent_by_me():
-    """
-    Pending workflow requests created by current user
-    Optimized: single-pass, minimal queries
-    """
-
     user = frappe.session.user
-    cache_key = f"pending_requests::{user}"
 
+    cache_key = f"sent_requests::{user}"
+
+    # 🔥 1️⃣ Return cached if exists
     cached = frappe.cache().get_value(cache_key)
-    if cached is not None:
+    if cached:
         return cached
-
+    
     result = {}
 
-    # 🔑 1. Fetch all open workflow actions
-    rows = frappe.db.sql("""
-        SELECT
-            wa.reference_doctype AS doctype,
-            wa.reference_name AS name
-        FROM `tabWorkflow Action` wa
-        WHERE
-            wa.status = 'Open'
-            AND wa.owner = %(user)s
-        ORDER BY wa.creation DESC
-    """, {"user": user}, as_dict=True)
+    workflows = frappe.get_all(
+        "Workflow",
+        filters={"is_active": 1},
+        fields=["name", "document_type"]
+    )
 
-    if not rows:
-        frappe.cache().set_value(cache_key, {}, expires_in_sec=300)
-        return {}
+    for wf in workflows:
+        dt = wf.document_type
+        meta = frappe.get_meta(dt)
 
-    # 🔑 2. Group documents by doctype
-    docs_by_doctype = {}
-    for r in rows:
-        docs_by_doctype.setdefault(r.doctype, []).append(r.name)
-
-    # 🔑 3. Validate documents in bulk per doctype
-    for doctype, names in docs_by_doctype.items():
-
-        if not frappe.db.table_exists(f"tab{doctype}"):
-            continue
-
-        meta = frappe.get_meta(doctype)
         if not meta.has_field("workflow_state"):
+            result[dt] = {"count": 0, "names": []}
             continue
 
-        # 🔑 Bulk validation query
-        valid_docs = frappe.db.sql(f"""
-            SELECT name
-            FROM `tab{doctype}`
-            WHERE
-                name IN %(names)s
-                AND docstatus = 0
-                AND workflow_state IS NOT NULL
-                AND workflow_state NOT IN (
-                    'Rejected',
-                    'Rejected by HOD',
-                    'Cancelled'
-                )
-        """, {"names": tuple(names)}, pluck="name")
+        # 🔥 Load workflow doc
+        workflow_doc = frappe.get_cached_doc("Workflow", wf.name)
 
-        if not valid_docs:
-            continue
+        # 🔥 Detect initial state (doc_status = 0)
+        initial_state = None
+        for s in workflow_doc.states:
+            if s.doc_status == 0:
+                initial_state = s.state
+                break
 
-        # 🔑 Final permission filter (light)
-        permitted = [
-            d for d in valid_docs
-            if frappe.has_permission(doctype, "read", d)
-        ]
+        docs = frappe.get_all(
+            dt,
+            filters={
+                "owner": user,
+                "workflow_state": ["is", "set"]
+            },
+            fields=["name", "workflow_state"],
+            ignore_permissions=False
+        )
 
-        if permitted:
-            result[doctype] = {
-                "count": len(permitted),
-                "names": permitted
-            }
+        valid = []
 
-    frappe.cache().set_value(cache_key, result, expires_in_sec=300)
+        for d in docs:
+
+            # ❌ Exclude initial state (Draft)
+            if initial_state and d.workflow_state == initial_state:
+                continue
+
+            # ❌ Exclude final states
+            if d.workflow_state in (
+                "Rejected",
+                "Draft",
+                "Cancelled",
+                "Approved",
+                "Completed",
+                "Closed",
+            ):
+                continue
+
+            if frappe.has_permission(dt, "read", d.name):
+                valid.append(d.name)
+
+        result[dt] = {
+            "count": len(valid),
+            "names": valid
+        }
+
+     # 🔥 2️⃣ Cache result (2 minutes)
+    frappe.cache().set_value(
+        cache_key,
+        result,
+        expires_in_sec=120
+    )
+    
     return result
 
 
-# @frappe.whitelist()
-# def get_pending_requests_sent_by_me():
-#     """
-#     Pending workflow requests created by current user
-#     (Still waiting for approval)
-#     """
 
-#     user = frappe.session.user
-#     cache_key = f"pending_requests::{user}"
-
-#     cached = frappe.cache().get_value(cache_key)
-#     if cached is not None:
-#         return cached
-
-#     result = {}
-
-#     workflows = frappe.get_all(
-#         "Workflow",
-#         filters={"is_active": 1},
-#         fields=["name", "document_type"]
-#     )
-
-#     for wf in workflows:
-#         doctype = wf.document_type
-
-#         # Safety: table exists
-#         # if not frappe.db.table_exists(f"tab{doctype}"):
-#         #     continue
-
-#         # Load workflow once
-#         workflow_doc = frappe.get_doc("Workflow", wf.name)
-
-#         final_states = {
-#             row.state
-#             for row in workflow_doc.states
-#             if row.allow_edit == 0   # final-ish states
-#         }
-
-#         docs = frappe.db.sql(f"""
-#             SELECT name, workflow_state
-#             FROM `tab{doctype}`
-#             WHERE owner = %s
-#               AND docstatus = 0
-#               AND workflow_state IS NOT NULL
-#         """, user, as_dict=True)
-
-#         for row in docs:
-#             docname = row.name
-#             state = row.workflow_state
-
-#             # Skip final / rejected
-#             if state in final_states:
-#                 continue
-#             if state in ("Rejected", "Rejected by HOD"):
-#                 continue
-
-#             # Hard safety
-#             if not frappe.db.exists(doctype, docname):
-#                 continue
-
-#             # # Permission check (light)
-#             if not frappe.has_permission(doctype, "read", docname):
-#                 continue
-
-#             result.setdefault(doctype, []).append(docname)
-
-#     final_result = {
-#         dt: {
-#             "count": len(names),
-#             "names": names
-#         }
-#         for dt, names in result.items()
-#     }
-
-#     frappe.cache().set_value(cache_key, final_result, expires_in_sec=300)
-#     return final_result
 
 
 def has_workflow(doctype):
@@ -949,8 +887,13 @@ def get_net_payroll_breakdown(month, by):
     # -----------------------------
     # Allowed employees (SECURITY)
     # -----------------------------
-    allowed_employees = get_accessible__sub_employees()
+    #allowed_employees = get_accessible__sub_employees()
+
     #frappe.msgprint(f"allowed_employees {allowed_employees}")
+
+    allowed_employees = get_salary_slip_accessible_employees(month_start, month_end)
+
+    #frappe.msgprint(f"allowed_employees salary slip {allowed_employees}")
     if not allowed_employees:
         return {}
 
@@ -1059,7 +1002,7 @@ def get_employees_for_net_payroll_filter(by, value, month):
     month_start = f"{month}-01"
     month_end = frappe.utils.get_last_day(month_start)
 
-    allowed_employees = get_accessible__sub_employees()
+    allowed_employees = get_salary_slip_accessible_employees(month_start, month_end)
     
     conditions = []
     params = {
@@ -1458,7 +1401,7 @@ def get_net_payroll_summary(month):
     start_date = f"{month}-01"
     end_date = get_last_day(start_date)
 
-    allowed_employees = get_accessible_employees()
+    allowed_employees = get_salary_slip_accessible_employees(start_date, end_date)
     if not allowed_employees:
         return 0
 
@@ -1491,7 +1434,7 @@ def get_net_payroll_breakdown_by_year(year, by):
     year_start = f"{year}-01-01"
     year_end = f"{year}-12-31"
 
-    allowed_employees = get_accessible_employees()
+    allowed_employees = get_salary_slip_accessible_employees(year_start, year_end)
     if not allowed_employees:
         return {}
 
@@ -1533,41 +1476,7 @@ def get_net_payroll_breakdown_by_year(year, by):
     }
 
 
-    """
-    Returns:
-    {
-        "Visa Expiry": {
-            "doctype": "Employee",
-            "field": "custom_visa_expiry"
-        },
-        ...
-    }
-    """
-    rules = {}
-
-    setup = frappe.get_all(
-        "ESS Dashboard Setup",
-        fields=["name"],
-        limit=1
-    )
-
-    if not setup:
-        return rules
-
-    rows = frappe.get_all(
-        "ESS Dashboard Setup Item",
-        filters={"parent": setup[0].name},
-        fields=["expiry_type", "ref_doctype", "expiry_field"]
-    )
-
-    for r in rows:
-        if r.expiry_type and r.ref_doctype and r.expiry_field:
-            rules[r.expiry_type] = {
-                "doctype": r.ref_doctype,
-                "field": r.expiry_field
-            }
-
-    return rules
+    
 
 def get_ess_expiry_config():
     """
@@ -1661,4 +1570,230 @@ def get_turnover_breakdown(month, by):
         "left": left
     }
 
+def get_salary_slip_accessible_employees(month_start, month_end):
+    """
+    Returns employees for which the current user
+    can ACTUALLY SEE Salary Slips (same as list view)
+    """
 
+    # 🔐 This respects:
+    # - User Permissions (Employee)
+    # - Role permissions
+    # - Docstatus rules
+    # - Match conditions
+
+    slips = frappe.get_list(
+        "Salary Slip",
+        filters={
+            "docstatus": 1,
+            "start_date": ["<=", month_end],
+            "end_date": [">=", month_start],
+        },
+        fields=["employee"],
+        distinct=True,
+        ignore_permissions=False,  # 🔑 CRITICAL
+        limit_page_length=0
+    )
+    #frappe.msgprint(f"Slips {slips}")
+    return list({s.employee for s in slips if s.employee})
+
+
+# @frappe.whitelist()
+# def get_pending_requests_sent_by_me():
+#     """
+#     Pending workflow requests created by current user
+#     (Still waiting for approval)
+#     """
+
+#     user = frappe.session.user
+#     cache_key = f"pending_requests::{user}"
+
+#     cached = frappe.cache().get_value(cache_key)
+#     if cached is not None:
+#         return cached
+
+#     result = {}
+
+#     workflows = frappe.get_all(
+#         "Workflow",
+#         filters={"is_active": 1},
+#         fields=["name", "document_type"]
+#     )
+
+#     for wf in workflows:
+#         doctype = wf.document_type
+
+#         # Safety: table exists
+#         # if not frappe.db.table_exists(f"tab{doctype}"):
+#         #     continue
+
+#         # Load workflow once
+#         workflow_doc = frappe.get_doc("Workflow", wf.name)
+
+#         final_states = {
+#             row.state
+#             for row in workflow_doc.states
+#             if row.allow_edit == 0   # final-ish states
+#         }
+
+#         docs = frappe.db.sql(f"""
+#             SELECT name, workflow_state
+#             FROM `tab{doctype}`
+#             WHERE owner = %s
+#               AND docstatus = 0
+#               AND workflow_state IS NOT NULL
+#         """, user, as_dict=True)
+
+#         for row in docs:
+#             docname = row.name
+#             state = row.workflow_state
+
+#             # Skip final / rejected
+#             if state in final_states:
+#                 continue
+#             if state in ("Rejected", "Rejected by HOD"):
+#                 continue
+
+#             # Hard safety
+#             if not frappe.db.exists(doctype, docname):
+#                 continue
+
+#             # # Permission check (light)
+#             if not frappe.has_permission(doctype, "read", docname):
+#                 continue
+
+#             result.setdefault(doctype, []).append(docname)
+
+#     final_result = {
+#         dt: {
+#             "count": len(names),
+#             "names": names
+#         }
+#         for dt, names in result.items()
+#     }
+
+#     frappe.cache().set_value(cache_key, final_result, expires_in_sec=300)
+#     return final_result
+
+#@frappe.whitelist()
+# def get_pending_approvals_for_me():
+
+#     user = frappe.session.user
+#     cache_key = f"pending_approvals::{user}"
+
+#     cached = frappe.cache().get_value(cache_key)
+#     if cached is not None:
+#         return cached
+
+#     #user_roles = set(frappe.get_roles(user))
+
+#     # --------------------------------------------------
+#     # 0️⃣ Get ALL active workflow doctypes
+#     # --------------------------------------------------
+#     active_workflow_doctypes = frappe.get_all(
+#         "Workflow",
+#         filters={"is_active": 1},
+#         pluck="document_type"
+#     )
+
+#     # Pre-fill result with zero counts
+#     result = {
+#         dt: {
+#             "count": 0,
+#             "names": []
+#         }
+#         for dt in active_workflow_doctypes
+#     }
+
+#     # --------------------------------------------------
+#     # 1️⃣ LEAVE APPLICATION SPECIAL CASE
+#     # --------------------------------------------------
+#     if "Leave Application" in result:
+
+#         leave_docs = frappe.db.get_all(
+#             "Leave Application",
+#             filters={
+#                 "workflow_state": ["in", ("Pending by HOD", "Pending by HR")]
+#             },
+#             fields=["name", "workflow_state", "owner"]
+#         )
+
+#         valid = []
+
+#         for d in leave_docs:
+#             if d.owner == user:
+#                 continue
+
+#             if frappe.has_permission("Leave Application", "read", d.name):
+#                 valid.append(d.name)
+
+#         result["Leave Application"]["count"] = len(valid)
+#         result["Leave Application"]["names"] = valid
+
+#     # --------------------------------------------------
+#     # 2️⃣ GENERIC WORKFLOW ACTIONS
+#     # --------------------------------------------------
+#     workflow_rows = frappe.db.sql("""
+#         SELECT
+#             wa.reference_doctype,
+#             wa.reference_name,
+#             wa.user
+#         FROM `tabWorkflow Action` wa
+#         WHERE
+#             wa.status = 'Open'
+#             AND wa.owner != %(user)s
+#     """, {"user": user}, as_dict=True)
+
+#     for row in workflow_rows:
+#         dt = row.reference_doctype
+#         name = row.reference_name
+#         assigned_user = row.user
+
+#         if dt not in result:
+#             continue
+
+#         if assigned_user and assigned_user != user:
+#             continue               
+
+#         # ✅ MUST be first check
+#         if not frappe.db.exists(dt, name):
+#             continue
+
+#         if not frappe.has_permission(dt, "read", name):
+#             continue
+
+#         doc_data = frappe.db.get_value(
+#             dt, name,
+#             ["docstatus", "workflow_state"],
+#             as_dict=True
+#         )
+
+#         if not doc_data:
+#             continue
+
+#         if doc_data.docstatus != 1:
+#             continue
+
+#         if doc_data.workflow_state in (
+#             "Rejected",
+#             "Cancelled",
+#             "Approved",
+#             "Completed",
+#             "Closed",
+#         ):
+#             continue
+        
+
+#         result[dt]["names"].append(name)
+
+#     # Update counts
+#     for dt in result:
+#         result[dt]["count"] = len(result[dt]["names"])
+
+#     frappe.cache().set_value(
+#         cache_key,
+#         result,
+#         expires_in_sec=300
+#     )
+
+#     return result

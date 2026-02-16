@@ -150,6 +150,7 @@
    "stats_filter": "{\"docstatus\":\"Draft\"}",
    "type": "DocType"
   },
+  
   {
    "color": "Grey",
    "doc_view": "List",

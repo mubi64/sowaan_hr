@@ -3440,7 +3440,7 @@ function inject_styles() {
                 border: 1px solid var(--border-color);
                 cursor: pointer;
                 display: inline-block;
-                min-width: 380px;
+                min-width: 300px;
             }
 
             /* Hover effect like other filters */

@@ -285,7 +285,7 @@ function render_ess_page(wrapper) {
                 <!-- NET PAYROLL SUMMARY -->
                     <div class="ess-card ess-netpay-summary-card ess-netpay-box">
                         <div class="ess-card-header">
-                            Net Payroll Summary
+                            Net Payroll Summary (Monthly)
                         </div>
                         
                         <!-- Month -->
@@ -1924,7 +1924,7 @@ function inject_styles() {
 
             /* Header height consistency */
             .ess-card-header-row {
-                min-height: 36px;
+                min-height: 18px;
             }
 
             #appraisal-status-chart {
@@ -2203,7 +2203,7 @@ function inject_styles() {
                 /* Chart headers */
                 .ess-card-header,
                 .ess-card-header-row {
-                    min-height: 36px;
+                    min-height: 18px;
                     margin-bottom: 6px;
                 }
 
@@ -2558,7 +2558,7 @@ function inject_styles() {
             .ess-compliance-expiry-card {
                 display: flex;
                 flex-direction: column;
-                max-height: 210px;   /* 🔑 matches KPI cards */
+                max-height: 220px;   /* 🔑 matches KPI cards */
             }
 
             /* Scrollable content */
@@ -2903,7 +2903,7 @@ function inject_styles() {
 
                 /* Leave Balance scroll */
             .ess-leave-card #ess-leave-balance-list {
-                max-height: 210px;        /* adjust if needed */
+                max-height: 220px;        /* adjust if needed */
                 overflow-y: auto;
                 padding-right: 6px;       /* space for scrollbar */
             }
@@ -2956,7 +2956,7 @@ function inject_styles() {
             }
 
             .ess-kpi-strip .ess-leave-card{
-                max-height: 210px !important;;
+                max-height: 220px !important;;
             }
             
             /* 🔥 THIS is what was missing */
@@ -3407,6 +3407,55 @@ function inject_styles() {
                 display: none !important;
             }
 
+            .month-year-display {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-color);
+            cursor: pointer;
+            padding: 6px 0;
+            }
+
+            .hidden-date-input {
+                position: absolute;
+                opacity: 0;
+                pointer-events: none;
+            }
+
+            /* Month label (already coming from your HTML) */
+            .turnover-card .month-label {
+                font-size: 13px;
+                font-weight: 500;
+                color: var(--text-muted);
+                margin-bottom: 4px;
+            }
+
+            /* Month + Year display (December 2025 style) */
+            .month-year-display {
+                font-size: 14px;
+                font-weight: 600;
+                color: var(--text-color);
+                padding: 6px 8px;
+                border-radius: 6px;
+                background: var(--control-bg);
+                border: 1px solid var(--border-color);
+                cursor: pointer;
+                display: inline-block;
+                min-width: 300px;
+            }
+
+            /* Hover effect like other filters */
+            // .month-year-display:hover {
+            //     background: var(--control-bg-hover);
+            // }
+
+            /* Completely hide the date input but keep it functional */
+            .hidden-date-input {
+                position: absolute;
+                width: 0;
+                height: 0;
+                overflow: hidden;
+                opacity: 0;
+            }            
 
         }   
 
@@ -3663,7 +3712,13 @@ function load_pending_requests_for_me() {
             entries.forEach(([doctype, info]) => {
                 const count = info?.count || 0;
                 const names = info?.names || [];
-                if (!count || !names.length) return;
+
+                // console.log(count);
+                // console.log(names);
+
+                // only skip if doctype not relevant
+                if (count === undefined) return;
+
 
                 const meta = iconMap[doctype] || {
                     icon: "fa-file-text-o",
@@ -3672,7 +3727,7 @@ function load_pending_requests_for_me() {
 
                 const row = document.createElement("div");
                 row.className = "ess-pending-item";
-
+                
                 row.innerHTML = `
                     <div class="ess-pending-left">
                         <div class="ess-pending-icon"
@@ -3689,18 +3744,26 @@ function load_pending_requests_for_me() {
                 `;
 
                 /* ===== CLICK → OPEN LIST (NEW TAB) ===== */
-                row.addEventListener("click", () => {
-                    const params = new URLSearchParams();
-                    params.append(
-                        "name",
-                        JSON.stringify(["in", names])
-                    );
+                if (count > 0) {
+                    row.addEventListener("click", () => {
+                        const params = new URLSearchParams();
+                        params.append(
+                            "name",
+                            JSON.stringify(["in", names])
+                        );
 
-                    window.open(
-                        `/app/${frappe.router.slug(doctype)}?${params.toString()}`,
-                        "_blank"
-                    );
-                });
+                        window.open(
+                            `/app/${frappe.router.slug(doctype)}?${params.toString()}`,
+                            "_blank"
+                        );
+                    });
+
+                    row.style.cursor = "pointer";
+                } else {
+                    row.style.cursor = "not-allowed";
+                    row.style.opacity = "0.6";
+                }
+
 
                 box.appendChild(row);
             });
@@ -4045,26 +4108,105 @@ function load_headcount_chart(by) {
     });
 }
 
-
+let net_payroll_month_control_breakdown = null;
+let selectedNetPayrollMonth_breakdown = null;
 
 function make_net_payroll_month_picker() {
-    const field = frappe.ui.form.make_control({
-        parent: document.getElementById("net-payroll-month-field"),
+    const wrapper = document.getElementById("net-payroll-month-field");
+
+    if (!wrapper) {
+        setTimeout(make_net_payroll_month_picker, 100);
+        return;
+    }
+
+    wrapper.innerHTML = "";
+
+    // Display element (Month Year text)
+    const display = document.createElement("div");
+    display.className = "month-year-display";
+    wrapper.appendChild(display);
+
+    // Hidden input container
+    const inputWrapper = document.createElement("div");
+    inputWrapper.className = "hidden-date-input";
+    wrapper.appendChild(inputWrapper);
+
+    net_payroll_month_control_breakdown = frappe.ui.form.make_control({
+        parent: inputWrapper,
         df: {
             fieldtype: "Date",
-            label: "Month",
+            fieldname: "net_payroll_month",
+            label: "",
             onchange() {
-                const v = field.get_value();
-                if (!v) return;
-                selectedNetPayrollMonth = v.slice(0, 7);
+                let val = net_payroll_month_control_breakdown.get_value();
+                if (!val) return;
+
+                let d = frappe.datetime.str_to_obj(val);
+
+                // Normalize to first day of month
+                let month_start = frappe.datetime.obj_to_str(
+                    new Date(d.getFullYear(), d.getMonth(), 1)
+                );
+
+                if (val !== month_start) {
+                    net_payroll_month_control_breakdown.set_value(month_start);
+                    return;
+                }
+
+                selectedNetPayrollMonth = month_start.slice(0, 7);
+
+                update_month_year_display(month_start, display);
+
+                // 🔥 Load chart on change
                 load_net_payroll_chart("department");
             }
         },
         render_input: true
     });
 
-    field.set_value(frappe.datetime.month_start());
+    net_payroll_month_control_breakdown.refresh();
+
+    // Clicking display opens calendar
+    display.addEventListener("click", () => {
+        net_payroll_month_control_breakdown.$input.trigger("focus");
+        net_payroll_month_control_breakdown.$input.trigger("click");
+    });
+
+    // ✅ Default = current month
+    const month_start = frappe.datetime.month_start(
+        frappe.datetime.get_today()
+    );
+
+    net_payroll_month_control_breakdown.set_value(month_start);
+
+    selectedNetPayrollMonth = month_start.slice(0, 7);
+
+    update_month_year_display(month_start, display);
+
+    // 🔥 IMPORTANT: load chart initially
+    load_net_payroll_chart("department");
 }
+
+
+
+// function make_net_payroll_month_picker() {
+//     const field = frappe.ui.form.make_control({
+//         parent: document.getElementById("net-payroll-month-field"),
+//         df: {
+//             fieldtype: "Date",
+//             label: "Month",
+//             onchange() {
+//                 const v = field.get_value();
+//                 if (!v) return;
+//                 selectedNetPayrollMonth = v.slice(0, 7);
+//                 load_net_payroll_chart("department");
+//             }
+//         },
+//         render_input: true
+//     });
+
+//     field.set_value(frappe.datetime.month_start());
+// }
 
 let selectedNetPayrollMonth = frappe.datetime.month_start().slice(0, 7);
 function load_net_payroll_chart(by) {
@@ -4109,10 +4251,6 @@ function load_net_payroll_chart(by) {
                     frappe.format(d, { fieldtype: "Currency" })
             }
         });
-
-
-
-
 
             // ✅ Attach click ONCE, after render
             setTimeout(() => {
@@ -4284,75 +4422,6 @@ function load_expiry_soon() {
     });
 }
 
-function load_nationality_chart_BK() {
-    frappe.call({
-        method: "sowaan_hr.sowaan_hr.page.ess.ess.get_employee_ratio_by_nationality",
-        callback: r => {
-            if (!r.message) return;
-
-            const container = document.getElementById("nationality-chart");
-            if (!container) return;
-
-            container.replaceChildren();
-
-            const chartData = r.message;
-            const labels = chartData.labels || [];
-
-            const chart = new frappe.Chart(container, {
-                data: chartData,
-                type: "donut",
-                height: 240,
-                donutOptions: {
-                    radius: 60,
-                    donutRatio: 0.45,
-                    labelThreshold: 2
-                },
-                legendOptions: {
-                    position: "bottom"
-                }
-            });
-                      
-
-        setTimeout(() => {
-    const legendItems = container.querySelectorAll(".chart-legend-item");
-
-    legendItems.forEach((item, index) => {
-        item.style.cursor = "pointer";
-
-        item.onclick = () => {
-            const nationality = labels[index];
-            if (!nationality) return;
-
-            frappe.call({
-                method: "sowaan_hr.sowaan_hr.page.ess.ess.get_accessible_employees",
-                callback: r => {
-                    const employees = r.message || [];
-                    if (!employees.length) return;
-
-                    const params = new URLSearchParams();
-                    params.append(
-                        "name",
-                        JSON.stringify(["in", employees])
-                    );
-                    params.append("nationality", nationality);
-
-                    window.open(
-                        `/app/employee?${params.toString()}`,
-                        "_blank"
-                    );
-                }
-            });
-        };
-    });
-}, 300);
-    
-
-    
-
-        }
-    });
-}
-
 function load_nationality_chart() {
     frappe.call({
         method: "sowaan_hr.sowaan_hr.page.ess.ess.get_employee_ratio_by_nationality",
@@ -4377,110 +4446,56 @@ function renderNationalityList(data) {
 
     if (!labels.length) {
         container.innerHTML =
-            `<div class="ess-muted">No nationality data</div>`;
+            `<div class="ess-muted">No expat status data</div>`;
         return;
     }
 
     const max = Math.max(...values, 1);
 
     labels.forEach((label, i) => {
-    const value = values[i] || 0;
+        const value = values[i] || 0;
 
-    const pct = Math.max((value / max) * 100, 12); // 🔑 define pct here
+        // 🔑 minimum visible width
+        const pct = Math.max((value / max) * 100, 12);
 
-    const row = document.createElement("div");
-    row.className = "ess-rank-row";
+        const row = document.createElement("div");
+        row.className = "ess-rank-row";
 
-    row.innerHTML = `
-        <div class="ess-rank-label">${label}</div>
-        <div class="ess-rank-bar">
-            <span style="width:${pct}%"></span>
-        </div>
-        <div class="ess-rank-value">${value}</div>
-    `;
+        row.innerHTML = `
+            <div class="ess-rank-label">${label}</div>
+            <div class="ess-rank-bar">
+                <span style="width:${pct}%"></span>
+            </div>
+            <div class="ess-rank-value">${value}</div>
+        `;
 
-    row.onclick = () => {
-        frappe.call({
-            method: "sowaan_hr.sowaan_hr.page.ess.ess.get_accessible_employees",
-            callback: r => {
-                const employees = r.message || [];
-                if (!employees.length) return;
+        // 🔑 CLICK → FILTER BY custom_expat_status
+        row.onclick = () => {
+            frappe.call({
+                method: "sowaan_hr.sowaan_hr.page.ess.ess.get_accessible_employees",
+                callback: r => {
+                    const employees = r.message || [];
+                    if (!employees.length) return;
 
-                const params = new URLSearchParams();
-                params.append(
-                    "name",
-                    JSON.stringify(["in", employees])
-                );
-                params.append("custom_nationality", label);
+                    const params = new URLSearchParams();
+                    params.append(
+                        "name",
+                        JSON.stringify(["in", employees])
+                    );
+                    params.append("custom_expat_status", label);
 
-                window.open(
-                    `/app/employee?${params.toString()}`,
-                    "_blank"
-                );
-            }
-        });
-    };
-
-    container.appendChild(row);
-});
-
-}
-
-
-
-function load_monthly_attendance_trend_bk() {
-    frappe.call({
-        method: "sowaan_hr.sowaan_hr.page.ess.ess.get_monthly_attendance_trend",
-        callback: r => {
-            if (!r.message) return;
-
-            const container = document.getElementById(
-                "monthly-attendance-trend-2"
-            );
-            if (!container) return;
-
-            container.replaceChildren();
-
-            const months = r.message.months || [];
-            const present = r.message.present || [];
-            const absent_late = r.message.absent_late || [];
-
-            if (!months.length) {
-                container.innerHTML =
-                    `<div class="ess-muted">No data available</div>`;
-                return;
-            }
-
-            new frappe.Chart(container, {
-                data: {
-                    labels: months,
-                    datasets: [
-                        {
-                            name: "Present",
-                            values: present
-                        },
-                        {
-                            name: "Absent / Late",
-                            values: absent_late
-                        }
-                    ]
-                },
-                type: "line",
-                height: 260,
-                axisOptions: {
-                    xAxisMode: "tick",
-                    yAxisMode: "span",
-                    xIsSeries: true
-                },
-                colors: ["#22c55e", "#ef4444"],
-                lineOptions: {
-                    dotSize: 4,
-                    regionFill: 0
+                    window.open(
+                        `/app/employee?${params.toString()}`,
+                        "_blank"
+                    );
                 }
             });
-        }
+        };
+
+        container.appendChild(row);
     });
 }
+
 
 let monthlyAttendanceChart = null;
 
@@ -4570,131 +4585,6 @@ function monthLabelToYYYYMM(label) {
 let appraisalStatusChart = null;
 let appraisalRatingChart = null;
 
-function load_performance_appraisal_summary() {
-    ensure_chartjs_loaded(() => {
-
-        frappe.call({
-            method: "sowaan_hr.sowaan_hr.page.ess.ess.get_performance_appraisal_summary",
-            callback: r => {
-                const data = r.message || {};
-
-                /* =====================================================
-                   DONUT CHART – APPRAISAL STATUS
-                ===================================================== */
-
-                const donutWrap = document.getElementById("appraisal-status-chart");
-                if (donutWrap && donutWrap.dataset.rendered !== "1") {
-                    donutWrap.dataset.rendered = "1";
-                    donutWrap.innerHTML = `<canvas></canvas>`;
-
-                    const ctx = donutWrap.querySelector("canvas").getContext("2d");
-
-                    let labels = data.status?.labels || [];
-                    let values = data.status?.values || [];
-
-                    let total = values.reduce((a, b) => a + b, 0);
-                    let isEmpty = false;
-
-                    // 🔹 Empty fallback
-                    if (!total) {
-                        isEmpty = true;
-                        labels = ["No Appraisals"];
-                        values = [1];
-                    }
-
-                    new Chart(ctx, {
-                        type: "doughnut",
-                        data: {
-                            labels,
-                            datasets: [{
-                                data: values,
-                                backgroundColor: isEmpty
-                                    ? ["#e5e7eb"]
-                                    : ["#f59e0b", "#22c55e", "#ef4444"],
-                                borderWidth: 0
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            cutout: "65%",
-                            plugins: {
-                                legend: {
-                                    position: "bottom"
-                                },
-                                tooltip: {
-                                    enabled: !isEmpty
-                                }
-                            },
-                            onClick: (_, elements) => {
-                                // 🚫 No navigation if empty
-                                if (isEmpty || !elements.length) return;
-
-                                const status = labels[elements[0].index];
-                                window.open(
-                                    `/app/appraisal?status=${encodeURIComponent(status)}`,
-                                    "_blank"
-                                );
-                            }
-                        }
-                    });
-                }
-
-                /* =====================================================
-                   LINE CHART – AVG RATING TREND
-                ===================================================== */
-
-                const lineWrap = document.getElementById("appraisal-rating-chart");
-                if (lineWrap && lineWrap.dataset.rendered !== "1") {
-                    lineWrap.dataset.rendered = "1";
-
-                    const labels = data.rating_trend?.labels || [];
-                    const values = data.rating_trend?.values || [];
-
-                    // 🔹 No data → show placeholder (heading still visible)
-                    if (!labels.length) {
-                        lineWrap.innerHTML =
-                            `<div class="ess-muted">No rating data</div>`;
-                        lineWrap.style.cursor = "default";
-                        lineWrap.onclick = null;
-                        return;
-                    }
-
-                    new frappe.Chart(lineWrap, {
-                        data: {
-                            labels,
-                            datasets: [{
-                                name: "Avg Rating",
-                                values
-                            }]
-                        },
-                        type: "line",
-                        height: 200,
-                        colors: ["#3b82f6"],
-                        lineOptions: {
-                            dotSize: 4,
-                            regionFill: 0
-                        },
-                        axisOptions: {
-                            xAxisMode: "tick",
-                            yAxisMode: "span"
-                        }
-                    });
-
-                    // ✅ Navigation only when chart has real data
-                    lineWrap.style.cursor = "pointer";
-                    lineWrap.onclick = () => {
-                        window.open(
-                            "/app/appraisal?docstatus=1",
-                            "_blank"
-                        );
-                    };
-                }
-            }
-        });
-
-    });
-}
 
 function ensure_chartjs_loaded(cb) {
     if (window.Chart) return cb();
@@ -4769,53 +4659,6 @@ function render_leave_employee_link_dropdown() {
     // Setup behavior (single / multiple employee logic)
     setup_leave_employee_behavior();
 }
-
-
-// function render_leave_employee_link_dropdown() {
-//     const wrapper = document.getElementById("leave-employee-link-control");
-//     const list = document.getElementById("ess-leave-balance-list");
-
-//     if (!wrapper || !list) return;
-
-//         wrapper.innerHTML = "";
-
-//         leave_employee_link_control = frappe.ui.form.make_control({
-//         parent: wrapper,
-//         df: {
-//             fieldtype: "Link",
-//             fieldname: "employee",
-//             label: "",              // ✅ remove label
-//             options: "Employee",
-//             placeholder: "Select Employee",
-//             get_query() {
-//                 return {
-//                     query: "sowaan_hr.sowaan_hr.page.ess.ess.employee_leave_access_query"
-//                 };
-//             },
-//             onchange() {
-//                 const employee = leave_employee_link_control.get_value();
-//                // 🔴 If cleared → reset UI
-//                     if (!employee) {
-//                         clear_leave_balance_ui();
-//                         return;
-//                     }
-
-//                     // 🟢 Load balances
-//                     load_leave_balance_for_employee(employee);
-//                             }
-//                         },
-//         render_input: true
-//     });
-
-
-//     leave_employee_link_control.refresh();
-
-//     // Dashboard styling
-//     leave_employee_link_control.$wrapper.addClass("ess-dashboard-link");
-
-//     // 🔑 Setup behavior (single / multiple employee logic)
-//     setup_leave_employee_behavior();
-// }
 
 
 function clear_leave_balance_ui() {
@@ -5117,25 +4960,78 @@ function load_login_employee_profile() {
 
 let selectedNetPayrollSummaryMonth = frappe.datetime.month_start().slice(0, 7);
 let selectedNetPayrollSummaryBy = "department";
+let net_payroll_month_control = null;
+
 
 function make_net_payroll_summary_month_picker() {
-    const field = frappe.ui.form.make_control({
-        parent: document.getElementById("net-payroll-summary-month"),
+    const wrapper = document.getElementById("net-payroll-summary-month");
+
+    if (!wrapper) {
+        setTimeout(make_net_payroll_summary_month_picker, 100);
+        return;
+    }
+
+    wrapper.innerHTML = "";
+
+    // Display element (Month Year text)
+    const display = document.createElement("div");
+    display.className = "month-year-display";
+    wrapper.appendChild(display);
+
+    // Hidden date input container
+    const inputWrapper = document.createElement("div");
+    inputWrapper.className = "hidden-date-input";
+    wrapper.appendChild(inputWrapper);
+
+    net_payroll_month_control = frappe.ui.form.make_control({
+        parent: inputWrapper,
         df: {
             fieldtype: "Date",
-            label: "Month",
+            fieldname: "net_payroll_month",
+            label: "",
             onchange() {
-                const v = field.get_value();
-                if (!v) return;
-                selectedNetPayrollSummaryMonth = v.slice(0, 7);
+                let val = net_payroll_month_control.get_value();
+                if (!val) return;
+
+                let d = frappe.datetime.str_to_obj(val);
+
+                // Normalize to first day of month
+                let month_start = frappe.datetime.obj_to_str(
+                    new Date(d.getFullYear(), d.getMonth(), 1)
+                );
+
+                if (val !== month_start) {
+                    net_payroll_month_control.set_value(month_start);
+                    return;
+                }
+
+                selectedNetPayrollSummaryMonth = month_start.slice(0, 7);
+
+                update_month_year_display(month_start, display);
                 load_net_payroll_summary();
             }
         },
         render_input: true
     });
 
-    field.set_value(frappe.datetime.month_start());
+    net_payroll_month_control.refresh();
+
+    // Clicking display opens calendar
+    display.addEventListener("click", () => {
+        net_payroll_month_control.$input.trigger("focus");
+        net_payroll_month_control.$input.trigger("click");
+    });
+
+    // Default = current month
+    const month_start = frappe.datetime.month_start(
+        frappe.datetime.get_today()
+    );
+
+    net_payroll_month_control.set_value(month_start);
+    selectedNetPayrollSummaryMonth = month_start.slice(0, 7);
+    update_month_year_display(month_start, display);
 }
+
 
 function load_net_payroll_summary() {
     frappe.call({
@@ -5218,29 +5114,183 @@ function render_pending_request_list(data, containerId) {
     }
 
     const ICON_MAP = {
-        "Leave Application": {
-            icon: "fa-calendar-check-o",
-            color: "#22c55e"
-        },
-        "Expense Claim": {
-            icon: "fa-money",
-            color: "#3b82f6"
-        },
-        "Business Visit Visa Request": {
-            icon: "fa-plane",
-            color: "#8b5cf6"
-        },
-        "Loan Application": {
-            icon: "fa-bank",
-            color: "#f59e0b"
-        }
-    };
+
+    // HR
+    "Leave Application": {
+        icon: "fa-calendar-check-o",
+        color: "#22c55e"
+    },
+    "Expense Claim": {
+        icon: "fa-money",
+        color: "#3b82f6"
+    },
+    "Loan Application": {
+        icon: "fa-university",
+        color: "#f59e0b"
+    },
+    "Appraisal": {
+        icon: "fa-line-chart",
+        color: "#10b981"
+    },
+    "Attendance Request": {
+        icon: "fa-clock-o",
+        color: "#06b6d4"
+    },
+
+    // Finance
+    "Purchase Invoice": {
+        icon: "fa-file-text-o",
+        color: "#6366f1"
+    },
+    "Purchase Order": {
+        icon: "fa-shopping-cart",
+        color: "#0ea5e9"
+    },
+    "Sales Invoice": {
+        icon: "fa-credit-card",
+        color: "#ef4444"
+    },
+    "Payment Entry": {
+        icon: "fa-exchange",
+        color: "#14b8a6"
+    },
+
+    // Procurement
+    "Purchase Request": {
+        icon: "fa-list-alt",
+        color: "#8b5cf6"
+    },
+    "Material Request": {
+        icon: "fa-cubes",
+        color: "#f97316"
+    },
+
+    // Travel & Visa
+    "Business Visit Visa Request": {
+        icon: "fa-plane",
+        color: "#8b5cf6"
+    },
+
+    // Recruitment
+    "Job Offer": {
+        icon: "fa-briefcase",
+        color: "#3b82f6"
+    },
+    "Interview": {
+        icon: "fa-users",
+        color: "#a855f7"
+    },
+
+    // Projects
+    "Task": {
+        icon: "fa-tasks",
+        color: "#22c55e"
+    },
+    "Project": {
+        icon: "fa-folder-open",
+        color: "#0ea5e9"
+    },
+
+    // Default fallback
+    "default": {
+        icon: "fa-file-o",
+        color: "#6b7280"
+    },
+        
+    // ---------------- HR ----------------
+    "Leave Application": {
+        icon: "fa-calendar-check-o",
+        color: "#22c55e"
+    },
+    "Employee Resignation": {
+        icon: "fa-sign-out",
+        color: "#ef4444"
+    },
+    "Employee Non Renewal of Contract": {
+        icon: "fa-file-text-o",
+        color: "#f97316"
+    },
+    "Employee Allowance": {
+        icon: "fa-gift",
+        color: "#10b981"
+    },
+    "Education Allowance": {
+        icon: "fa-graduation-cap",
+        color: "#14b8a6"
+    },
+    "Employee Checkin Request": {
+        icon: "fa-clock-o",
+        color: "#06b6d4"
+    },
+    "Internal Request For Transfer": {
+        icon: "fa-random",
+        color: "#0ea5e9"
+    },
+
+    // ---------------- Payroll / Finance ----------------
+    "Expense Claim": {
+        icon: "fa-money",
+        color: "#3b82f6"
+    },
+    "Expanse Claims": {   // in case typo used
+        icon: "fa-money",
+        color: "#3b82f6"
+    },
+    "Salary Identification Letter": {
+        icon: "fa-id-card",
+        color: "#6366f1"
+    },
+
+    // ---------------- Appraisal ----------------
+    "Appraisal": {
+        icon: "fa-line-chart",
+        color: "#10b981"
+    },
+    "Appraisals": {
+        icon: "fa-line-chart",
+        color: "#10b981"
+    },
+
+    // ---------------- Recruitment ----------------
+    "Job Requisition": {
+        icon: "fa-briefcase",
+        color: "#8b5cf6"
+    },
+    "Job Offer": {
+        icon: "fa-handshake-o",
+        color: "#a855f7"
+    },
+
+    // ---------------- Travel / Visa ----------------
+    "Business Visit Visa Request": {
+        icon: "fa-plane",
+        color: "#8b5cf6"
+    },
+    "Travel Request": {
+        icon: "fa-suitcase",
+        color: "#6366f1"
+    },
+
+    // ---------------- Support ----------------
+    "Issue": {
+        icon: "fa-ticket",
+        color: "#ef4444"
+    },
+
+    // ---------------- Default ----------------
+    "default": {
+        icon: "fa-file-o",
+        color: "#6b7280"
+    }
+
+};
+
 
     Object.entries(data).forEach(([doctype, info]) => {
         const count = info?.count || 0;
         const names = info?.names || [];
 
-        if (!count || !names.length) return;
+        //if (!count || !names.length) return;
 
         const meta = ICON_MAP[doctype] || {
             icon: "fa-file-text-o",
@@ -5266,23 +5316,28 @@ function render_pending_request_list(data, containerId) {
         `;
 
         // ✅ Drill-down with SAME filter logic as approvals
-        row.onclick = () => {
+        //console.log(count)
+        if (count > 0) {
+            row.addEventListener("click", () => {
+                const params = new URLSearchParams();
+                params.append(
+                    "name",
+                    JSON.stringify(["in", names])
+                );
 
-            if (!names || !names.length) {
-                frappe.msgprint("This request no longer exists.");
-                return;
-            }
-            const params = new URLSearchParams();
-            params.append(
-                "name",
-                JSON.stringify(["in", names])
-            );
+                window.open(
+                    `/app/${frappe.router.slug(doctype)}?${params.toString()}`,
+                    "_blank"
+                );
+            });
 
-            window.open(
-                `/app/${frappe.router.slug(doctype)}?${params.toString()}`,
-                "_blank"
-            );
-        };
+            row.style.cursor = "pointer";
+        } else {
+            row.style.cursor = "not-allowed";
+            row.style.opacity = "0.6";
+        }
+
+
 
         box.appendChild(row);
     });
@@ -5292,7 +5347,7 @@ function render_pending_request_list(data, containerId) {
 
 function switch_pending_tab(tab) {
     if (tab === "sent_by_me") {
-        console.log(tab);
+        //console.log(tab);
         load_pending_requests_sent_by_me();
     } else if (tab === "pending_for_me") {
         load_pending_requests_for_me(); // ← your EXISTING function
@@ -5454,8 +5509,6 @@ function init_net_payroll_year_dropdown() {
     });
 }
 
-
-
 function init_turnover_month_picker() {
     const wrapper = document.getElementById("turnover-month-picker");
 
@@ -5466,16 +5519,38 @@ function init_turnover_month_picker() {
 
     wrapper.innerHTML = "";
 
+    // Display element (what user sees)
+    const display = document.createElement("div");
+    display.className = "month-year-display";
+    wrapper.appendChild(display);
+
+    // Hidden date input container
+    const inputWrapper = document.createElement("div");
+    inputWrapper.className = "hidden-date-input";
+    wrapper.appendChild(inputWrapper);
+
     turnover_month_control = frappe.ui.form.make_control({
-        parent: wrapper,
+        parent: inputWrapper,
         df: {
             fieldtype: "Date",
             fieldname: "turnover_month",
             label: "",
             onchange() {
-                const val = turnover_month_control.get_value();
+                let val = turnover_month_control.get_value();
                 if (!val) return;
 
+                // Normalize to month start
+                let d = frappe.datetime.str_to_obj(val);
+                let month_start = frappe.datetime.obj_to_str(
+                    new Date(d.getFullYear(), d.getMonth(), 1)
+                );
+
+                if (val !== month_start) {
+                    turnover_month_control.set_value(month_start);
+                    return;
+                }
+
+                update_month_year_display(month_start, display);
                 load_turnover_chart(current_turnover_by);
             }
         },
@@ -5484,12 +5559,32 @@ function init_turnover_month_picker() {
 
     turnover_month_control.refresh();
 
-    const monthStart =
-        frappe.datetime.month_start(frappe.datetime.get_today());
+    // Clicking display opens the date picker
+    display.addEventListener("click", () => {
+        turnover_month_control.$input.trigger("focus");
+        turnover_month_control.$input.trigger("click");
+    });
 
-    turnover_month_control.set_value(monthStart);
+    // Default: current month
+    const month_start = frappe.datetime.month_start(
+        frappe.datetime.get_today()
+    );
+
+    turnover_month_control.set_value(month_start);
+    update_month_year_display(month_start, display);
 }
 
+
+function update_month_year_display(date_str, display_el) {
+    const d = frappe.datetime.str_to_obj(date_str);
+
+    const text = d.toLocaleString("default", {
+        month: "long",
+        year: "numeric"
+    });
+
+    display_el.innerText = text;
+}
 
 function init_turnover_tabs() {
     const tabs = document.querySelectorAll(
@@ -5606,6 +5701,5 @@ function load_turnover_chart(by) {
         }
     });
 }
-
 
 

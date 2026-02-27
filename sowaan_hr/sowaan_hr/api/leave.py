@@ -52,6 +52,9 @@ def get_leaves(employee, status, page):
 @frappe.whitelist()
 def create_leave(employee, from_date, to_date, leave_type, description, leave_approver=None, half_day=False, half_day_date=None):
     try:
+        # 🔥 Normalize bad mobile values
+        if leave_approver in ("null", "", None):
+            leave_approver = None
         day = date_diff(to_date, from_date)
         if (day > 0 and half_day == True):
             if (half_day_date == None):

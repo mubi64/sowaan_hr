@@ -229,71 +229,46 @@ def get_accessible_employees():
     return [employee] + reports
 
 
-
 # =========================================================
 # NATIONALITY RATIO (CUSTOM FIELD SAFE)
 # =========================================================
 @frappe.whitelist()
-def get_employee_ratio_by_nationality_bk():
-    """
-    Returns employee count by custom_expat_status
-    LIMITED to current user + subordinates
-    """
-
-    allowed_employees = get_accessible_employees()
-    if not allowed_employees:
-        return {}
-
-    data = frappe.db.sql("""
-        SELECT
-            IFNULL(e.custom_expat_status, 'Not Set') AS expat_status,
-            COUNT(*) AS total
-        FROM `tabEmployee` e
-        WHERE
-            e.status = 'Active'
-            AND e.name IN %(employees)s
-        GROUP BY e.custom_expat_status
-        ORDER BY total DESC
-    """, {
-        "employees": tuple(allowed_employees)
-    }, as_dict=True)
-
-    if not data:
-        return {}
-
-    return {
-        "labels": [d.expat_status for d in data],
-        "datasets": [
-            {
-                "name": "Employees",
-                "values": [d.total for d in data]
-            }
-        ]
-    }
-
-
-@frappe.whitelist()
 def get_employee_ratio_by_nationality():
     """
-    Employee count by Expat Status
-    LIMITED to current user + subordinates
-    Returns employees per bar (for drill-down)
+    Employee count by Expat Status (with fallback to Nationality)
+    Safe across all instances
     """
 
     allowed_employees = get_accessible_employees()
     if not allowed_employees:
         return {}
 
-    rows = frappe.db.sql("""
+    # ✅ Resolve field (priority-based)
+    fieldname = resolve_employee_field(
+        doctype="Employee",
+        primary_field="custom_expat_status",
+        fallback_field="custom_nationality"
+    )
+
+    # ❌ If no field exists → return empty chart (no error)
+    if not fieldname:
+        return {
+            "labels": [],
+            "datasets": [],
+            "employees_by_index": []
+        }
+
+    # ✅ Build dynamic SQL
+    rows = frappe.db.sql(f"""
         SELECT
-            IFNULL(e.custom_expat_status, 'Not Set') AS label,
+            IFNULL(e.{fieldname}, 'Not Set') AS label,
             COUNT(*) AS value,
             GROUP_CONCAT(e.name) AS employees
         FROM `tabEmployee` e
         WHERE
             e.status = 'Active'
             AND e.name IN %(employees)s
-        GROUP BY e.custom_expat_status
+        GROUP BY e.{fieldname}
         ORDER BY value DESC
     """, {
         "employees": tuple(allowed_employees)
@@ -304,12 +279,50 @@ def get_employee_ratio_by_nationality():
         "datasets": [{
             "values": [r.value for r in rows]
         }],
-        # 🔑 THIS IS THE FIX
         "employees_by_index": [
             r.employees.split(",") if r.employees else []
             for r in rows
         ]
     }
+
+# @frappe.whitelist()
+# def get_employee_ratio_by_nationality():
+#     """
+#     Employee count by Expat Status
+#     LIMITED to current user + subordinates
+#     Returns employees per bar (for drill-down)
+#     """
+
+#     allowed_employees = get_accessible_employees()
+#     if not allowed_employees:
+#         return {}
+
+#     rows = frappe.db.sql("""
+#         SELECT
+#             IFNULL(e.custom_expat_status, 'Not Set') AS label,
+#             COUNT(*) AS value,
+#             GROUP_CONCAT(e.name) AS employees
+#         FROM `tabEmployee` e
+#         WHERE
+#             e.status = 'Active'
+#             AND e.name IN %(employees)s
+#         GROUP BY e.custom_expat_status
+#         ORDER BY value DESC
+#     """, {
+#         "employees": tuple(allowed_employees)
+#     }, as_dict=True)
+
+#     return {
+#         "labels": [r.label for r in rows],
+#         "datasets": [{
+#             "values": [r.value for r in rows]
+#         }],
+#         # 🔑 THIS IS THE FIX
+#         "employees_by_index": [
+#             r.employees.split(",") if r.employees else []
+#             for r in rows
+#         ]
+#     }
 
 @frappe.whitelist()
 
@@ -1597,7 +1610,18 @@ def get_salary_slip_accessible_employees(month_start, month_end):
     #frappe.msgprint(f"Slips {slips}")
     return list({s.employee for s in slips if s.employee})
 
+def resolve_employee_field(doctype, primary_field, fallback_field):
+    """
+    Returns the first available field from priority list
+    """
 
+    if frappe.db.has_column(doctype, primary_field):
+        return primary_field
+
+    if frappe.db.has_column(doctype, fallback_field):
+        return fallback_field
+
+    return None
 # @frappe.whitelist()
 # def get_pending_requests_sent_by_me():
 #     """

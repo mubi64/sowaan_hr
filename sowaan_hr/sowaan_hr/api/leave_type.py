@@ -1,8 +1,9 @@
 import frappe
 from frappe import utils
 from sowaan_hr.sowaan_hr.api.employee import get_allowed_employees, get_current_emp
-from hrms.hr.doctype.leave_application.leave_application import get_leave_details
 from sowaan_hr.sowaan_hr.api.api import gen_response
+# from hrms.hr.doctype.leave_application.leave_application import get_leave_details
+from sowaan_hr.sowaan_hr.api.leave_application import get_leave_details
 
 @frappe.whitelist()
 def get_leave_list(employee):

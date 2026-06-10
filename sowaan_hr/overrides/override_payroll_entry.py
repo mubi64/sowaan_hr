@@ -788,7 +788,7 @@ class OverridePayrollEntry(PayrollEntry):
 		)
         if not self.salary_slip_based_on_timesheet:
             filters.update(dict(payroll_frequency=self.payroll_frequency))
-            return filters
+        return filters
     @frappe.whitelist()
     def fill_employee_details(self):
         filters = self.make_filters()

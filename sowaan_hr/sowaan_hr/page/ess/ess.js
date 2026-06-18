@@ -9,8 +9,9 @@ frappe.pages["ess"].on_page_show = function (wrapper) {
 };
 
 let ess_guard_checked = false;
-let turnover_month_control = null;
+let turnover_year_select = null;
 let current_turnover_by = "department";
+let current_company = null;
 
 
 function guard_and_render_ess(wrapper) {
@@ -90,12 +91,12 @@ function render_ess_page(wrapper) {
                     <div class="kpi-line"></div>
                 </div>
 
-                <div class="ess-kpi-card kpi-purple" data-route="/app/appraisal?docstatus=0">
+                <div class="ess-kpi-card kpi-purple" id="kpi-appraisal-card" data-route="/app/appraisal?docstatus=0">
                     <div class="ess-card-title"><i class="fa fa-hourglass-half text-warning"></i>Pending Appraisals</div>
                     <div class="kpi-main" id="kpi-appraisal-days">– Days</div>
                     <div class="kpi-sub" id="kpi-appraisal-count">– Appraisals</div>
                     <div class="kpi-line"></div>
-                </div> 
+                </div>
 
                 <div class="ess-card ess-pending-requests-card kpi-silver">
                     <div class="ess-card-header">
@@ -128,7 +129,6 @@ function render_ess_page(wrapper) {
 
                     </div>
                 </div>
-
 
                 <div class="ess-kpi-card ess-compliance-expiry-card kpi-purple">
                     <div class="ess-card-title">
@@ -189,7 +189,6 @@ function render_ess_page(wrapper) {
 
                     <div class="ess-tabs">
                         <button class="ess-tab active" data-headcount="department">Department</button>
-                        <button class="ess-tab" data-headcount="branch">Branch</button>
                         <button class="ess-tab" data-headcount="employment_type">Employment Type</button>
                     </div>
 
@@ -228,10 +227,11 @@ function render_ess_page(wrapper) {
                             </div>
                         </div>
 
-                        <!-- Row 2: Month picker (moved here) -->
+                        <!-- Row 2: Year picker -->
                         <div class="ess-card-header-row">
-                            <div class="ess-card-control">Month
-                                <div id="turnover-month-picker"></div>
+                            <div class="ess-card-control">
+                                <div class="ess-filter-label">Year</div>
+                                <select id="turnover-year-select" class="input-with-feedback"></select>
                             </div>
                         </div>
 
@@ -256,10 +256,29 @@ function render_ess_page(wrapper) {
 
 
                 <div class="ess-card">
-                    <div class="ess-card-header">
-                        Monthly Attendance Trend (Last 6 Months)
+                    <div class="ess-card-header-row">
+                        <div class="ess-card-title">Attendance Trend</div>
+                    </div>
+                    <div class="ess-tabs" id="attendance-trend-tabs">
+                        <button class="ess-tab active" data-trend="monthly">Monthly</button>
+                        <button class="ess-tab" data-trend="yearly">Yearly</button>
+                    </div>
+                    <div id="attendance-trend-year-row" style="display:none; margin-bottom:6px;">
+                        <select id="attendance-trend-year-select" class="input-with-feedback" style="width:100%;border-radius:8px;padding:5px 10px;font-size:13px;font-weight:600;background:#f8fafc;border:1px solid #e2e8f0;"></select>
                     </div>
                     <div id="monthly-attendance-trend-2"></div>
+                </div>
+
+                <!-- GENDER BREAKDOWN -->
+                <div class="ess-card">
+                    <div class="ess-card-header">
+                        Active Employees by Gender
+                        <i class="fa fa-external-link chart-action"
+                           onclick="window.open('/app/employee?status=Active','_blank')"></i>
+                    </div>
+                    <div class="ess-chart-wrap">
+                        <div id="gender-breakdown-chart"></div>
+                    </div>
                 </div>
 
                 <!-- NET PAYROLL -->
@@ -342,14 +361,14 @@ function render_ess_page(wrapper) {
                     </div>
 
 
+
             </div>
 
 
-        </div>  
+        </div>
 `;
 
     let ESS_ALLOWED_EMPLOYEES = [];
-    let turnover_month_control = null;
 
     inject_styles();
     bind_events();
@@ -386,7 +405,6 @@ load_kpis();
 // =============================
 // 🔹 MEDIUM
 // =============================
-load_today_attendance();
 load_compliance_and_expiry();
 
 // =============================
@@ -402,7 +420,9 @@ setTimeout(() => {
 setTimeout(() => {
     load_headcount_chart("department");
     load_nationality_chart();
+    load_gender_chart();
     load_monthly_attendance_trend();
+    init_attendance_trend_tabs();
 
     make_net_payroll_month_picker();
     load_net_payroll_chart("department");
@@ -413,12 +433,13 @@ setTimeout(() => {
     init_net_payroll_year_dropdown();
     load_net_payroll_year_summary();
 
-    init_turnover_month_picker();
-    init_turnover_tabs();
-    load_turnover_chart("department");
-
-
 }, 50);
+
+// Turnover card — isolated so other chart errors can't block it
+setTimeout(() => {
+    init_turnover_year_picker();
+    init_turnover_tabs();
+}, 100);
 
     
 
@@ -697,7 +718,7 @@ function inject_styles() {
 
         .ess-kpi-strip {
             display: grid;
-            grid-template-columns: repeat(5, minmax(220px, 1fr));
+            grid-template-columns: repeat(12, minmax(0, 1fr));
             gap: 14px;
             margin-bottom: 20px;
         }
@@ -727,21 +748,30 @@ function inject_styles() {
             }
 
 
-            @media (max-width: 1400px) {
-                .ess-kpi-strip {
-                    grid-template-columns: repeat(4, 1fr);
-                }
-            }
-
+            /* Tablet: collapse to 2-col layout (span 6 each) */
             @media (max-width: 1100px) {
                 .ess-kpi-strip {
-                    grid-template-columns: repeat(3, 1fr);
+                    grid-template-columns: repeat(6, minmax(0, 1fr));
+                }
+                .ess-kpi-strip .ess-profile-card,
+                .ess-kpi-strip .kpi-blue:not(.ess-leave-card):not(.ess-profile-card),
+                .ess-kpi-strip .kpi-green,
+                .ess-kpi-strip .kpi-purple:not(.ess-compliance-expiry-card),
+                .ess-kpi-strip .ess-compliance-expiry-card,
+                .ess-kpi-strip .ess-leave-card,
+                .ess-kpi-strip .ess-attendance-card,
+                .ess-kpi-strip .ess-pending-requests-card {
+                    grid-column: span 3;
                 }
             }
 
+            /* Mobile: single column */
             @media (max-width: 768px) {
                 .ess-kpi-strip {
-                    grid-template-columns: repeat(2, 1fr);
+                    grid-template-columns: 1fr;
+                }
+                .ess-kpi-strip > * {
+                    grid-column: span 1 !important;
                 }
             }
 
@@ -1091,10 +1121,6 @@ function inject_styles() {
             font-size: 12px;
             font-weight: 500;
 
-            white-space: nowrap;        /* 🔑 PREVENT WRAP */
-            overflow: hidden;
-            text-overflow: ellipsis;
-
             cursor: pointer;
         }
 
@@ -1138,8 +1164,52 @@ function inject_styles() {
             .att-leave   { background:#fff7ed; color:#c2410c; }
             .att-early   { background:#f1f5f9; color:#334155; }
             .att-half    { background:#ecfeff; color:#0f766e; }
+            .att-remote  { background:#f0f9ff; color:#0369a1; }
             .att-wfh     { background:#eef2ff; color:#4338ca; }
             .att-visit   { background:#fdf4ff; color:#86198f; }
+
+            /* ── Custom tooltip ── */
+            [data-tooltip] {
+                position: relative;
+            }
+            [data-tooltip]::after {
+                content: attr(data-tooltip);
+                position: absolute;
+                bottom: calc(100% + 6px);
+                left: 50%;
+                transform: translateX(-50%) scale(0.9);
+                white-space: nowrap;
+                background: #1e293b;
+                color: #f1f5f9;
+                font-size: 11px;
+                font-weight: 500;
+                padding: 4px 9px;
+                border-radius: 6px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+                letter-spacing: 0.02em;
+                pointer-events: none;
+                opacity: 0;
+                transition: opacity 0.15s ease, transform 0.15s ease;
+                z-index: 9999;
+            }
+            [data-tooltip]::before {
+                content: "";
+                position: absolute;
+                bottom: calc(100% + 2px);
+                left: 50%;
+                transform: translateX(-50%);
+                border: 4px solid transparent;
+                border-top-color: #1e293b;
+                pointer-events: none;
+                opacity: 0;
+                transition: opacity 0.15s ease;
+                z-index: 9999;
+            }
+            [data-tooltip]:hover::after,
+            [data-tooltip]:hover::before {
+                opacity: 1;
+                transform: translateX(-50%) scale(1);
+            }
 
             /* value */
             .ess-att-pill b {
@@ -2749,51 +2819,61 @@ function inject_styles() {
             }
 
             /* =======================
-            FIRST ROW
+            ROW 1 — 3 wide cards (span 4 each = 12 cols)
             ======================= */
 
-            /* 1️⃣ My Profile — FORCE FIRST */
+            /* 1️⃣ My Profile */
             .ess-kpi-strip .ess-profile-card {
                 order: 1 !important;
+                grid-column: span 4;
             }
 
             /* 2️⃣ Reporting To You */
             .ess-kpi-strip .kpi-blue:not(.ess-leave-card):not(.ess-profile-card) {
                 order: 2 !important;
+                grid-column: span 4;
             }
 
             /* 3️⃣ Active Employees */
             .ess-kpi-strip .kpi-green {
                 order: 3 !important;
+                grid-column: span 4;
             }
+
+            /* =======================
+            ROW 2 — 4 narrower cards (span 3 each = 12 cols)
+            For Jeel (Appraisals hidden):   Compliance + Leave + Attendance + Pending Requests
+            For others (Appraisals visible): Appraisals + Compliance + Leave + Attendance
+            ======================= */
 
             /* 4️⃣ Pending Appraisals */
             .ess-kpi-strip .kpi-purple:not(.ess-compliance-expiry-card) {
                 order: 4 !important;
+                grid-column: span 3;
             }
 
-            /* =======================
-            SECOND ROW
-            ======================= */
-
-            /* 5️⃣ Pending Requests */
-            .ess-kpi-strip .ess-pending-requests-card {
-                order: 5 !important;
-            }
-
-            /* 6️⃣ Employee Compliance */
+            /* 5️⃣ Employee Compliance */
             .ess-kpi-strip .ess-compliance-expiry-card {
-                order: 6 !important;
+                order: 5 !important;
+                grid-column: span 3;
             }
 
-            /* 7️⃣ Leave Balance */
+            /* 6️⃣ Leave Balance */
             .ess-kpi-strip .ess-leave-card {
-                order: 7 !important;
+                order: 6 !important;
+                grid-column: span 3;
             }
 
-            /* 8️⃣ Today’s Attendance */
+            /* 7️⃣ Today’s Attendance */
             .ess-kpi-strip .ess-attendance-card {
+                order: 7 !important;
+                grid-column: span 3;
+            }
+
+            /* 8️⃣ Pending Requests */
+            .ess-kpi-strip .ess-pending-requests-card {
                 order: 8 !important;
+                grid-column: span 3 !important;
             }
 
 
@@ -3074,7 +3154,6 @@ function inject_styles() {
 
             /* Treat Pending Requests as a KPI card */
             .ess-pending-requests-card {
-                grid-column: span 1 !important;   /* 🔑 SAME as other cards */
                 max-width: 100% !important;
             }
 
@@ -3102,7 +3181,7 @@ function inject_styles() {
 
             /* Lock Pending Requests card height like others */
             .ess-pending-requests-card {
-                max-height: 220px;               /* same as KPI cards */
+                max-height: 220px;
                 display: flex;
                 flex-direction: column;
             }
@@ -3111,7 +3190,7 @@ function inject_styles() {
             .ess-pending-requests-card #ess-pending-requests {
                 flex: 1;
                 overflow-y: auto;
-                min-height: 0;                   /* 🔥 REQUIRED for flex scroll */
+                min-height: 0;
             }
 
             #ess-yearly-payroll-amount {
@@ -3129,15 +3208,17 @@ function inject_styles() {
             }
 
             /* Make Year dropdown match Month input (Net Payroll) */
-            #net-payroll-year-select {
-                background: #f8fafc;              /* same soft bg */
-                border: none !important;          /* 🔥 remove black border */
+            #net-payroll-year-select,
+            #turnover-year-select {
+                width: 100%;
+                background: #f8fafc;
+                border: none !important;
                 border-radius: 10px;
                 padding: 6px 10px;
                 font-size: 13px;
                 font-weight: 600;
                 color: #0f172a;
-                box-shadow: inset 0 0 0 1px #e5e7eb;  /* subtle outline like Frappe */
+                box-shadow: inset 0 0 0 1px #e5e7eb;
             }
 
             [data-page-route="ess"] #ess-dashboard {
@@ -3440,7 +3521,7 @@ function inject_styles() {
                 border: 1px solid var(--border-color);
                 cursor: pointer;
                 display: inline-block;
-                min-width: 300px;
+                min-width: 0;
             }
 
             /* Hover effect like other filters */
@@ -3455,11 +3536,119 @@ function inject_styles() {
                 height: 0;
                 overflow: hidden;
                 opacity: 0;
-            }            
+            }
 
-        }   
+            /* =====================================================
+               GLOBAL RESPONSIVE FIXES
+            ===================================================== */
 
-    `;              
+            /* Prevent month-year-display from overflowing its container */
+            .month-year-display {
+                min-width: min(300px, 100%);
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            /* Prevent any card content from causing horizontal scroll */
+            .ess-dashboard {
+                overflow-x: hidden;
+            }
+            .ess-kpi-strip,
+            .ess-charts-grid {
+                min-width: 0;
+            }
+            .ess-card,
+            .ess-kpi-card {
+                min-width: 0;
+                overflow: hidden;
+            }
+
+            /* Turnover card: fixed height → min-height so it can grow */
+            .ess-turnover-card {
+                height: auto !important;
+                min-height: 360px;
+            }
+
+            /* =====================================================
+               TABLET BREAKPOINT  (≤ 900px)
+               Tighten rank-row label before it gets clipped
+            ===================================================== */
+            @media (max-width: 900px) {
+                .ess-rank-row {
+                    grid-template-columns: 120px 1fr 28px;
+                    gap: 8px;
+                }
+                #nationality-chart .ess-rank-row {
+                    grid-template-columns: 120px 1fr 28px;
+                    gap: 8px;
+                }
+            }
+
+            /* =====================================================
+               SMALL MOBILE BREAKPOINT  (≤ 480px)
+            ===================================================== */
+            @media (max-width: 480px) {
+                /* Tighten outer padding so cards get more room */
+                .ess-dashboard {
+                    padding: 8px;
+                }
+
+                /* Shrink rank-row label further */
+                .ess-rank-row,
+                #nationality-chart .ess-rank-row {
+                    grid-template-columns: 90px 1fr 26px;
+                    gap: 6px;
+                    padding: 6px 2px;
+                }
+
+                /* Cards with explicit fixed heights: allow to grow */
+                .ess-kpi-strip .ess-leave-card,
+                .ess-kpi-strip .ess-leave-card {
+                    height: auto !important;
+                    max-height: none !important;
+                    min-height: 120px;
+                }
+
+                .ess-pending-requests-card {
+                    max-height: none !important;
+                    height: auto !important;
+                    min-height: 160px;
+                }
+
+                /* Attendance inline grid: stack to 1 column on tiny screens */
+                .ess-attendance-inline {
+                    grid-template-columns: 1fr;
+                }
+
+                /* Chart cards: reduce min-height */
+                .ess-charts-grid .ess-card {
+                    min-height: 240px;
+                }
+
+                /* Tab pills: allow wrapping */
+                .ess-tabs {
+                    flex-wrap: wrap;
+                }
+
+                /* Net payroll year/month display */
+                #net-payroll-year-select,
+                #turnover-year-select,
+                #attendance-trend-year-select {
+                    width: 100%;
+                }
+
+                /* KPI card text size: prevent overflow */
+                .kpi-main {
+                    font-size: 14px;
+                }
+                .kpi-header {
+                    font-size: 11px;
+                }
+            }
+
+        }
+
+    `;
 
                 document.head.appendChild(style);
             }
@@ -3534,6 +3723,16 @@ function load_kpis() {
         method: "sowaan_hr.sowaan_hr.page.ess.ess.get_kpi_summary",
         callback: r => {
             const d = r.message || {};
+            current_company = d.current_employee_company || null;
+            load_today_attendance();  // depends on current_company being set
+
+            const appraisalKpiCard = document.getElementById("kpi-appraisal-card");
+            if (appraisalKpiCard) {
+                appraisalKpiCard.style.display =
+                    current_company === "Jeel Digital Innovation Company" ? "none" : "";
+            }
+
+            apply_jeel_branch_visibility();
 
             /* ================= Reporting To You ================= */
 
@@ -3575,28 +3774,13 @@ function load_kpis() {
                 `${d.active_employees || 0} Employees`
             );
 
-            const g = d.active_gender_split || {};
-            const genderText =
-                (g.Female || 0) + (g.Male || 0) > 0
-                    ? `${g.Female || 0} Female · ${g.Male || 0} Male`
-                    : "—";
-
-            setText("kpi-active-sub", genderText);
 
             const activeCard = document
                 .getElementById("kpi-active")
                 ?.closest(".ess-kpi-card");
 
-            if (activeCard && d.active_employee_list?.length) {
-                const params = new URLSearchParams();
-                params.append(
-                    "name",
-                    JSON.stringify(["in", d.active_employee_list])
-                );
-                activeCard.dataset.route =
-                    `/app/employee?${params.toString()}`;
-            } else if (activeCard) {
-                activeCard.removeAttribute("data-route");
+            if (activeCard) {
+                activeCard.dataset.route = "/app/employee?status=Active";
             }
 
             toggle_kpi_click("kpi-active", d.active_employees);
@@ -3774,6 +3958,39 @@ function load_pending_requests_for_me() {
 
 
 /* Attendance */
+function apply_jeel_branch_visibility() {
+    const isJeel = current_company === "Jeel Digital Innovation Company";
+
+    // All branch tabs across all charts
+    const branchSelectors = [
+        "[data-by='branch']",
+        "[data-netpay='branch']",
+        "[data-netpay-summary='branch']",
+        "[data-netpay-year='branch']",
+        "[data-headcount='branch']"
+    ];
+
+    branchSelectors.forEach(sel => {
+        document.querySelectorAll(sel).forEach(tab => {
+            tab.style.display = isJeel ? "none" : "";
+
+            // If this tab is currently active, switch to the first sibling tab
+            if (isJeel && tab.classList.contains("active")) {
+                const siblings = tab.closest(".ess-tabs")
+                    ?.querySelectorAll(".ess-tab");
+                if (siblings) {
+                    for (const sibling of siblings) {
+                        if (sibling !== tab && sibling.style.display !== "none") {
+                            sibling.click();
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+    });
+}
+
 function load_today_attendance() {
     const box = document.getElementById("ess-today-attendance");
     if (!box) return;
@@ -3784,12 +4001,14 @@ function load_today_attendance() {
             const d = r.message || {};
             box.innerHTML = "";
 
-            add_att_inline(box, "Present",    d.present,     "Present");
-            add_att_inline(box, "Absent",     d.absent,      "Absent");
+            const isJeel = current_company === "Jeel Digital Innovation Company";
+            if (!isJeel) add_att_inline(box, "Present",    d.present,     "Present");
+            if (!isJeel) add_att_inline(box, "Absent",     d.absent,      "Absent");
             add_att_inline(box, "On Leave",   d.leave,       "On Leave");
-            add_att_inline(box, "Late",       d.late,        "Late");
-            add_att_inline(box, "Early Exit", d.early_exit,  "Early Exit");
-            add_att_inline(box, "Half Day",   d.half_day,    "Half Day");
+            if (isJeel)  add_att_inline(box, "Remotely Working", d.remotely_working, "Remotely Working");
+            if (!isJeel) add_att_inline(box, "Late",       d.late,        "Late");
+            if (!isJeel) add_att_inline(box, "Early Exit", d.early_exit,  "Early Exit");
+            if (!isJeel) add_att_inline(box, "Half Day",   d.half_day,    "Half Day");
         }
     });
 }
@@ -3797,12 +4016,13 @@ function load_today_attendance() {
 
 function add_att_inline(parent, label, data, status) {
     const config = {
-        "Present":    { icon: "fa-check",    cls: "att-present" },
-        "Absent":     { icon: "fa-times",    cls: "att-absent" },
-        "On Leave":   { icon: "fa-plane",    cls: "att-leave" },
-        "Late":       { icon: "fa-clock-o",  cls: "att-late" },
-        "Early Exit": { icon: "fa-sign-out", cls: "att-early" },
-        "Half Day":   { icon: "fa-adjust",   cls: "att-half" }
+        "Present":           { icon: "fa-check",    cls: "att-present" },
+        "Absent":            { icon: "fa-times",    cls: "att-absent" },
+        "On Leave":          { icon: "fa-plane",    cls: "att-leave" },
+        "Late":              { icon: "fa-clock-o",  cls: "att-late" },
+        "Early Exit":        { icon: "fa-sign-out", cls: "att-early" },
+        "Half Day":          { icon: "fa-adjust",   cls: "att-half" },
+        "Remotely Working":  { icon: "fa-laptop",   cls: "att-remote" }
     };
 
     const cfg = config[status] || { icon: "fa-circle", cls: "" };
@@ -3815,6 +4035,7 @@ function add_att_inline(parent, label, data, status) {
 
     parent.insertAdjacentHTML("beforeend", `
         <div class="ess-att-inline-item ${!clickable ? "is-disabled" : ""}"
+             data-tooltip="${label}"
              ${clickable ? "data-clickable='1'" : ""}>
 
             <span class="ess-att-left">
@@ -4497,77 +4718,187 @@ function renderNationalityList(data) {
 }
 
 
+function load_gender_chart() {
+    frappe.call({
+        method: "sowaan_hr.sowaan_hr.page.ess.ess.get_gender_breakdown",
+        callback: r => {
+            if (!r.message) return;
+            render_gender_chart(r.message);
+        }
+    });
+}
+
+function render_gender_chart(data) {
+    const container = document.getElementById("gender-breakdown-chart");
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    const labels = data.labels || [];
+    const values = data.datasets?.[0]?.values || [];
+    const employeesByIndex = data.employees_by_index || [];
+
+    if (!labels.length) {
+        container.innerHTML = `<div class="ess-muted">No gender data available</div>`;
+        return;
+    }
+
+    // Preferred colors for common values; any other gender in the system gets a palette color.
+    const PREFERRED_COLORS = {
+        "Male":     "#3b82f6",
+        "Female":   "#ec4899",
+        "Other":    "#8b5cf6",
+        "Not Set":  "#94a3b8"
+    };
+    const PALETTE = ["#f59e0b", "#10b981", "#ef4444", "#06b6d4", "#84cc16", "#f97316", "#6366f1"];
+    let paletteIdx = 0;
+    const colorMap = {};
+    labels.forEach(label => {
+        colorMap[label] = PREFERRED_COLORS[label] || PALETTE[paletteIdx++ % PALETTE.length];
+    });
+
+    const max = Math.max(...values, 1);
+    const total = values.reduce((s, v) => s + v, 0);
+
+    labels.forEach((label, i) => {
+        const value = values[i] || 0;
+        const pct = Math.max((value / max) * 100, 12);
+        const color = colorMap[label];
+        const employees = employeesByIndex[i] || [];
+
+        const row = document.createElement("div");
+        row.className = "ess-rank-row";
+        row.style.cursor = employees.length ? "pointer" : "default";
+
+        row.innerHTML = `
+            <div class="ess-rank-label" style="display:flex;align-items:center;gap:6px;">
+                <span style="width:10px;height:10px;border-radius:50%;background:${color};display:inline-block;flex-shrink:0;"></span>
+                ${label}
+            </div>
+            <div class="ess-rank-bar">
+                <span style="width:${pct}%;background:${color};"></span>
+            </div>
+            <div class="ess-rank-value">${value}</div>
+        `;
+
+        if (employees.length) {
+            row.onclick = () => {
+                const params = new URLSearchParams();
+                params.append("name", JSON.stringify(["in", employees]));
+                window.open(`/app/employee?${params.toString()}`, "_blank");
+            };
+        }
+
+        container.appendChild(row);
+    });
+
+    // Summary line
+    const summary = document.createElement("div");
+    summary.style.cssText = "margin-top:10px;font-size:12px;color:#64748b;text-align:right;";
+    summary.textContent = `Total: ${total}`;
+    container.appendChild(summary);
+}
+
+
 let monthlyAttendanceChart = null;
+
+function render_attendance_trend_chart(data) {
+    const container = document.getElementById("monthly-attendance-trend-2");
+    if (!container) return;
+
+    container.replaceChildren();
+
+    const {
+        months = [],
+        present = [],
+        absent = [],
+        late = [],
+        on_leave = []
+    } = data;
+
+    if (!months.length) {
+        container.innerHTML = `<div class="ess-muted">No data available</div>`;
+        return;
+    }
+
+    new frappe.Chart(container, {
+        data: {
+            labels: months,
+            datasets: [
+                { name: "Present",  values: present  },
+                { name: "Absent",   values: absent   },
+                { name: "Late",     values: late     },
+                { name: "On Leave", values: on_leave }
+            ]
+        },
+        type: "line",
+        height: 220,
+        axisOptions: {
+            xAxisMode: "tick",
+            yAxisMode: "span",
+            xIsSeries: true
+        },
+        colors: ["#22c55e", "#ef4444", "#f97316", "#3b82f6"],
+        lineOptions: { dotSize: 4, regionFill: 0, hideDots: false }
+    });
+}
 
 function load_monthly_attendance_trend() {
     frappe.call({
         method: "sowaan_hr.sowaan_hr.page.ess.ess.get_monthly_attendance_trend",
         callback: r => {
-            if (!r.message) return;
-
-            const container = document.getElementById(
-                "monthly-attendance-trend-2"
-            );
-            if (!container) return;
-
-            container.replaceChildren();
-
-            const {
-                months = [],
-                present = [],
-                absent = [],
-                late = [],
-                on_leave = []
-            } = r.message;
-
-            if (!months.length) {
-                container.innerHTML =
-                    `<div class="ess-muted">No data available</div>`;
-                return;
-            }
-
-            new frappe.Chart(container, {
-                data: {
-                    labels: months,
-                    datasets: [
-                        {
-                            name: "Present",
-                            values: present
-                        },
-                        {
-                            name: "Absent",
-                            values: absent
-                        },
-                        {
-                            name: "Late",
-                            values: late
-                        },
-                        {
-                            name: "On Leave",
-                            values: on_leave
-                        }
-                    ]
-                },
-                type: "line",
-                height: 220, // 🔑 compact like reference
-                axisOptions: {
-                    xAxisMode: "tick",
-                    yAxisMode: "span",
-                    xIsSeries: true
-                },
-                colors: [
-                    "#22c55e", // Present (green)
-                    "#ef4444", // Absent (red)
-                    "#f97316", // Late (orange)
-                    "#3b82f6"  // On Leave (blue)
-                ],
-                lineOptions: {
-                    dotSize: 4,
-                    regionFill: 0,
-                    hideDots: false
-                }
-            });
+            if (r.message) render_attendance_trend_chart(r.message);
         }
+    });
+}
+
+function load_yearly_attendance_trend(year) {
+    frappe.call({
+        method: "sowaan_hr.sowaan_hr.page.ess.ess.get_yearly_attendance_trend",
+        args: { year },
+        callback: r => {
+            if (r.message) render_attendance_trend_chart(r.message);
+        }
+    });
+}
+
+function init_attendance_trend_tabs() {
+    const tabs = document.querySelectorAll("#attendance-trend-tabs .ess-tab");
+    const yearRow = document.getElementById("attendance-trend-year-row");
+    const yearSelect = document.getElementById("attendance-trend-year-select");
+
+    if (!tabs.length || !yearRow || !yearSelect) return;
+
+    // Populate year dropdown
+    const currentYear = new Date().getFullYear();
+    yearSelect.innerHTML = "";
+    for (let i = 0; i < 10; i++) {
+        const y = currentYear - i;
+        const opt = document.createElement("option");
+        opt.value = y;
+        opt.textContent = y;
+        yearSelect.appendChild(opt);
+    }
+    yearSelect.value = currentYear;
+
+    yearSelect.addEventListener("change", () => {
+        load_yearly_attendance_trend(yearSelect.value);
+    });
+
+    tabs.forEach(tab => {
+        tab.addEventListener("click", function () {
+            tabs.forEach(t => t.classList.remove("active"));
+            this.classList.add("active");
+
+            const mode = this.dataset.trend;
+            if (mode === "yearly") {
+                yearRow.style.display = "";
+                load_yearly_attendance_trend(yearSelect.value);
+            } else {
+                yearRow.style.display = "none";
+                load_monthly_attendance_trend();
+            }
+        });
     });
 }
 
@@ -4828,25 +5159,37 @@ function load_compliance_and_expiry() {
             icon: "fa-user-clock",
             color: "#22c55e"
         },
-        "Expiring Contracts (30 Days)": {
-            icon: "fa-file-contract",
-            color: "#f97316"
-        },
         "Missing Leave Allocation": {
             icon: "fa-calendar-times",
             color: "#ef4444"
         },
-        "Visa Expiry (30 Days)": {
+        "Visa Expiry": {
             icon: "fa-id-card",
             color: "#3b82f6"
         },
-        "Passport Expiry (30 Days)": {
-            icon: "fa-passport",
+        "Passport Expiry": {
+            icon: "fa-book",
             color: "#0ea5e9"
         },
-        "Labor Card Expiry (30 Days)": {
+        "Labor Card Expiry": {
             icon: "fa-id-badge",
             color: "#8b5cf6"
+        },
+        "Emirates ID Expiry": {
+            icon: "fa-credit-card",
+            color: "#06b6d4"
+        },
+        "Iqama Expiry": {
+            icon: "fa-id-card-o",
+            color: "#dc2626"
+        },
+        "Contract Expiry": {
+            icon: "fa-file-text-o",
+            color: "#ea580c"
+        },
+        "Probation End Date": {
+            icon: "fa-hourglass-half",
+            color: "#d97706"
         }
     };
 
@@ -5509,81 +5852,39 @@ function init_net_payroll_year_dropdown() {
     });
 }
 
-function init_turnover_month_picker() {
-    const wrapper = document.getElementById("turnover-month-picker");
+function update_month_year_display(date_str, display_el) {
+    const d = frappe.datetime.str_to_obj(date_str);
+    const text = d.toLocaleString("default", { month: "long", year: "numeric" });
+    display_el.innerText = text;
+}
 
-    if (!wrapper) {
-        setTimeout(init_turnover_month_picker, 100);
+function init_turnover_year_picker() {
+    const select = document.getElementById("turnover-year-select");
+    if (!select) {
+        setTimeout(init_turnover_year_picker, 100);
         return;
     }
 
-    wrapper.innerHTML = "";
+    const currentYear = new Date().getFullYear();
 
-    // Display element (what user sees)
-    const display = document.createElement("div");
-    display.className = "month-year-display";
-    wrapper.appendChild(display);
+    select.innerHTML = "";
+    for (let i = 0; i < 10; i++) {
+        const yr = currentYear - i;
+        const opt = document.createElement("option");
+        opt.value = yr;
+        opt.textContent = yr;
+        select.appendChild(opt);
+    }
 
-    // Hidden date input container
-    const inputWrapper = document.createElement("div");
-    inputWrapper.className = "hidden-date-input";
-    wrapper.appendChild(inputWrapper);
+    select.value = currentYear;
+    turnover_year_select = select;
 
-    turnover_month_control = frappe.ui.form.make_control({
-        parent: inputWrapper,
-        df: {
-            fieldtype: "Date",
-            fieldname: "turnover_month",
-            label: "",
-            onchange() {
-                let val = turnover_month_control.get_value();
-                if (!val) return;
-
-                // Normalize to month start
-                let d = frappe.datetime.str_to_obj(val);
-                let month_start = frappe.datetime.obj_to_str(
-                    new Date(d.getFullYear(), d.getMonth(), 1)
-                );
-
-                if (val !== month_start) {
-                    turnover_month_control.set_value(month_start);
-                    return;
-                }
-
-                update_month_year_display(month_start, display);
-                load_turnover_chart(current_turnover_by);
-            }
-        },
-        render_input: true
+    select.addEventListener("change", () => {
+        load_turnover_chart(current_turnover_by);
     });
 
-    turnover_month_control.refresh();
-
-    // Clicking display opens the date picker
-    display.addEventListener("click", () => {
-        turnover_month_control.$input.trigger("focus");
-        turnover_month_control.$input.trigger("click");
-    });
-
-    // Default: current month
-    const month_start = frappe.datetime.month_start(
-        frappe.datetime.get_today()
-    );
-
-    turnover_month_control.set_value(month_start);
-    update_month_year_display(month_start, display);
-}
-
-
-function update_month_year_display(date_str, display_el) {
-    const d = frappe.datetime.str_to_obj(date_str);
-
-    const text = d.toLocaleString("default", {
-        month: "long",
-        year: "numeric"
-    });
-
-    display_el.innerText = text;
+    // Load chart with default values once picker is ready
+    load_turnover_chart(current_turnover_by);
 }
 
 function init_turnover_tabs() {
@@ -5612,15 +5913,15 @@ function init_turnover_tabs() {
 
 function load_turnover_chart(by) {
 
-    if (!turnover_month_control) return;
+    if (!turnover_year_select) return;
 
-    const month = turnover_month_control.get_value();
-    if (!month) return;
+    const year = turnover_year_select.value;
+    if (!year) return;
 
     frappe.call({
         method: "sowaan_hr.sowaan_hr.page.ess.ess.get_turnover_breakdown",
         args: {
-            month: month.slice(0, 7),
+            year: year,
             by: by
         },
         callback: r => {

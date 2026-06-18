@@ -40,11 +40,14 @@ def get_kpi_summary():
     if not emp:
         return {}
 
-    emp_name = frappe.db.get_value(
+    emp_doc = frappe.db.get_value(
         "Employee",
         emp,
-        "employee_name"
+        ["employee_name", "company"],
+        as_dict=True
     )
+    emp_name = emp_doc.employee_name
+    emp_company = emp_doc.company
 
     # =====================================================
     # REPORTING EMPLOYEES
@@ -61,30 +64,28 @@ def get_kpi_summary():
     reporting_count = len(reporting_employees)
 
     # =====================================================
-    # ACTIVE EMPLOYEES (SELF + SUBORDINATES)
+    # ACTIVE EMPLOYEES (permission-filtered)
     # =====================================================
-    active_employee_list = [emp] + reporting_employees
+    active_employee_list = get_permitted_employees()
     active_employees = len(active_employee_list)
 
     # =====================================================
-    # GENDER SPLIT (ACTIVE EMPLOYEES)
+    # GENDER SPLIT (ALL ACTIVE EMPLOYEES)
     # =====================================================
     gender_split = {"Male": 0, "Female": 0}
 
-    if active_employee_list:
-        rows = frappe.db.sql("""
-            SELECT gender, COUNT(*) AS total
-            FROM `tabEmployee`
-            WHERE
-                name IN %s
-                AND status = 'Active'
-                AND gender IS NOT NULL
-            GROUP BY gender
-        """, (tuple(active_employee_list),), as_dict=True)
+    rows = frappe.db.sql("""
+        SELECT gender, COUNT(*) AS total
+        FROM `tabEmployee`
+        WHERE
+            status = 'Active'
+            AND gender IS NOT NULL
+        GROUP BY gender
+    """, as_dict=True)
 
-        for r in rows:
-            if r.gender in gender_split:
-                gender_split[r.gender] = r.total
+    for r in rows:
+        if r.gender in gender_split:
+            gender_split[r.gender] = r.total
 
     # =====================================================
     # PENDING REQUESTS (WORKFLOW ONLY)
@@ -130,6 +131,7 @@ def get_kpi_summary():
     return {
         "current_employee": emp,
         "current_employee_name": emp_name,
+        "current_employee_company": emp_company,
 
         "reporting_count": reporting_count,
         "reporting_employees": reporting_employees,
@@ -163,7 +165,7 @@ def get_headcount_breakdown(by="department"):
     if not group_field:
         return {}
 
-    employees = get_accessible_employees()
+    employees = get_permitted_employees()
     if not employees:
         return {}
 
@@ -230,6 +232,22 @@ def get_accessible_employees():
 
 
 # =========================================================
+# PERMISSION-BASED EMPLOYEE LIST
+# Returns all active employees the current user is allowed
+# to see in the standard Frappe Employee list view.
+# HR Manager / HR User → all employees.
+# Others → restricted by User Permissions.
+# =========================================================
+def get_permitted_employees():
+    return frappe.get_list(
+        "Employee",
+        filters={"status": "Active"},
+        pluck="name",
+        ignore_permissions=False
+    )
+
+
+# =========================================================
 # NATIONALITY RATIO (CUSTOM FIELD SAFE)
 # =========================================================
 @frappe.whitelist()
@@ -239,7 +257,7 @@ def get_employee_ratio_by_nationality():
     Safe across all instances
     """
 
-    allowed_employees = get_accessible_employees()
+    allowed_employees = get_permitted_employees()
     if not allowed_employees:
         return {}
 
@@ -284,6 +302,40 @@ def get_employee_ratio_by_nationality():
             for r in rows
         ]
     }
+
+# =========================================================
+# GENDER BREAKDOWN
+# =========================================================
+@frappe.whitelist()
+def get_gender_breakdown():
+    allowed_employees = get_permitted_employees()
+    if not allowed_employees:
+        return {}
+
+    rows = frappe.db.sql("""
+        SELECT
+            IFNULL(gender, 'Not Set') AS label,
+            COUNT(*) AS value,
+            GROUP_CONCAT(name) AS employees
+        FROM `tabEmployee`
+        WHERE
+            status = 'Active'
+            AND name IN %(employees)s
+        GROUP BY gender
+        ORDER BY value DESC
+    """, {
+        "employees": tuple(allowed_employees)
+    }, as_dict=True)
+
+    return {
+        "labels": [r.label for r in rows],
+        "datasets": [{"values": [r.value for r in rows]}],
+        "employees_by_index": [
+            r.employees.split(",") if r.employees else []
+            for r in rows
+        ]
+    }
+
 
 # @frappe.whitelist()
 # def get_employee_ratio_by_nationality():
@@ -337,7 +389,7 @@ def get_compliance_summary():
     t = today()
     t30 = add_days(t, 30)
 
-    allowed_employees = get_accessible_employees()
+    allowed_employees = get_permitted_employees()
     if not allowed_employees:
         return []
 
@@ -399,27 +451,19 @@ def get_compliance_summary():
     # 3️⃣ EXPIRY ITEMS (CONFIGURABLE)
     # ======================================================
     default_expiry_map = {
-        "Contract End Date (30 Days)": {
-            "doctype": "Employee",
-            "field": "contract_end_date"
-        },
-        "Visa Expiry (30 Days)": {
+        "Visa Expiry": {
             "doctype": "Employee",
             "field": "custom_visa_expiry"
         },
-        "Iqama Expiry (30 Days)": {
-            "doctype": "Employee",
-            "field": "custom_iqama_expiry_date"
-        },
-        "Passport Expiry (30 Days)": {
+        "Passport Expiry": {
             "doctype": "Employee",
             "field": "valid_upto"
         },
-        "Labor Card Expiry (30 Days)": {
+        "Labor Card Expiry": {
             "doctype": "Employee",
             "field": "custom_labour_card_expiry"
         },
-        "Emirates ID Expiry (30 Days)": {
+        "Emirates ID Expiry": {
             "doctype": "Employee",
             "field": "custom_emirates_id_expiry"
         }
@@ -475,6 +519,47 @@ def get_compliance_summary():
                 AND `{field}` BETWEEN %(start)s AND %(end)s
                 {emp_filter}
         """, params, pluck="name")
+
+        if rows:
+            results.append({
+                "label": label,
+                "count": len(rows),
+                "employees": rows
+            })
+
+    # ======================================================
+    # 4️⃣ 15-DAY ALERT ITEMS (expired OR expiring in 15 days)
+    #    Restricted to HR roles only
+    # ======================================================
+    hr_roles = {"HR Manager", "HR User"}
+    user_roles = set(frappe.get_roles(frappe.session.user))
+    if not (user_roles & hr_roles):
+        return results
+
+    t15 = add_days(t, 15)
+
+    alert_items = [
+        ("Iqama Expiry",      "custom_iqama_expiry_date"),
+        ("Contract Expiry",   "contract_end_date"),
+        ("Probation End Date","custom_probation_end_date"),
+    ]
+
+    for label, field in alert_items:
+        if not frappe.db.has_column("Employee", field):
+            continue
+
+        rows = frappe.db.sql(f"""
+            SELECT name
+            FROM `tabEmployee`
+            WHERE
+                status = 'Active'
+                AND `{field}` IS NOT NULL
+                AND `{field}` <= %(t15)s
+                AND name IN %(emps)s
+        """, {
+            "t15": t15,
+            "emps": tuple(allowed_employees)
+        }, pluck="name")
 
         if rows:
             results.append({
@@ -574,6 +659,39 @@ def get_today_attendance_summary():
             summary["present"]["count"] += 1
             summary["present"]["employees"].append(a.employee)
 
+
+    # --------------------------------
+    # Step 5: Remotely Working count
+    # (from Leave Application, not Attendance)
+    # Excluded from On Leave to avoid double-counting.
+    # --------------------------------
+    remotely_rows = frappe.db.sql("""
+        SELECT employee
+        FROM `tabLeave Application`
+        WHERE
+            leave_type LIKE %(pattern)s
+            AND from_date <= %(today)s
+            AND to_date >= %(today)s
+            AND docstatus = 1
+            AND employee IN %(employees)s
+    """, {
+        "pattern": "%Remote%",
+        "today": today,
+        "employees": tuple(employees)
+    }, as_dict=True)
+
+    remotely_working_set = {r.employee for r in remotely_rows}
+
+    # Remove remotely-working employees from the On Leave bucket
+    summary["leave"]["employees"] = [
+        e for e in summary["leave"]["employees"] if e not in remotely_working_set
+    ]
+    summary["leave"]["count"] = len(summary["leave"]["employees"])
+
+    summary["remotely_working"] = {
+        "count": len(remotely_working_set),
+        "employees": list(remotely_working_set)
+    }
 
     return summary
 
@@ -1242,6 +1360,50 @@ def get_monthly_attendance_trend():
 
 
 @frappe.whitelist()
+def get_yearly_attendance_trend(year):
+    """
+    Attendance trend for all 12 months of a given year.
+    """
+    from frappe.utils import get_last_day, formatdate
+
+    allowed_employees = get_accessible_employees()
+    if not allowed_employees:
+        return {}
+
+    year = int(year)
+    months, present, absent, late, on_leave = [], [], [], [], []
+
+    for month_num in range(1, 13):
+        month_start = f"{year}-{month_num:02d}-01"
+        month_end   = str(get_last_day(month_start))
+
+        months.append(formatdate(month_start, "MMM"))
+
+        def count(status, ms=month_start, me=month_end):
+            return frappe.db.count(
+                "Attendance",
+                {
+                    "attendance_date": ["between", [ms, me]],
+                    "employee": ["in", allowed_employees],
+                    "status": status
+                }
+            )
+
+        present.append(count("Present"))
+        absent.append(count("Absent"))
+        late.append(count("Late"))
+        on_leave.append(count("On Leave"))
+
+    return {
+        "months": months,
+        "present": present,
+        "absent": absent,
+        "late": late,
+        "on_leave": on_leave
+    }
+
+
+@frappe.whitelist()
 def get_employees_with_visa_expiry():
     start_date = today()
     end_date = add_days(start_date, 30)
@@ -1519,13 +1681,13 @@ def get_ess_expiry_config():
 
 
 @frappe.whitelist()
-def get_turnover_breakdown(month, by):
+def get_turnover_breakdown(year, by):
     """
     Employee Turnover (Joined vs Left)
     Grouped by department / branch / employment_type
     """
 
-    if not month:
+    if not year:
         return {}
 
     field_map = {
@@ -1538,8 +1700,8 @@ def get_turnover_breakdown(month, by):
     if not group_field:
         return {}
 
-    month_start = f"{month}-01"
-    month_end = frappe.utils.get_last_day(month_start)
+    month_start = f"{year}-01-01"
+    month_end = f"{year}-12-31"
 
     rows = frappe.db.sql(f"""
         SELECT

@@ -211,8 +211,19 @@ function render_ess_page(wrapper) {
                     <div class="ess-chart-wrap ess-chart-wrap--donut">
                         <div id="nationality-chart"></div>
                     </div>                   
-                </div>            
+                </div>
 
+                <!-- GENDER BREAKDOWN -->
+                <div class="ess-card">
+                    <div class="ess-card-header">
+                        Active Employees by Gender
+                        <i class="fa fa-external-link chart-action"
+                           onclick="window.open('/app/employee?status=Active','_blank')"></i>
+                    </div>
+                    <div class="ess-chart-wrap">
+                        <div id="gender-breakdown-chart"></div>
+                    </div>
+                </div>
 
                 <div class="ess-card ess-turnover-card kpi-silver">
 
@@ -267,18 +278,6 @@ function render_ess_page(wrapper) {
                         <select id="attendance-trend-year-select" class="input-with-feedback" style="width:100%;border-radius:8px;padding:5px 10px;font-size:13px;font-weight:600;background:#f8fafc;border:1px solid #e2e8f0;"></select>
                     </div>
                     <div id="monthly-attendance-trend-2"></div>
-                </div>
-
-                <!-- GENDER BREAKDOWN -->
-                <div class="ess-card">
-                    <div class="ess-card-header">
-                        Active Employees by Gender
-                        <i class="fa fa-external-link chart-action"
-                           onclick="window.open('/app/employee?status=Active','_blank')"></i>
-                    </div>
-                    <div class="ess-chart-wrap">
-                        <div id="gender-breakdown-chart"></div>
-                    </div>
                 </div>
 
                 <!-- NET PAYROLL -->
@@ -5179,11 +5178,11 @@ function load_compliance_and_expiry() {
             icon: "fa-credit-card",
             color: "#06b6d4"
         },
-        "Iqama Expiry": {
+        "Iqama / ID Expiry Date": {
             icon: "fa-id-card-o",
             color: "#dc2626"
         },
-        "Contract Expiry": {
+        "Contract Expiry Date": {
             icon: "fa-file-text-o",
             color: "#ea580c"
         },
@@ -5866,10 +5865,10 @@ function init_turnover_year_picker() {
     }
 
     const currentYear = new Date().getFullYear();
+    const startYear = 2023;
 
     select.innerHTML = "";
-    for (let i = 0; i < 10; i++) {
-        const yr = currentYear - i;
+    for (let yr = currentYear; yr >= startYear; yr--) {
         const opt = document.createElement("option");
         opt.value = yr;
         opt.textContent = yr;

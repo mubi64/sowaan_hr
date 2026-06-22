@@ -539,8 +539,8 @@ def get_compliance_summary():
     t15 = add_days(t, 15)
 
     alert_items = [
-        ("Iqama Expiry",      "custom_iqama_expiry_date"),
-        ("Contract Expiry",   "contract_end_date"),
+        ("Iqama / ID Expiry Date",      "custom_iqama_expiry_date"),
+        ("Contract Expiry Date",   "contract_end_date"),
         ("Probation End Date","custom_probation_end_date"),
     ]
 
@@ -728,12 +728,37 @@ def get_pending_approvals_for_me():
     for a in actions:
         by_doctype[a.reference_doctype].append(a.reference_name)
 
+    # Leave Application visibility on this dashboard follows two explicit
+    # rules (client-specified), independent of the generic Workflow
+    # transition check used for every other doctype below:
+    #   1. "Pending by HR" -> shown to any user holding the HR Manager role.
+    #   2. "Pending by HOD" -> shown to a Department Manager only for their
+    #      own reports (Employee.custom_reports_to_email == them).
+    # No fallback/safety-net: if an employee's Pending-by-HOD manager doesn't
+    # hold the Department Manager role, this simply doesn't show to anyone
+    # else on this dashboard - it stays invisible here until that role is
+    # granted (explicit client decision - do not leak it to other HODs/HR
+    # Managers who aren't this employee's actual manager).
+    HR_MANAGER_ROLE = "HR Manager"
+    DEPT_MANAGER_ROLE = "Department Manager"
+
+    user_is_hr_manager = bool(
+        frappe.db.exists("Has Role", {"parent": user, "role": HR_MANAGER_ROLE})
+    )
+    user_is_dept_manager = bool(
+        frappe.db.exists("Has Role", {"parent": user, "role": DEPT_MANAGER_ROLE})
+    )
+
     for dt, names in by_doctype.items():
+
+        fields = ["name", "owner", "workflow_state"]
+        if dt == "Leave Application":
+            fields += ["status", "employee"]
 
         docs = frappe.get_all(
             dt,
             filters={"name": ["in", names]},
-            fields=["name", "owner", "workflow_state"],
+            fields=fields,
             ignore_permissions=False
         )
 
@@ -743,6 +768,24 @@ def get_pending_approvals_for_me():
                 continue
 
             if not d.workflow_state:
+                continue
+
+            if dt == "Leave Application":
+                # ✅ Only count Leave Applications still pending approval
+                if d.get("status") != "Open":
+                    continue
+
+                if d.workflow_state == "Pending by HR":
+                    if user_is_hr_manager:
+                        result[dt].append(d.name)
+
+                elif d.workflow_state == "Pending by HOD":
+                    reports_to = frappe.db.get_value(
+                        "Employee", d.get("employee"), "custom_reports_to_email"
+                    )
+                    if user_is_dept_manager and reports_to == user:
+                        result[dt].append(d.name)
+
                 continue
 
             try:

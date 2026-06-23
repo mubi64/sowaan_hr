@@ -373,7 +373,7 @@ advance_payment_doctypes = ["KSA Gratuity"]
 
 # Request Events
 # ----------------
-# before_request = ["sowaan_hr.utils.before_request"]
+before_request = ["sowaan_hr.overrides.monthly_attendance_sheet.apply"]
 # after_request = ["sowaan_hr.utils.after_request"]
 
 # Job Events

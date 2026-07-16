@@ -728,12 +728,18 @@ def get_pending_approvals_for_me():
     for a in actions:
         by_doctype[a.reference_doctype].append(a.reference_name)
 
-    # Leave Application visibility on this dashboard follows two explicit
-    # rules (client-specified), independent of the generic Workflow
-    # transition check used for every other doctype below:
+    # Leave Application and Attendance Request visibility on this dashboard
+    # follow two explicit rules (client-specified), independent of the
+    # generic Workflow transition check used for every other doctype below:
     #   1. "Pending by HR" -> shown to any user holding the HR Manager role.
     #   2. "Pending by HOD" -> shown to a Department Manager only for their
     #      own reports (Employee.custom_reports_to_email == them).
+    # This overrides the generic role check below, which would otherwise
+    # also surface "Pending by HOD" items to every HR Manager company-wide
+    # (that transition's "allowed" role includes HR Manager with no
+    # condition) - client explicitly wants HOD-stage items scoped to the
+    # employee's actual manager only, even for users who are also HR
+    # Managers (2026-07-16 tweak request re: Rana Al-Kahtani).
     # No fallback/safety-net: if an employee's Pending-by-HOD manager doesn't
     # hold the Department Manager role, this simply doesn't show to anyone
     # else on this dashboard - it stays invisible here until that role is
@@ -741,6 +747,7 @@ def get_pending_approvals_for_me():
     # Managers who aren't this employee's actual manager).
     HR_MANAGER_ROLE = "HR Manager"
     DEPT_MANAGER_ROLE = "Department Manager"
+    HOD_SCOPED_DOCTYPES = ("Leave Application", "Attendance Request")
 
     user_is_hr_manager = bool(
         frappe.db.exists("Has Role", {"parent": user, "role": HR_MANAGER_ROLE})
@@ -754,6 +761,8 @@ def get_pending_approvals_for_me():
         fields = ["name", "owner", "workflow_state"]
         if dt == "Leave Application":
             fields += ["status", "employee"]
+        elif dt == "Attendance Request":
+            fields += ["employee"]
 
         docs = frappe.get_all(
             dt,
@@ -770,9 +779,10 @@ def get_pending_approvals_for_me():
             if not d.workflow_state:
                 continue
 
-            if dt == "Leave Application":
-                # ✅ Only count Leave Applications still pending approval
-                if d.get("status") != "Open":
+            if dt in HOD_SCOPED_DOCTYPES:
+                # ✅ Leave Application also tracks a separate `status` field;
+                # skip anything no longer actually open there.
+                if dt == "Leave Application" and d.get("status") != "Open":
                     continue
 
                 if d.workflow_state == "Pending by HR":
@@ -797,7 +807,7 @@ def get_pending_approvals_for_me():
 
                 approval_actions = [
                     t for t in transitions
-                    if t.get("action") not in ("Submit",)
+                    if t.get("action") not in ("Submit", "Cancel")
                 ]
 
                 if approval_actions:
@@ -859,6 +869,19 @@ def get_pending_requests_sent_by_me():
                 initial_state = s.state
                 break
 
+        # 🔥 Detect terminal states from the workflow definition itself
+        # instead of a hardcoded label list ("Rejected", "Approved", ...),
+        # since real workflows use doctype-specific names like
+        # "Rejected by HR Manager" / "Rejected by HOD" that never match
+        # those generic strings. A state is terminal if it's submitted
+        # (doc_status 1) or cancelled (doc_status 2), or if no transition
+        # ever originates from it (a rejection dead-end).
+        states_with_outgoing_transition = {t.state for t in workflow_doc.transitions}
+        terminal_states = {
+            s.state for s in workflow_doc.states
+            if s.doc_status in (1, 2) or s.state not in states_with_outgoing_transition
+        }
+
         docs = frappe.get_all(
             dt,
             filters={
@@ -878,14 +901,7 @@ def get_pending_requests_sent_by_me():
                 continue
 
             # ❌ Exclude final states
-            if d.workflow_state in (
-                "Rejected",
-                "Draft",
-                "Cancelled",
-                "Approved",
-                "Completed",
-                "Closed",
-            ):
+            if d.workflow_state in terminal_states:
                 continue
 
             if frappe.has_permission(dt, "read", d.name):
@@ -964,41 +980,21 @@ def get_leave_balance_for_employee(employee=None):
     if employee not in allowed_names:
         frappe.throw("Not permitted")
 
-    allocations = frappe.get_all(
-        "Leave Allocation",
-        filters={
-            "employee": employee,
-            "docstatus": 1
-        },
-        fields=[
-            "leave_type",
-            "total_leaves_allocated"
-        ]
-    )
-    used = frappe.db.sql("""
-    SELECT
-        leave_type,
-        ABS(SUM(leaves)) AS used
-    FROM `tabLeave Ledger Entry`
-    WHERE
-        employee = %s
-        AND docstatus = 1
-        AND transaction_type = 'Leave Application'
-        AND leaves < 0
-    GROUP BY leave_type
-""", employee, as_dict=True)
+    # Reuse HRMS's own leave-balance calculation (same one backing the
+    # Employee Leave Balance report and the stock ESS widget) instead of a
+    # separate query, so this card only shows each leave type's balance for
+    # its currently active allocation period rather than every historical
+    # Leave Allocation record summed against a lifetime "used" total.
+    from hrms.hr.doctype.leave_application.leave_application import get_leave_details
 
+    leave_details = get_leave_details(employee, getdate())
+    allocation = leave_details.get("leave_allocation", {})
 
-    #frappe.msgprint(f"used {used}")
-    used_map = {u.leave_type: abs(u.used or 0) for u in used}
-
-    #frappe.msgprint(f"used_map {used_map}")
     result = []
-    for a in allocations:
-        balance = round((a.total_leaves_allocated or 0) - used_map.get(a.leave_type, 0), 2)
+    for leave_type, details in allocation.items():
         result.append({
-            "leave_type": a.leave_type,
-            "balance": balance
+            "leave_type": leave_type,
+            "balance": details.get("remaining_leaves")
         })
 
     return result

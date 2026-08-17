@@ -6,6 +6,7 @@ app_icon = "octicon octicon-file-directory"
 app_color = "grey"
 app_email = "info@sowaan.com"
 app_license = "mit"
+app_logo_url = "/assets/sowaan_hr/images/sowaan_hr-logo.png"
 
 
 # Apps
@@ -14,15 +15,14 @@ app_license = "mit"
 # required_apps = []
 
 # Each item in the list will be shown as an app in the apps page
-# add_to_apps_screen = [
-# 	{
-# 		"name": "sowaan_hr",
-# 		"logo": "/assets/sowaan_hr/logo.png",
-# 		"title": "Sowaan Hr",
-# 		"route": "/sowaan_hr",
-# 		"has_permission": "sowaan_hr.api.permission.has_app_permission"
-# 	}
-# ]
+add_to_apps_screen = [
+	{
+		"name": "sowaan_hr",
+		"logo": "/assets/sowaan_hr/images/sowaan_hr-logo.png",
+		"title": "Sowaan Hr",
+		"route": "/sowaan_hr",
+	}
+]
 
 #updated to include Sowaan HR Setting, Leave Application
 

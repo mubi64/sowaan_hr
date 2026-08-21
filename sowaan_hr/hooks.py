@@ -20,7 +20,7 @@ add_to_apps_screen = [
 		"name": "sowaan_hr",
 		"logo": "/assets/sowaan_hr/images/sowaan_hr-logo.png",
 		"title": "Sowaan Hr",
-		"route": "/sowaan_hr",
+		"route": "/desk/sowaan-hr",
 	}
 ]
 

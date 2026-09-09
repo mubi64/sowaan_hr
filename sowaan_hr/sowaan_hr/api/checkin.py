@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 import json
 from tabnanny import check
 import frappe
-from frappe.utils import nowdate, flt, cstr, getdate, get_datetime
+from frappe.utils import nowdate, flt, cstr, cint, getdate, get_datetime
 from frappe import _
 from datetime import datetime
 from pytz import timezone
@@ -114,9 +114,23 @@ def get_checkins(employee, status, from_date, to_date, page):
 
 
 @frappe.whitelist()
-def create_employee_checkin(logtype, employee, time, gps, deviceId):
+def create_employee_checkin(logtype, employee, time, gps, deviceId, client_id=None, time_verified=None, is_offline_sync=None):
     success = True
     message = ''
+
+    # Idempotency: the mobile app retries a sync if a response is lost (e.g.
+    # connection drops right after the server processed the request). If
+    # this exact check-in was already recorded, return the existing result
+    # instead of inserting a duplicate Employee Checkin.
+    if client_id:
+        existing = frappe.db.get_value(
+            "Employee Checkin",
+            {"custom_client_id": client_id},
+            ["log_type"],
+            as_dict=True,
+        )
+        if existing:
+            return {"success": True, "message": existing.log_type + " already recorded"}
 
     if (not logtype or not logtype in ('IN', 'OUT') or not employee or not time or not gps or not deviceId):
         success = False
@@ -128,7 +142,28 @@ def create_employee_checkin(logtype, employee, time, gps, deviceId):
         source_loc = split_string_to_float(gps, ',')
         obj = TimezoneFinder()
         gps_timezone = obj.timezone_at(lat=source_loc[0], lng=source_loc[1])
-        gps_time = datetime.now(timezone(gps_timezone))
+
+        is_offline_sync = cint(is_offline_sync)
+        time_verified = cint(time_verified)
+
+        if is_offline_sync and time_verified:
+            # Offline check-in being synced after the fact: `datetime.now()`
+            # here would be the moment of sync, not the moment the employee
+            # actually checked in. `time` was reconstructed on-device from a
+            # tamper-resistant monotonic clock anchored to a trusted server
+            # timestamp (see the sowaanerp_hr app's DeviceClock) rather than
+            # the device's editable wall clock, so it can be trusted here.
+            # The app sends it as a naive UTC string (no timezone suffix), so
+            # it must be localized to UTC explicitly before converting to the
+            # GPS location's timezone - otherwise Python's astimezone() would
+            # silently assume the server's own local timezone instead.
+            gps_time = timezone('UTC').localize(get_datetime(time)).astimezone(timezone(gps_timezone))
+        else:
+            # Live check-in (or an offline one whose time could never be
+            # verified): never trust the device's wall clock - stamp with
+            # the server's own clock at the moment of the request.
+            gps_time = datetime.now(timezone(gps_timezone))
+
         gps_time_formatted = gps_time.strftime('%Y-%m-%d %H:%M:%S')
 
         # verifying registered device
@@ -193,6 +228,9 @@ def create_employee_checkin(logtype, employee, time, gps, deviceId):
             checkin.device_id = deviceId
             checkin.marked_gps = gps
             checkin.gps_location = x['name']
+            if client_id:
+                checkin.custom_client_id = client_id
+            checkin.custom_time_verified = time_verified
 
             checkin.insert(ignore_permissions=True)
             if checkin.shift:

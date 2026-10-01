@@ -7,7 +7,6 @@ from frappe import _
 from datetime import datetime
 from pytz import timezone
 from timezonefinder import TimezoneFinder
-from tzwhere import tzwhere
 from math import sin, cos, sqrt, atan2, radians
 from hrms.hr.doctype.shift_assignment.shift_assignment import (
     get_actual_start_end_datetime_of_shift, get_shifts_for_date, get_shift_details

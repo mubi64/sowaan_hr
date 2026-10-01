@@ -21,6 +21,8 @@ def gen_response(status, message, data=[]):
 
 
 def sort_by_char_frequency(statuses):
+    if not statuses:
+        return []
     max_length = max(len(s['status']) for s in statuses)
     index_counts = [0] * max_length
 

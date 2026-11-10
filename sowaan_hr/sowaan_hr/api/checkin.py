@@ -11,12 +11,13 @@ from math import sin, cos, sqrt, atan2, radians
 from hrms.hr.doctype.shift_assignment.shift_assignment import (
     get_actual_start_end_datetime_of_shift, get_shifts_for_date, get_shift_details
 )
-from sowaan_hr.sowaan_hr.api.employee import get_allowed_locations, get_employee_devices
+from sowaan_hr.sowaan_hr.api.employee import get_allowed_locations, get_employee_devices, resolve_employee
 from sowaan_hr.sowaan_hr.api.api import gen_response
 
 
 @frappe.whitelist()
 def get_my_today_checkins(employee):
+    employee = resolve_employee(employee)
     employee_detail = frappe.get_doc("Employee", employee)
     shifts = get_shifts_for_date(
         employee, get_datetime()
@@ -116,6 +117,8 @@ def get_checkins(employee, status, from_date, to_date, page):
 def create_employee_checkin(logtype, employee, time, gps, deviceId, client_id=None, time_verified=None, is_offline_sync=None):
     success = True
     message = ''
+    # The app may hold a stale (renamed) Employee ID - see resolve_employee.
+    employee = resolve_employee(employee)
 
     # Idempotency: the mobile app retries a sync if a response is lost (e.g.
     # connection drops right after the server processed the request). If
@@ -141,6 +144,11 @@ def create_employee_checkin(logtype, employee, time, gps, deviceId, client_id=No
         source_loc = split_string_to_float(gps, ',')
         obj = TimezoneFinder()
         gps_timezone = obj.timezone_at(lat=source_loc[0], lng=source_loc[1])
+        if not gps_timezone:
+            # No timezone for these coordinates (e.g. near a boundary or
+            # offshore): fall back to the site timezone instead of crashing
+            # with a 500, which the mobile app reports as "You're offline".
+            gps_timezone = frappe.utils.get_system_timezone()
 
         is_offline_sync = cint(is_offline_sync)
         time_verified = cint(time_verified)

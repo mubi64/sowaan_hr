@@ -9,7 +9,7 @@ from frappe.utils import (
 from frappe import _
 from hrms.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 from hrms.hr.utils import get_holiday_dates_for_employee
-from sowaan_hr.sowaan_hr.api.employee import get_allowed_employees, get_current_emp
+from sowaan_hr.sowaan_hr.api.employee import get_allowed_employees, get_current_emp, resolve_employee
 from hrms.hr.doctype.shift_assignment.shift_assignment import (
     get_actual_start_end_datetime_of_shift, get_shifts_for_date
 )
@@ -108,6 +108,7 @@ def get_attendance(employee, status, from_date, to_date, page):
 
 @frappe.whitelist()
 def get_attendance_summary_statuswise(employee, from_date, to_date):
+    employee = resolve_employee(employee)
     filters = {
         "docstatus": 1,
         "attendance_date": ["between", (getdate(from_date), getdate(to_date))]
@@ -154,7 +155,16 @@ def get_attendance_summary_statuswise(employee, from_date, to_date):
     ))
 
     # get holidays
-    holidays = get_holiday_dates_for_employee(employee, from_date, to_date)
+    holiday_employee = filters.get("employee")
+    if not isinstance(holiday_employee, str):
+        holiday_employee = employee
+    try:
+        holidays = get_holiday_dates_for_employee(holiday_employee, from_date, to_date)
+    except Exception:
+        # Employee without a resolvable holiday list/record must not break
+        # the whole summary.
+        frappe.clear_last_message()
+        holidays = []
     holidays = len(
         list(filter(lambda x: getdate(x) < getdate(nowdate()), holidays)))
 

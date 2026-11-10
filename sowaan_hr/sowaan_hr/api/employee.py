@@ -105,3 +105,15 @@ def get_allowed_employees():
 
 def get_current_emp():
     return frappe.get_value("Employee", {'user_id':frappe.session.user}, 'name')
+
+
+def resolve_employee(employee):
+    """Return a valid Employee name for the request.
+
+    Mobile apps cache the employee ID at login. If the Employee was renamed
+    afterwards (e.g. HR-EMP-00002 -> 1003), the cached ID no longer exists and
+    every call crashes with a 500. Fall back to the logged-in user's own
+    Employee record in that case."""
+    if employee and frappe.db.exists("Employee", employee):
+        return employee
+    return get_current_emp() or employee

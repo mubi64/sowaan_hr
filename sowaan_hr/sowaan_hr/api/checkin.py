@@ -234,6 +234,12 @@ def create_employee_checkin(logtype, employee, time, gps, deviceId, client_id=No
             checkin.time = gps_time_formatted
             checkin.device_id = deviceId
             checkin.marked_gps = gps
+            # HRMS rejects check-ins without latitude/longitude when
+            # HR Settings > "Allow Geolocation Tracking" is enabled (and
+            # validates the distance from the shift location with them).
+            if checkin.meta.has_field("latitude"):
+                checkin.latitude = source_loc[0]
+                checkin.longitude = source_loc[1]
             checkin.gps_location = x['name']
             if client_id:
                 checkin.custom_client_id = client_id
